@@ -285,3 +285,62 @@ def test_format_context_and_build_messages_flags():
     msgs_cit = build_messages("q", chunks, enforce_citations=True)
     assert "trích dẫn mã [CHUNK_ID] đầy đủ sau mỗi câu khẳng định." in msgs_cit[1]["content"]
 
+def test_generator_litellm_exception_sets_extractive_fallback_model():
+    """Verify that when litellm raises an exception, model is updated to extractive-fallback."""
+    config = GenerationConfig(model="gpt-4o", dry_run=False)
+    generator = MedicalGenerator(config=config)
+    chunks = [_make_chunk("c1", "Nội dung vắc xin [c1].")]
+
+    with patch.dict("os.environ", {"OPENAI_API_KEY": "fake_key"}):
+        with patch("litellm.completion", side_effect=RuntimeError("LiteLLM connection error")):
+            res = generator.generate("Câu hỏi?", chunks)
+            assert res.model == "extractive-fallback"
+            assert "[c1]" in res.answer
+
+
+def test_generator_unified_llm_api_key():
+    """Verify LLM_API_KEY is accepted and passed to litellm.completion kwargs."""
+    config = GenerationConfig(model="custom-model", dry_run=False)
+    generator = MedicalGenerator(config=config)
+    chunks = [_make_chunk("c1", "Nội dung.")]
+
+    mock_resp = MagicMock()
+    mock_resp.choices = [MagicMock(message=MagicMock(content="Đáp án [c1]."))]
+    mock_resp.usage.prompt_tokens = 10
+    mock_resp.usage.completion_tokens = 10
+    mock_resp.usage.total_tokens = 20
+
+    with patch.dict("os.environ", {"LLM_API_KEY": "unified_secret_key"}, clear=True):
+        with patch("litellm.completion", return_value=mock_resp) as mock_comp:
+            res = generator.generate("Query?", chunks)
+            mock_comp.assert_called_once()
+            _, kwargs = mock_comp.call_args
+            assert kwargs.get("api_key") == "unified_secret_key"
+            assert res.model == "custom-model"
+
+
+def test_citation_validation_advanced_formats():
+    """Verify extraction of merged citations, bracket prefixes, and multiple ids."""
+    generator = MedicalGenerator()
+    chunks = [_make_chunk("c1"), _make_chunk("c2"), _make_chunk("c3")]
+
+    # Multi-citation inside single bracket
+    valid, invalid, cited = generator._validate_citations(
+        "Chỉ định ngừa bệnh [c1, c2]. Tác dụng phụ [CHUNK_ID: c3]. Lỗi [c_fake].",
+        chunks,
+    )
+    assert "c1" in valid
+    assert "c2" in valid
+    assert "c3" in valid
+    assert "c_fake" in invalid
+    assert len(cited) == 3
+
+    # Semicolon separated citations
+    valid_semi, _, _ = generator._validate_citations("Chỉ định [c1; c2].", chunks)
+    assert valid_semi == ["c1", "c2"]
+
+    # Header style prefix [Tài liệu 1 | CHUNK_ID: c1]
+    valid_prefix, _, _ = generator._validate_citations("Chỉ định [TÀI LIỆU 1 | CHUNK_ID: c1].", chunks)
+    assert valid_prefix == ["c1"]
+
+
