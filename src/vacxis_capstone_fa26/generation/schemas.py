@@ -32,6 +32,16 @@ class GenerationConfig:
     dry_run: bool = False
 
 
+def _extract_chunk_id(c: Any) -> str:
+    """Safely extract chunk ID from an object or dictionary."""
+    if isinstance(c, dict):
+        cid = c.get("chunk_id") or c.get("CHUNK_ID")
+        return str(cid) if cid is not None else str(c)
+    if hasattr(c, "chunk_id"):
+        return str(c.chunk_id)
+    return str(c)
+
+
 @dataclass
 class GeneratedAnswer:
     """Represents an answer synthesized by the generator."""
@@ -54,8 +64,8 @@ class GeneratedAnswer:
             "answer": self.answer,
             "citations": self.citations,
             "invalid_citations": self.invalid_citations,
-            "cited_chunk_ids": [getattr(c, "chunk_id", str(c)) for c in self.cited_chunks],
-            "retrieved_chunk_ids": [getattr(c, "chunk_id", str(c)) for c in self.retrieved_chunks],
+            "cited_chunk_ids": [_extract_chunk_id(c) for c in self.cited_chunks],
+            "retrieved_chunk_ids": [_extract_chunk_id(c) for c in self.retrieved_chunks],
             "is_refusal": self.is_refusal,
             "model": self.model,
             "latency_seconds": round(self.latency_seconds, 4),

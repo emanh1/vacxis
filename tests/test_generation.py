@@ -237,3 +237,51 @@ def test_pipeline_answer_batch_override_chunks():
         chunks_per_query=custom_batch,
     )
 
+
+def test_format_context_with_dict_chunks():
+    """Verify format_context properly formats dictionary-shaped chunks."""
+    dict_chunks = [
+        {"chunk_id": "c_dict_1", "text": "Đoạn văn bản 1.", "doc_title": "Vaccine A", "category": "chỉ định", "header": "Mục 1"},
+        {"CHUNK_ID": "c_dict_2", "TEXT": "Đoạn văn bản 2."},
+    ]
+    ctx = format_context(dict_chunks)
+    assert "CHUNK_ID: c_dict_1" in ctx
+    assert "Vắc-xin: Vaccine A" in ctx
+    assert "Đoạn văn bản 1." in ctx
+    assert "CHUNK_ID: c_dict_2" in ctx
+    assert "Đoạn văn bản 2." in ctx
+
+
+def test_generated_answer_to_dict_with_dict_chunks():
+    """Verify GeneratedAnswer.to_dict handles dictionary chunks without raw dict stringification."""
+    ans = GeneratedAnswer(
+        query="q",
+        answer="a",
+        cited_chunks=[{"chunk_id": "c_cited", "text": "t"}],
+        retrieved_chunks=[{"CHUNK_ID": "c_retrieved", "text": "t"}],
+    )
+    d = ans.to_dict()
+    assert d["cited_chunk_ids"] == ["c_cited"]
+    assert d["retrieved_chunk_ids"] == ["c_retrieved"]
+
+
+def test_format_context_and_build_messages_flags():
+    """Verify include_metadata and enforce_citations configuration flags."""
+    chunks = [_make_chunk("c1", "Nội dung vắc xin.")]
+
+    # include_metadata=False
+    ctx_no_meta = format_context(chunks, include_metadata=False)
+    assert "CHUNK_ID: c1" in ctx_no_meta
+    assert "Vắc-xin:" not in ctx_no_meta
+    assert "Chuyên mục:" not in ctx_no_meta
+
+    # enforce_citations=False in build_messages
+    msgs_no_cit = build_messages("q", chunks, enforce_citations=False)
+    user_prompt = msgs_no_cit[1]["content"]
+    assert "trích dẫn mã [CHUNK_ID] đầy đủ" not in user_prompt
+    assert "Hãy trả lời câu hỏi dựa trên các tài liệu trên." in user_prompt
+
+    # enforce_citations=True in build_messages
+    msgs_cit = build_messages("q", chunks, enforce_citations=True)
+    assert "trích dẫn mã [CHUNK_ID] đầy đủ sau mỗi câu khẳng định." in msgs_cit[1]["content"]
+

@@ -32,29 +32,46 @@ REFUSAL_TRIGGER_PHRASES: tuple[str, ...] = (
 )
 
 
-def format_context(chunks: Sequence[Any]) -> str:
+def get_chunk_field(c: Any, field_name: str, default: Any = "") -> Any:
+    """Safely extract a field from either an object or a dictionary."""
+    if isinstance(c, dict):
+        if field_name in c and c[field_name] is not None:
+            return c[field_name]
+        upper_field = field_name.upper()
+        if upper_field in c and c[upper_field] is not None:
+            return c[upper_field]
+        return default
+    return getattr(c, field_name, default)
+
+
+def format_context(chunks: Sequence[Any], include_metadata: bool = True) -> str:
     """Format retrieved chunks into a clear, referenced text block."""
     if not chunks:
         return "Không có đoạn tài liệu tham khảo nào được tìm thấy."
 
     formatted_blocks: list[str] = []
     for idx, c in enumerate(chunks, start=1):
-        cid = getattr(c, "chunk_id", str(idx))
-        text = getattr(c, "text", "")
-        doc_title = getattr(c, "doc_title", "")
-        category = getattr(c, "category", "")
-        header = getattr(c, "header", "")
+        cid = get_chunk_field(c, "chunk_id", str(idx))
+        text = str(get_chunk_field(c, "text", ""))
 
-        header_parts: list[str] = []
-        if doc_title:
-            header_parts.append(f"Vắc-xin: {doc_title}")
-        if category:
-            header_parts.append(f"Chuyên mục: {category}")
-        if header:
-            header_parts.append(f"Mục: {header}")
+        if include_metadata:
+            doc_title = get_chunk_field(c, "doc_title", "")
+            category = get_chunk_field(c, "category", "")
+            header = get_chunk_field(c, "header", "")
 
-        meta_line = " | ".join(header_parts) if header_parts else "Thông tin chung"
-        block = f"--- [TÀI LIỆU {idx} | CHUNK_ID: {cid} | {meta_line}] ---\n{text.strip()}"
+            header_parts: list[str] = []
+            if doc_title:
+                header_parts.append(f"Vắc-xin: {doc_title}")
+            if category:
+                header_parts.append(f"Chuyên mục: {category}")
+            if header:
+                header_parts.append(f"Mục: {header}")
+
+            meta_line = " | ".join(header_parts) if header_parts else "Thông tin chung"
+            block = f"--- [TÀI LIỆU {idx} | CHUNK_ID: {cid} | {meta_line}] ---\n{text.strip()}"
+        else:
+            block = f"--- [TÀI LIỆU {idx} | CHUNK_ID: {cid}] ---\n{text.strip()}"
+
         formatted_blocks.append(block)
 
     return "\n\n".join(formatted_blocks)
@@ -64,15 +81,23 @@ def build_messages(
     query: str,
     chunks: Sequence[Any],
     system_prompt: str | None = None,
+    include_metadata: bool = True,
+    enforce_citations: bool = True,
 ) -> list[dict[str, str]]:
     """Construct messages payload compatible with LiteLLM/OpenAI format."""
     sys_prompt = system_prompt or DEFAULT_MEDICAL_SYSTEM_PROMPT
-    context_str = format_context(chunks)
+    context_str = format_context(chunks, include_metadata=include_metadata)
+
+    citation_instruction = (
+        "Hãy trả lời câu hỏi dựa trên các tài liệu trên và trích dẫn mã [CHUNK_ID] đầy đủ sau mỗi câu khẳng định."
+        if enforce_citations
+        else "Hãy trả lời câu hỏi dựa trên các tài liệu trên."
+    )
 
     user_content = (
         f"CÂU HỎI CỦA NGƯỜI DÙNG: {query.strip()}\n\n"
         f"CÁC ĐOẠN TÀI LIỆU HƯỚNG DẪN SỬ DỤNG:\n{context_str}\n\n"
-        "Hãy trả lời câu hỏi dựa trên các tài liệu trên và trích dẫn mã [CHUNK_ID] đầy đủ sau mỗi câu khẳng định."
+        f"{citation_instruction}"
     )
 
     return [
