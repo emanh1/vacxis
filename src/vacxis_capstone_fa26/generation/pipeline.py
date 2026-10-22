@@ -84,7 +84,7 @@ class VacxisRAGPipeline:
         if override_chunks_per_query is not None:
             chunks_batch = list(override_chunks_per_query)
         else:
-            chunks_batch = self.retriever.retrieve_batch(
+            chunks_batch = self.retriever.batch_retrieve(
                 queries=queries,
                 top_k=top_k,
                 skip_rerank=skip_rerank,

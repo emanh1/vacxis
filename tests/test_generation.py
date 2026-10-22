@@ -188,3 +188,52 @@ def test_pipeline_override_chunks():
 
     mock_retriever.retrieve.assert_not_called()
     mock_generator.generate.assert_called_once_with(query="Query", chunks=[custom_chunk])
+
+
+def test_pipeline_answer_batch_with_mocked_retriever():
+    """Verify answer_batch calls batch_retrieve on retriever and generate_batch on generator."""
+    mock_retriever = MagicMock()
+    chunk1 = _make_chunk("c1", "Text 1")
+    chunk2 = _make_chunk("c2", "Text 2")
+    mock_retriever.batch_retrieve.return_value = [[chunk1], [chunk2]]
+
+    mock_generator = MagicMock()
+    mock_generator.generate_batch.return_value = [
+        GeneratedAnswer(query="q1", answer="a1", model="mock"),
+        GeneratedAnswer(query="q2", answer="a2", model="mock"),
+    ]
+
+    pipeline = VacxisRAGPipeline(retriever=mock_retriever, generator=mock_generator)
+    results = pipeline.answer_batch(
+        queries=["q1", "q2"],
+        top_k=5,
+        skip_rerank=True,
+    )
+
+    mock_retriever.batch_retrieve.assert_called_once_with(
+        queries=["q1", "q2"],
+        top_k=5,
+        skip_rerank=True,
+    )
+    mock_generator.generate_batch.assert_called_once_with(
+        queries=["q1", "q2"],
+        chunks_per_query=[[chunk1], [chunk2]],
+    )
+    assert len(results) == 2
+
+
+def test_pipeline_answer_batch_override_chunks():
+    """Verify override_chunks_per_query bypasses retrieval in answer_batch."""
+    mock_retriever = MagicMock()
+    mock_generator = MagicMock()
+    custom_batch = [[_make_chunk("c1")], [_make_chunk("c2")]]
+
+    pipeline = VacxisRAGPipeline(retriever=mock_retriever, generator=mock_generator)
+    pipeline.answer_batch(queries=["q1", "q2"], override_chunks_per_query=custom_batch)
+
+    mock_retriever.batch_retrieve.assert_not_called()
+    mock_generator.generate_batch.assert_called_once_with(
+        queries=["q1", "q2"],
+        chunks_per_query=custom_batch,
+    )
+
