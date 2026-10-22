@@ -5,12 +5,14 @@ import argparse
 from dataclasses import dataclass
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
 
 from vacxis_capstone_fa26.generation.generator import MedicalGenerator
 from vacxis_capstone_fa26.generation.pipeline import VacxisRAGPipeline
+from vacxis_capstone_fa26.generation.prompts import get_chunk_field
 from vacxis_capstone_fa26.generation.schemas import GenerationConfig
 
 logging.basicConfig(
@@ -110,8 +112,9 @@ def main() -> None:
     """Run generation CLI entrypoint."""
     args = parse_args()
 
+    model_name = args.model if args.model is not None else os.environ.get("VACXIS_LLM_MODEL", "gpt-4o-mini")
     gen_config = GenerationConfig(
-        model=args.model or "gpt-4o-mini",
+        model=model_name,
         temperature=args.temperature,
         dry_run=args.dry_run,
     )
@@ -138,14 +141,14 @@ def main() -> None:
         if args.use_ground_truth_chunks:
             logger.info("Using ground truth RELEVANT_CHUNKS directly (bypassing retrieval).")
             for item in items:
-                q_text = item.get("QUERY", "")
-                raw_chunks = item.get("RELEVANT_CHUNKS", [])
+                q_text = item.get("QUERY") or ""
+                raw_chunks = item.get("RELEVANT_CHUNKS") or []
                 chunks = [
                     _GroundTruthChunk(
-                        chunk_id=c.get("CHUNK_ID", ""),
-                        doc_title=item.get("ENTITIES", {}).get("vaccine", ""),
-                        text=c.get("TEXT", ""),
-                        score=float(c.get("RELEVANCE_SCORE", 0.0)),
+                        chunk_id=c.get("CHUNK_ID", "") if isinstance(c, dict) else getattr(c, "chunk_id", ""),
+                        doc_title=(item.get("ENTITIES") or {}).get("vaccine", "") if isinstance(item, dict) else "",
+                        text=c.get("TEXT", "") if isinstance(c, dict) else getattr(c, "text", ""),
+                        score=float((c.get("RELEVANCE_SCORE") if isinstance(c, dict) else getattr(c, "score", 0.0)) or 0.0),
                     )
                     for c in raw_chunks
                 ]
@@ -165,7 +168,7 @@ def main() -> None:
             with VacxisRetriever(config=ret_config) as retriever:
                 pipeline = VacxisRAGPipeline(retriever=retriever, generator=generator)
                 for item in items:
-                    q_text = item.get("QUERY", "")
+                    q_text = item.get("QUERY") or ""
                     ans = pipeline.answer(query=q_text, top_k=args.top_k, skip_rerank=args.skip_rerank)
                     res_dict = item.copy()
                     res_dict["GENERATED_ANSWER"] = ans.to_dict()
@@ -212,7 +215,7 @@ def main() -> None:
     print(answer_obj.answer)
     print("\nRetrieved Context:")
     for idx, c in enumerate(answer_obj.retrieved_chunks, start=1):
-        print(f"[{idx}] {getattr(c, 'chunk_id', '')} | {getattr(c, 'doc_title', '')} | {getattr(c, 'category', '')}")
+        print(f"[{idx}] {get_chunk_field(c, 'chunk_id', '')} | {get_chunk_field(c, 'doc_title', '')} | {get_chunk_field(c, 'category', '')}")
 
 
 if __name__ == "__main__":

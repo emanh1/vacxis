@@ -344,3 +344,37 @@ def test_citation_validation_advanced_formats():
     assert valid_prefix == ["c1"]
 
 
+def test_cli_null_safety_and_env_model():
+    """Verify cli safe parsing of null values and respect for VACXIS_LLM_MODEL."""
+    from vacxis_capstone_fa26.generation.cli import _GroundTruthChunk
+    import os
+
+    # Test null ENTITIES and null RELEVANCE_SCORE
+    item = {
+        "QUERY": "q",
+        "ENTITIES": None,
+        "RELEVANT_CHUNKS": [
+            {"CHUNK_ID": "c1", "TEXT": "t", "RELEVANCE_SCORE": None}
+        ]
+    }
+    raw_chunks = item.get("RELEVANT_CHUNKS") or []
+    chunks = [
+        _GroundTruthChunk(
+            chunk_id=c.get("CHUNK_ID", "") if isinstance(c, dict) else getattr(c, "chunk_id", ""),
+            doc_title=(item.get("ENTITIES") or {}).get("vaccine", "") if isinstance(item, dict) else "",
+            text=c.get("TEXT", "") if isinstance(c, dict) else getattr(c, "text", ""),
+            score=float((c.get("RELEVANCE_SCORE") if isinstance(c, dict) else getattr(c, "score", 0.0)) or 0.0),
+        )
+        for c in raw_chunks
+    ]
+    assert len(chunks) == 1
+    assert chunks[0].doc_title == ""
+    assert chunks[0].score == 0.0
+
+    # Test VACXIS_LLM_MODEL env var
+    with patch.dict("os.environ", {"VACXIS_LLM_MODEL": "gemini-2.5-pro"}):
+        args_model = None
+        model_name = args_model if args_model is not None else os.environ.get("VACXIS_LLM_MODEL", "gpt-4o-mini")
+        cfg = GenerationConfig(model=model_name)
+        assert cfg.model == "gemini-2.5-pro"
+
