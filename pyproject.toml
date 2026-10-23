@@ -18,6 +18,7 @@ dependencies = [
 vacxis-capstone-fa26 = "vacxis_capstone_fa26:main"
 generate-test-dataset = "vacxis_capstone_fa26.testdata.cli:main"
 vacxis-retrieval = "vacxis_capstone_fa26.retrieval.cli:main"
+vacxis-generation = "vacxis_capstone_fa26.generation.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]

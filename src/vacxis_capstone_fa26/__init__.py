@@ -1,2 +1,4 @@
-def main() -> None:
-    print("Hello from vacxis-capstone-fa26!")
+"""VacxiS Capstone: Vaccine Information RAG System."""
+from vacxis_capstone_fa26.generation.cli import main
+
+__all__ = ["main"]
