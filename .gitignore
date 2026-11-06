@@ -23,3 +23,7 @@ bugs-review/
 
 #models
 models/
+
+.env
+.env.local
+!.env.example
