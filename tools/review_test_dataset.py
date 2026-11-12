@@ -355,31 +355,6 @@ def load_checkpoint(path: Path) -> dict[str, dict[str, Any]]:
     return done
 
 
-def review_part(
-    part_path: Path,
-    records: list[dict[str, Any]],
-    reviewer: Reviewer,
-    checkpoint: Path,
-    checkpoint_lock: threading.Lock,
-    done: dict[str, dict[str, Any]],
-) -> list[dict[str, Any]]:
-    part_name = part_path.name
-    rows: list[dict[str, Any]] = []
-    for record in records:
-        key = f"{part_name}::{record.get('QUERY_ID')}"
-        if key in done:
-            rows.append(done[key])
-            continue
-        row = reviewer.review_record(record)
-        row["part"] = part_name
-        done[key] = row
-        with checkpoint_lock:
-            with checkpoint.open("a", encoding="utf-8") as handle:
-                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-        rows.append(row)
-    return rows
-
-
 def cmd_review(args: argparse.Namespace) -> int:
     api_key = os.getenv("TESTDATA_API_KEY", "").strip()
     base_url = os.getenv("TESTDATA_BASE_URL", "").strip()
@@ -398,7 +373,11 @@ def cmd_review(args: argparse.Namespace) -> int:
         return 1
 
     out_dir = Path(args.out_dir)
-    parts = sorted(out_dir.glob("*.part*.json"))
+    parts = sorted(
+        path
+        for path in out_dir.glob("*.part*.json")
+        if not path.name.startswith("review_report_")
+    )
     if not parts:
         print(f"[ERROR] No part files in {out_dir}; run split_test_dataset.py first.", file=sys.stderr)
         return 1
@@ -463,7 +442,10 @@ def _review_one(
     checkpoint_lock: threading.Lock,
     done: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    key = f"{part_name}::{record.get('QUERY_ID')}"
+    query_id = record.get("QUERY_ID")
+    if not query_id:
+        raise ValueError(f"record in {part_name} has no QUERY_ID")
+    key = f"{part_name}::{query_id}"
     if key in done:
         return done[key]
     row = reviewer.review_record(record)
