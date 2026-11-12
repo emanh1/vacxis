@@ -1,0 +1,80 @@
+{
+  "part": "test_dataset.part3.json",
+  "records": 1,
+  "passed": 0,
+  "failed": 1,
+  "errors": 0,
+  "results": [
+    {
+      "QUERY_ID": "VAX_Q_0235",
+      "error": null,
+      "raw_reply": "answerability_match: FAIL - Các chunk không nêu thông tin về đau người hoặc mệt mỏi sau tiêm Vaxneuvance, nên không thể trả lời đầy đủ câu hỏi; nhãn đúng phải là UNANSWERABLE.\nanswer_grounded: FAIL - REFERENCE_ANSWER khẳng định có thể bị đau người và mệt mỏi nhưng không có chunk nào hỗ trợ thông tin này.\nquery_type_match: PASS - Câu hỏi hỏi về tác dụng phụ sau tiêm, phù hợp với ADVERSE_EFFECT.\nquery_wellformed: PASS - Câu hỏi tiếng Việt đơn lẻ, rõ ràng, nêu cụ thể vắc-xin Vaxneuvance.\n\nISSUE critical answerability_match: Nhãn ANSWERABLE không khớp bằng chứng; các chunk không trả lời được câu hỏi về đau người và mệt mỏi sau tiêm Vaxneuvance.\nISSUE critical answer_grounded: REFERENCE_ANSWER chứa khẳng định không được chunks hỗ trợ về đau người và mệt mỏi sau tiêm Vaxneuvance.",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry carries a chunk id and an evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": false,
+          "detail": "Các chunk không nêu thông tin về đau người hoặc mệt mỏi sau tiêm Vaxneuvance, nên không thể trả lời đầy đủ câu hỏi; nhãn đúng phải là UNANSWERABLE."
+        },
+        "answer_grounded": {
+          "ok": false,
+          "detail": "REFERENCE_ANSWER khẳng định có thể bị đau người và mệt mỏi nhưng không có chunk nào hỗ trợ thông tin này."
+        },
+        "query_type_match": {
+          "ok": true,
+          "detail": "Câu hỏi hỏi về tác dụng phụ sau tiêm, phù hợp với ADVERSE_EFFECT."
+        },
+        "query_wellformed": {
+          "ok": true,
+          "detail": "Câu hỏi tiếng Việt đơn lẻ, rõ ràng, nêu cụ thể vắc-xin Vaxneuvance."
+        }
+      },
+      "issues": [
+        {
+          "severity": "critical",
+          "check": "answerability_match",
+          "detail": "Nhãn ANSWERABLE không khớp bằng chứng; các chunk không trả lời được câu hỏi về đau người và mệt mỏi sau tiêm Vaxneuvance."
+        },
+        {
+          "severity": "critical",
+          "check": "answer_grounded",
+          "detail": "REFERENCE_ANSWER chứa khẳng định không được chunks hỗ trợ về đau người và mệt mỏi sau tiêm Vaxneuvance."
+        }
+      ],
+      "failed_checks": [
+        "answerability_match",
+        "answer_grounded"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset.part3.json"
+    }
+  ]
+}

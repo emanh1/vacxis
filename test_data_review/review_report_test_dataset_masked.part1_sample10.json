@@ -1,0 +1,216 @@
+{
+  "part": "test_dataset_masked.part1.json",
+  "records": 3,
+  "passed": 0,
+  "failed": 3,
+  "errors": 0,
+  "results": [
+    {
+      "QUERY_ID": "VAX_Q_0350",
+      "error": null,
+      "raw_reply": "answerability_match: FAIL - Các chunks chỉ nói về đáp ứng miễn dịch của Pentaxim, Vaxneuvance và quy cách đóng gói Tetavax; không có thông tin nào về Hb trung bình hồng cầu, độ phân bố tiểu cầu hoặc mối liên quan với vaccine, nên không trả lời được phần nào. Nhãn đúng phải là UNANSWERABLE, không phải PARTIALLY_ANSWERABLE.\nanswer_grounded: PASS - Câu trả lời tham chiếu chỉ nêu rằng tài liệu không cung cấp thông tin và không thể xác định mối liên quan, phù hợp với nội dung chunks.\nquery_type_match: FAIL - Câu hỏi hỏi về khả năng một kết quả xét nghiệm máu liên quan đến vaccine đã tiêm, không phải câu hỏi về tương tác giữa vaccine với thuốc/loại vaccine khác, nên không khớp INTERACTION.\nquery_wellformed: PASS - Câu hỏi là một câu hỏi tiếng Việt đơn lẻ, tự đủ, nêu rõ vaccine Pentaxim và các chỉ số xét nghiệm cụ thể, không có placeholder hay chỉ thị cho trợ lý.\n\nISSUE critical answerability_match: Nhãn PARTIALLY_ANSWERABLE không đúng vì chunks không trả lời được bất kỳ phần nào của câu hỏi; phải là UNANSWERABLE.\nISSUE major query_type_match: Câu hỏi về mối liên quan giữa kết quả xét nghiệm và vaccine không thuộc loại INTERACTION.",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='PARTIALLY_ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry carries a chunk id and an evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": false,
+          "detail": "Các chunks chỉ nói về đáp ứng miễn dịch của Pentaxim, Vaxneuvance và quy cách đóng gói Tetavax; không có thông tin nào về Hb trung bình hồng cầu, độ phân bố tiểu cầu hoặc mối liên quan với vaccine, nên không trả lời được phần nào. Nhãn đúng phải là UNANSWERABLE, không phải PARTIALLY_ANSWERABLE."
+        },
+        "answer_grounded": {
+          "ok": true,
+          "detail": "Câu trả lời tham chiếu chỉ nêu rằng tài liệu không cung cấp thông tin và không thể xác định mối liên quan, phù hợp với nội dung chunks."
+        },
+        "query_type_match": {
+          "ok": false,
+          "detail": "Câu hỏi hỏi về khả năng một kết quả xét nghiệm máu liên quan đến vaccine đã tiêm, không phải câu hỏi về tương tác giữa vaccine với thuốc/loại vaccine khác, nên không khớp INTERACTION."
+        },
+        "query_wellformed": {
+          "ok": true,
+          "detail": "Câu hỏi là một câu hỏi tiếng Việt đơn lẻ, tự đủ, nêu rõ vaccine Pentaxim và các chỉ số xét nghiệm cụ thể, không có placeholder hay chỉ thị cho trợ lý."
+        }
+      },
+      "issues": [
+        {
+          "severity": "critical",
+          "check": "answerability_match",
+          "detail": "Nhãn PARTIALLY_ANSWERABLE không đúng vì chunks không trả lời được bất kỳ phần nào của câu hỏi; phải là UNANSWERABLE."
+        },
+        {
+          "severity": "major",
+          "check": "query_type_match",
+          "detail": "Câu hỏi về mối liên quan giữa kết quả xét nghiệm và vaccine không thuộc loại INTERACTION."
+        }
+      ],
+      "failed_checks": [
+        "answerability_match",
+        "query_type_match"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset_masked.part1.json"
+    },
+    {
+      "QUERY_ID": "VAX_Q_0443",
+      "error": null,
+      "raw_reply": "answerability_match: FAIL - Các chunks không đề cập đến việc tiêm vắc xin Pfizer sau Gardasil 9 nên không trả lời được câu hỏi; nhãn ANSWERABLE là sai.\nanswer_grounded: FAIL - REFERENCE_ANSWER khẳng định có thể chích Pfizer ngay sau Gardasil 9 và điều kiện dị ứng/sốt, nhưng chunks không có thông tin này; chỉ có ý theo dõi 15 phút là được hỗ trợ.\nquery_type_match: PASS - Câu hỏi về việc tiêm một vắc xin khác sau Gardasil 9 thuộc loại INTERACTION.\nquery_wellformed: PASS - Câu hỏi tiếng Việt rõ ràng, tự đủ, nêu cụ thể Gardasil 9 và Pfizer, không có placeholder hay chỉ thị cho trợ lý.\n\nISSUE critical answerability_match: Chunks không trả lời được việc có thể tiêm Pfizer ngay sau mũi Gardasil 9 thứ 3 hay không, nhưng nhãn ghi ANSWERABLE.\nISSUE critical answer_grounded: REFERENCE_ANSWER bịa đặt/không được chunks hỗ trợ ở khẳng định có thể chích Pfizer ngay sau Gardasil 9 và điều kiện không dị ứng/sốt.",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry carries a chunk id and an evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": false,
+          "detail": "Các chunks không đề cập đến việc tiêm vắc xin Pfizer sau Gardasil 9 nên không trả lời được câu hỏi; nhãn ANSWERABLE là sai."
+        },
+        "answer_grounded": {
+          "ok": false,
+          "detail": "REFERENCE_ANSWER khẳng định có thể chích Pfizer ngay sau Gardasil 9 và điều kiện dị ứng/sốt, nhưng chunks không có thông tin này; chỉ có ý theo dõi 15 phút là được hỗ trợ."
+        },
+        "query_type_match": {
+          "ok": true,
+          "detail": "Câu hỏi về việc tiêm một vắc xin khác sau Gardasil 9 thuộc loại INTERACTION."
+        },
+        "query_wellformed": {
+          "ok": true,
+          "detail": "Câu hỏi tiếng Việt rõ ràng, tự đủ, nêu cụ thể Gardasil 9 và Pfizer, không có placeholder hay chỉ thị cho trợ lý."
+        }
+      },
+      "issues": [
+        {
+          "severity": "critical",
+          "check": "answerability_match",
+          "detail": "Chunks không trả lời được việc có thể tiêm Pfizer ngay sau mũi Gardasil 9 thứ 3 hay không, nhưng nhãn ghi ANSWERABLE."
+        },
+        {
+          "severity": "critical",
+          "check": "answer_grounded",
+          "detail": "REFERENCE_ANSWER bịa đặt/không được chunks hỗ trợ ở khẳng định có thể chích Pfizer ngay sau Gardasil 9 và điều kiện không dị ứng/sốt."
+        }
+      ],
+      "failed_checks": [
+        "answerability_match",
+        "answer_grounded"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset_masked.part1.json"
+    },
+    {
+      "QUERY_ID": "VAX_Q_0542",
+      "error": null,
+      "raw_reply": "answerability_match: PASS - Các chunk trả lời được phần hỏi về khả năng phòng ngừa của Gardasil 9 nhưng không trả lời phần đau thắt lưng/nổi u hậu môn có phải dấu hiệu HPV, nên PARTIALLY_ANSWERABLE là phù hợp.\nanswer_grounded: FAIL - REFERENCE_ANSWER khẳng định đau thắt lưng/nổi u hậu môn có thể là dấu hiệu HPV và đau thắt lưng không phải triệu chứng chính, nhưng chunks không nêu các thông tin này; claim_evidence_map còn gán bằng chứng không hỗ trợ trực tiếp.\nquery_type_match: PASS - Câu hỏi có phần hỏi về chỉ định/phòng ngừa của Gardasil 9 nên phù hợp với INDICATION.\nquery_wellformed: PASS - Câu hỏi tiếng Việt rõ ràng, tự đủ, nêu rõ HPV và Gardasil 9, không có placeholder.\n\nISSUE critical answer_grounded: REFERENCE_ANSWER chứa khẳng định không được chunks hỗ trợ (đau thắt lưng/nổi u hậu môn là dấu hiệu HPV; đau thắt lưng không phải triệu chứng chính) và trích dẫn bằng chứng cho claim đầu không khớp.",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='PARTIALLY_ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry carries a chunk id and an evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": true,
+          "detail": "Các chunk trả lời được phần hỏi về khả năng phòng ngừa của Gardasil 9 nhưng không trả lời phần đau thắt lưng/nổi u hậu môn có phải dấu hiệu HPV, nên PARTIALLY_ANSWERABLE là phù hợp."
+        },
+        "answer_grounded": {
+          "ok": false,
+          "detail": "REFERENCE_ANSWER khẳng định đau thắt lưng/nổi u hậu môn có thể là dấu hiệu HPV và đau thắt lưng không phải triệu chứng chính, nhưng chunks không nêu các thông tin này; claim_evidence_map còn gán bằng chứng không hỗ trợ trực tiếp."
+        },
+        "query_type_match": {
+          "ok": true,
+          "detail": "Câu hỏi có phần hỏi về chỉ định/phòng ngừa của Gardasil 9 nên phù hợp với INDICATION."
+        },
+        "query_wellformed": {
+          "ok": true,
+          "detail": "Câu hỏi tiếng Việt rõ ràng, tự đủ, nêu rõ HPV và Gardasil 9, không có placeholder."
+        }
+      },
+      "issues": [
+        {
+          "severity": "critical",
+          "check": "answer_grounded",
+          "detail": "REFERENCE_ANSWER chứa khẳng định không được chunks hỗ trợ (đau thắt lưng/nổi u hậu môn là dấu hiệu HPV; đau thắt lưng không phải triệu chứng chính) và trích dẫn bằng chứng cho claim đầu không khớp."
+        }
+      ],
+      "failed_checks": [
+        "answer_grounded"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset_masked.part1.json"
+    }
+  ]
+}

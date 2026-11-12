@@ -1,0 +1,93 @@
+{
+  "part": "test_dataset.part1.json",
+  "records": 1,
+  "passed": 0,
+  "failed": 1,
+  "errors": 0,
+  "results": [
+    {
+      "QUERY_ID": "VAX_Q_0001",
+      "error": null,
+      "raw_reply": "answerability_match: FAIL - Các chunks chỉ nói về chống chỉ định của Gardasil 9/IVACFLU-S và chỉ định ProQuad, không trả lời câu hỏi về xét nghiệm HIV hay ảnh hưởng của Gardasil 9 lên xét nghiệm HIV; đúng ra phải là UNANSWERABLE, không phải PARTIALLY_ANSWERABLE.\nanswer_grounded: FAIL - REFERENCE_ANSWER khẳng định không cần xét nghiệm lại HIV và Gardasil 9 không ảnh hưởng kết quả HIV, nhưng không có chunk nào hỗ trợ; claim đầu không có chunk, claim sau dùng trích dẫn về quá mẫn không liên quan.\nquery_type_match: FAIL - Câu hỏi hỏi về xét nghiệm HIV và ảnh hưởng của vắc xin lên xét nghiệm, không phải câu hỏi về chống chỉ định.\nquery_wellformed: FAIL - Câu hỏi gộp hai câu hỏi riêng biệt (xét nghiệm HIV và ảnh hưởng Gardasil 9), không phải một câu hỏi đơn lẻ, tự đủ.\n\nISSUE critical answerability_match: Nhãn PARTIALLY_ANSWERABLE không khớp bằng chứng; chunks không trả lời được phần nào của câu hỏi, nên phải là UNANSWERABLE.\nISSUE critical answer_grounded: Câu trả lời tham chiếu đưa ra khuyến cáo y khoa và kết luận về ảnh hưởng của Gardasil 9 lên xét nghiệm HIV mà không có bằng chứng trong chunks; trích dẫn claim thứ hai không liên quan.\nISSUE major query_type_match: QUERY_TYPE CONTRAINDICATION không phù hợp với nội dung câu hỏi về xét nghiệm HIV và ảnh hưởng của vắc xin lên xét nghiệm.\nISSUE major query_wellformed: Câu hỏi chứa hai câu hỏi riêng biệt, không đáp ứng yêu cầu là một câu hỏi tiếng Việt đơn lẻ, tự đủ.",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='PARTIALLY_ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": false,
+          "detail": "claim_evidence_map entr(y/ies) #1 have no chunk id and no evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": false,
+          "detail": "Các chunks chỉ nói về chống chỉ định của Gardasil 9/IVACFLU-S và chỉ định ProQuad, không trả lời câu hỏi về xét nghiệm HIV hay ảnh hưởng của Gardasil 9 lên xét nghiệm HIV; đúng ra phải là UNANSWERABLE, không phải PARTIALLY_ANSWERABLE."
+        },
+        "answer_grounded": {
+          "ok": false,
+          "detail": "REFERENCE_ANSWER khẳng định không cần xét nghiệm lại HIV và Gardasil 9 không ảnh hưởng kết quả HIV, nhưng không có chunk nào hỗ trợ; claim đầu không có chunk, claim sau dùng trích dẫn về quá mẫn không liên quan."
+        },
+        "query_type_match": {
+          "ok": false,
+          "detail": "Câu hỏi hỏi về xét nghiệm HIV và ảnh hưởng của vắc xin lên xét nghiệm, không phải câu hỏi về chống chỉ định."
+        },
+        "query_wellformed": {
+          "ok": false,
+          "detail": "Câu hỏi gộp hai câu hỏi riêng biệt (xét nghiệm HIV và ảnh hưởng Gardasil 9), không phải một câu hỏi đơn lẻ, tự đủ."
+        }
+      },
+      "issues": [
+        {
+          "severity": "critical",
+          "check": "answerability_match",
+          "detail": "Nhãn PARTIALLY_ANSWERABLE không khớp bằng chứng; chunks không trả lời được phần nào của câu hỏi, nên phải là UNANSWERABLE."
+        },
+        {
+          "severity": "critical",
+          "check": "answer_grounded",
+          "detail": "Câu trả lời tham chiếu đưa ra khuyến cáo y khoa và kết luận về ảnh hưởng của Gardasil 9 lên xét nghiệm HIV mà không có bằng chứng trong chunks; trích dẫn claim thứ hai không liên quan."
+        },
+        {
+          "severity": "major",
+          "check": "query_type_match",
+          "detail": "QUERY_TYPE CONTRAINDICATION không phù hợp với nội dung câu hỏi về xét nghiệm HIV và ảnh hưởng của vắc xin lên xét nghiệm."
+        },
+        {
+          "severity": "major",
+          "check": "query_wellformed",
+          "detail": "Câu hỏi chứa hai câu hỏi riêng biệt, không đáp ứng yêu cầu là một câu hỏi tiếng Việt đơn lẻ, tự đủ."
+        }
+      ],
+      "failed_checks": [
+        "claim_evidence_present",
+        "answerability_match",
+        "answer_grounded",
+        "query_type_match",
+        "query_wellformed"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset.part1.json"
+    }
+  ]
+}

@@ -71,44 +71,6 @@ SEMANTIC_CHECKS: tuple[tuple[str, str], ...] = (
     ),
 )
 
-REVIEW_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "checks": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {
-                name: {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "properties": {
-                        "ok": {"type": "boolean"},
-                        "detail": {"type": "string"},
-                    },
-                    "required": ["ok", "detail"],
-                }
-                for name, _ in SEMANTIC_CHECKS
-            },
-            "required": [name for name, _ in SEMANTIC_CHECKS],
-        },
-        "issues": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "severity": {"type": "string", "enum": ["critical", "major", "minor"]},
-                    "check": {"type": "string"},
-                    "detail": {"type": "string"},
-                },
-                "required": ["severity", "check", "detail"],
-            },
-        },
-    },
-    "required": ["checks", "issues"],
-}
-
 SYSTEM_PROMPT = """Bạn là chuyên gia kiểm định chất lượng (QA) cho bộ dữ liệu đánh giá RAG về vắc xin tiếng Việt.
 
 Bạn nhận MỘT bản ghi gồm: câu hỏi, nhãn ANSWERABILITY, QUERY_TYPE, các đoạn văn bằng chứng (chunks), câu trả lời tham chiếu REFERENCE_ANSWER và danh sách claim_evidence_map.
@@ -120,11 +82,23 @@ Hãy đánh giá từng mục kiểm tra sau một cách nghiêm ngặt và ch�
 - query_type_match: câu hỏi thực sự thuộc loại QUERY_TYPE khai báo (ví dụ STORAGE chỉ dành cho câu hỏi về điều kiện bảo quản).
 - query_wellformed: câu hỏi là một câu hỏi tiếng Việt đơn lẻ, tự đủ, không mơ hồ, có nêu rõ loại vắc xin hoặc chủ đề cụ thể; không có placeholder, không có trường rỗng, không có chỉ thị dành cho trợ lý.
 
-Nếu một mục kiểm tra không đạt, ghi thêm một issue với severity phù hợp (critical = sai nhãn ANSWERABILITY, câu trả lời bịa đặt, hoặc trích dẫn sai; major = lệch QUERY_TYPE, câu hỏi mơ hồ; minor = vấn đề hình thức nhỏ). Nếu tất cả đều đạt thì issues là mảng rỗng.
+Nếu một mục kiểm tra không đạt, ghi thêm một issue với severity phù hợp (critical = sai nhãn ANSWERABILITY, câu trả lời bịa đặt, hoặc trích dẫn sai; major = lệch QUERY_TYPE, câu hỏi mơ hồ; minor = vấn đề hình thức nhỏ). Nếu tất cả đều đạt thì không ghi issue nào.
 
-Trả về đúng JSON theo schema được cung cấp. Không dùng Markdown, không thêm chú thích ngoài JSON."""
+TRẢ LỜI bằng văn bản thuần theo đúng mẫu sau, mỗi mục kiểm tra trên một dòng:
 
-USER_TEMPLATE = """CÂU HỎI (QUERY): {query}
+answerability_match: PASS | FAIL - <giải thích ngắn tiếng Việt>
+answer_grounded: PASS | FAIL - <giải thích ngắn tiếng Việt>
+query_type_match: PASS | FAIL - <giải thích ngắn tiếng Việt>
+query_wellformed: PASS | FAIL - <giải thích ngắn tiếng Việt>
+
+Sau đó, nếu có mục kiểm tra FAIL, ghi thêm mỗi issue trên một dòng:
+
+ISSUE <critical|major|minor> <tên-mục-kiểm-tra>: <mô tả lỗi>
+
+Không dùng JSON, không dùng Markdown, không thêm mục nào khác ngoài các dòng trên."""
+
+USER_TEMPLATE = """CÂU HỎI (QUERY):
+{query}
 
 QUERY_TYPE: {query_type}
 ANSWERABILITY: {answerability}
@@ -138,7 +112,7 @@ REFERENCE_ANSWER:
 CLAIM_EVIDENCE_MAP:
 {claims}
 
-Hãy thực hiện 4 mục kiểm tra đã nêu và trả về JSON."""
+Hãy thực hiện 4 mục kiểm tra đã nêu và trả lời theo mẫu."""
 
 
 def read_json(path: Path) -> Any:
@@ -254,26 +228,74 @@ def record_payload(record: dict[str, Any]) -> str:
         for chunk in record.get("RELEVANT_CHUNKS") or []
         if isinstance(chunk, dict)
     )
-    claims = json.dumps(record.get("CLAIM_EVIDENCE_MAP") or [], ensure_ascii=False, indent=2)
+    claims = "\n".join(
+        f"- claim: {claim.get('claim', '')}\n  chunk_id: {claim.get('chunk_id', '')}\n"
+        f"  evidence_quote: {claim.get('evidence_quote', '')}"
+        for claim in record.get("CLAIM_EVIDENCE_MAP") or []
+        if isinstance(claim, dict)
+    )
     return USER_TEMPLATE.format(
         query=record.get("QUERY", ""),
         query_type=record.get("QUERY_TYPE", ""),
         answerability=record.get("ANSWERABILITY", ""),
         chunks=chunks or "(không có chunk nào)",
         answer=record.get("REFERENCE_ANSWER", ""),
-        claims=claims,
+        claims=claims or "(không có claim nào)",
     )
 
 
-def parse_json_content(content: str) -> dict[str, Any]:
-    text = content.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```[a-zA-Z]*\s*", "", text)
-        text = re.sub(r"```$", "", text).strip()
-    data = json.loads(text)
-    if not isinstance(data, dict):
-        raise ValueError("model response is not a JSON object")
-    return data
+def parse_review_reply(content: str) -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
+    """Parse the plain-text review reply.
+
+    Expected shape, one check per line::
+
+        answerability_match: PASS | FAIL - explanation
+
+    followed by optional issue lines::
+
+        ISSUE critical answerability_match: what is wrong
+    """
+    checks: dict[str, dict[str, Any]] = {}
+    issues: list[dict[str, str]] = []
+
+    check_names = {name.lower(): name for name, _ in SEMANTIC_CHECKS}
+    for raw_line in (content or "").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        # Drop list markers models sometimes add in front of the line.
+        for marker in ("-", "*", "•"):
+            if line.startswith(marker):
+                line = line[len(marker):].strip()
+        if line.upper().startswith("ISSUE "):
+            body = line[len("ISSUE ") :].strip()
+            severity, _, remainder = body.partition(" ")
+            name, _, detail = remainder.partition(":")
+            issues.append(
+                {
+                    "severity": severity.strip().lower() or "minor",
+                    "check": name.strip(),
+                    "detail": detail.strip(),
+                }
+            )
+            continue
+        name, separator, verdict = line.partition(":")
+        if not separator:
+            continue
+        normalized = name.strip().lower()
+        if normalized not in check_names:
+            continue
+        verdict = verdict.strip()
+        status, _, detail = verdict.partition("-")
+        status = status.strip().upper()
+        if status not in ("PASS", "FAIL"):
+            continue
+        checks[check_names[normalized]] = {
+            "ok": status == "PASS",
+            "detail": detail.strip() or verdict.strip(),
+        }
+
+    return checks, issues
 
 
 class Reviewer:
@@ -288,6 +310,7 @@ class Reviewer:
     def review_record(self, record: dict[str, Any]) -> dict[str, Any]:
         payload = record_payload(record)
         last_error = ""
+        last_raw = ""
         for _ in range(self.retries + 1):
             try:
                 response = self._client.chat.completions.create(
@@ -297,26 +320,26 @@ class Reviewer:
                         {"role": "user", "content": payload},
                     ],
                     temperature=0.0,
-                    response_format={
-                        "type": "json_schema",
-                        "json_schema": {"name": "review", "strict": True, "schema": REVIEW_SCHEMA},
-                    },
                 )
-                data = parse_json_content(response.choices[0].message.content or "")
-                return assemble_result(record, data, None)
+                last_raw = response.choices[0].message.content or ""
+                data = parse_review_reply(last_raw)
+                return assemble_result(record, data, None, raw=last_raw)
             except Exception as exc:  # noqa: BLE001 - reported per record, never fatal
                 last_error = f"{type(exc).__name__}: {exc}"
-        return assemble_result(record, {}, last_error)
+        return assemble_result(record, ({}, []), last_error, raw=last_raw)
 
 
 def assemble_result(
-    record: dict[str, Any], data: dict[str, Any], error: str | None
+    record: dict[str, Any],
+    data: tuple[dict[str, dict[str, Any]], list[dict[str, str]]],
+    error: str | None,
+    raw: str = "",
 ) -> dict[str, Any]:
     deterministic = deterministic_checks(record)
-    semantic_raw = data.get("checks") if isinstance(data.get("checks"), dict) else {}
+    semantic_raw, model_issues = data
     semantic: dict[str, dict[str, Any]] = {}
     for name, description in SEMANTIC_CHECKS:
-        entry = semantic_raw.get(name) if isinstance(semantic_raw, dict) else None
+        entry = semantic_raw.get(name)
         if isinstance(entry, dict):
             semantic[name] = {
                 "ok": bool(entry.get("ok")),
@@ -325,11 +348,16 @@ def assemble_result(
         else:
             semantic[name] = {"ok": False, "detail": "Model did not report this check."}
 
-    issues = [issue for issue in (data.get("issues") or []) if isinstance(issue, dict)]
+    issues = [
+        issue
+        for issue in model_issues
+        if isinstance(issue, dict) and "severity" in issue
+    ]
     failed = [name for name, check in {**deterministic, **semantic}.items() if not check["ok"]]
     return {
         "QUERY_ID": record.get("QUERY_ID"),
         "error": error,
+        "raw_reply": raw,
         "deterministic": deterministic,
         "semantic": semantic,
         "issues": issues,
@@ -384,7 +412,8 @@ def cmd_review(args: argparse.Namespace) -> int:
     if args.limit:
         parts = parts[: args.limit]
 
-    checkpoint = out_dir / "review_checkpoint.jsonl"
+    suffix = f"_{args.tag}" if args.tag else ""
+    checkpoint = out_dir / f"review_checkpoint{suffix}.jsonl"
     done = load_checkpoint(checkpoint)
     if done:
         print(f"Resuming with {len(done)} record(s) already reviewed.")
@@ -393,8 +422,56 @@ def cmd_review(args: argparse.Namespace) -> int:
     checkpoint_lock = threading.Lock()
     summary: dict[str, Any] = {"model": model, "base_url": base_url, "parts": []}
 
+    # Allocate the sample across the parts proportionally so that, say,
+    # --sample 10 reviews exactly 10 records spread over the whole dataset.
+    allocations: dict[Path, int] = {}
+    if args.sample:
+        part_lengths = {part: len(read_json(part)) for part in parts}
+        total = sum(part_lengths.values())
+        if args.sample >= total:
+            allocations = part_lengths
+        else:
+            n = args.sample
+            base = {part: n * length // total for part, length in part_lengths.items()}
+            shortfall = n - sum(base.values())
+            ranked = sorted(
+                part_lengths,
+                key=lambda part: (n * part_lengths[part]) % total,
+                reverse=True,
+            )
+            for index in range(shortfall):
+                base[ranked[index % len(ranked)]] += 1
+            allocations = {part: min(count, part_lengths[part]) for part, count in base.items()}
+
     for part_path in parts:
         records = read_json(part_path)
+        if args.sample:
+            # A part allocated zero records must be skipped, not reviewed in
+            # full; the empty report still keeps the summary complete.
+            take = allocations.get(part_path, 0)
+            if take <= 0:
+                print(f"Reviewing {part_path.name} (0 records) ...")
+                rows = []
+                write_json(
+                    out_dir / f"review_report_{part_path.stem}{suffix}.json",
+                    {
+                        "part": part_path.name,
+                        "records": 0,
+                        "passed": 0,
+                        "failed": 0,
+                        "errors": 0,
+                        "results": [],
+                    },
+                )
+                summary["parts"].append(
+                    {"part": part_path.name, "records": 0, "passed": 0, "failed": 0, "errors": 0}
+                )
+                continue
+            if take < len(records):
+                # Even slice across the part so a sample spans the dataset
+                # instead of only its first records.
+                step = len(records) / take
+                records = [records[int(i * step)] for i in range(take)]
         print(f"Reviewing {part_path.name} ({len(records)} records) ...")
         rows: list[dict[str, Any]] = []
         with ThreadPoolExecutor(max_workers=args.workers) as pool:
@@ -423,14 +500,15 @@ def cmd_review(args: argparse.Namespace) -> int:
             "errors": sum(1 for row in rows if row.get("error")),
             "results": rows,
         }
-        write_json(out_dir / f"review_report_{part_path.stem}.json", report)
+        write_json(out_dir / f"review_report_{part_path.stem}{suffix}.json", report)
         summary["parts"].append(
             {key: report[key] for key in ("part", "records", "passed", "failed", "errors")}
         )
         print(f"  passed={report['passed']} failed={report['failed']} errors={report['errors']}")
 
-    write_json(out_dir / "review_summary.json", summary)
-    print(f"Summary written to {out_dir / 'review_summary.json'}")
+    summary_path = out_dir / f"review_summary{suffix}.json"
+    write_json(summary_path, summary)
+    print(f"Summary written to {summary_path}")
     return 0
 
 
@@ -450,6 +528,9 @@ def _review_one(
         return done[key]
     row = reviewer.review_record(record)
     row["part"] = part_name
+    if row["error"]:
+        # A failed call must not poison the checkpoint: resume should retry it.
+        return row
     done[key] = row
     with checkpoint_lock:
         with checkpoint.open("a", encoding="utf-8") as handle:
@@ -461,9 +542,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR))
     parser.add_argument("--workers", type=int, default=8)
-    parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--timeout", type=float, default=300.0)
     parser.add_argument("--retries", type=int, default=2)
     parser.add_argument("--limit", type=int, default=0, help="Only review the first N part files")
+    parser.add_argument(
+        "--sample",
+        type=int,
+        default=0,
+        help="Review only about N records in total, spread evenly across the parts",
+    )
+    parser.add_argument(
+        "--tag",
+        default="",
+        help="Suffix for the checkpoint and report file names, e.g. 'sample'",
+    )
     args = parser.parse_args(argv)
     return cmd_review(args)
 

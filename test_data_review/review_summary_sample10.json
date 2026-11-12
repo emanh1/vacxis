@@ -1,0 +1,48 @@
+{
+  "model": "DeepSeek-V4.1-Flash",
+  "base_url": "https://token-api.fpt.ai/v1",
+  "parts": [
+    {
+      "part": "test_dataset.part1.json",
+      "records": 1,
+      "passed": 0,
+      "failed": 1,
+      "errors": 0
+    },
+    {
+      "part": "test_dataset.part2.json",
+      "records": 1,
+      "passed": 0,
+      "failed": 1,
+      "errors": 1
+    },
+    {
+      "part": "test_dataset.part3.json",
+      "records": 1,
+      "passed": 0,
+      "failed": 1,
+      "errors": 0
+    },
+    {
+      "part": "test_dataset_masked.part1.json",
+      "records": 3,
+      "passed": 0,
+      "failed": 3,
+      "errors": 0
+    },
+    {
+      "part": "test_dataset_masked.part2.json",
+      "records": 2,
+      "passed": 0,
+      "failed": 2,
+      "errors": 0
+    },
+    {
+      "part": "test_dataset_masked.part3.json",
+      "records": 2,
+      "passed": 1,
+      "failed": 1,
+      "errors": 0
+    }
+  ]
+}

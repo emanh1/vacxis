@@ -1,0 +1,71 @@
+{
+  "part": "test_dataset.part2.json",
+  "records": 1,
+  "passed": 0,
+  "failed": 1,
+  "errors": 1,
+  "results": [
+    {
+      "QUERY_ID": "VAX_Q_0122",
+      "error": "APITimeoutError: Request timed out.",
+      "raw_reply": "",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='PARTIALLY_ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry carries a chunk id and an evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": false,
+          "detail": "Model did not report this check."
+        },
+        "answer_grounded": {
+          "ok": false,
+          "detail": "Model did not report this check."
+        },
+        "query_type_match": {
+          "ok": false,
+          "detail": "Model did not report this check."
+        },
+        "query_wellformed": {
+          "ok": false,
+          "detail": "Model did not report this check."
+        }
+      },
+      "issues": [],
+      "failed_checks": [
+        "answerability_match",
+        "answer_grounded",
+        "query_type_match",
+        "query_wellformed"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset.part2.json"
+    }
+  ]
+}

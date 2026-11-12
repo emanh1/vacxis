@@ -1,0 +1,157 @@
+{
+  "part": "test_dataset_masked.part2.json",
+  "records": 2,
+  "passed": 0,
+  "failed": 2,
+  "errors": 0,
+  "results": [
+    {
+      "QUERY_ID": "VAX_Q_0637",
+      "error": null,
+      "raw_reply": "answerability_match: FAIL - Các chunks chỉ nói về tác dụng không mong muốn của Pentaxim/bOPV/Twinrix, không có thông tin về petadine, ảnh hưởng của petadine đến vaccine hay xét nghiệm cần làm; do đó không trả lời được câu hỏi, không phải chỉ trả lời một phần.\nanswer_grounded: FAIL - REFERENCE_ANSWER chứa nhiều khẳng định không có trong chunks như petadine không ảnh hưởng đến vaccine, petadine không được khuyến nghị cho trẻ sơ sinh, cách vệ sinh rốn và dấu hiệu nhiễm trùng/xét nghiệm; trích dẫn trong claim_evidence_map cũng không hỗ trợ cho claim.\nquery_type_match: FAIL - Câu hỏi chủ yếu hỏi về tương tác/ảnh hưởng của petadine với vaccine Pentaxim và xét nghiệm cần làm, không phải câu hỏi về tác dụng không mong muốn của vắc xin.\nquery_wellformed: PASS - Câu hỏi tiếng Việt rõ ràng, tự đủ, nêu cụ thể Pentaxim và petadine, không có placeholder hay chỉ thị dành cho trợ lý.\n\nISSUE critical answerability_match: Nhãn PARTIALLY_ANSWERABLE không khớp; chunks không trả lời được câu hỏi về ảnh hưởng của petadine đến vaccine Pentaxim hoặc xét nghiệm cần làm.\nISSUE critical answer_grounded: REFERENCE_ANSWER bịa đặt/không được chunks hỗ trợ, đặc biệt các khẳng định về petadine, vệ sinh rốn và xét nghiệm; claim_evidence_map trích dẫn không liên quan để chứng minh claim.\nISSUE major query_type_match: QUERY_TYPE ADVERSE_EFFECT không phù hợp với câu hỏi về tương tác/ảnh hưởng của petadine và xét nghiệm.",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='PARTIALLY_ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry carries a chunk id and an evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": false,
+          "detail": "Các chunks chỉ nói về tác dụng không mong muốn của Pentaxim/bOPV/Twinrix, không có thông tin về petadine, ảnh hưởng của petadine đến vaccine hay xét nghiệm cần làm; do đó không trả lời được câu hỏi, không phải chỉ trả lời một phần."
+        },
+        "answer_grounded": {
+          "ok": false,
+          "detail": "REFERENCE_ANSWER chứa nhiều khẳng định không có trong chunks như petadine không ảnh hưởng đến vaccine, petadine không được khuyến nghị cho trẻ sơ sinh, cách vệ sinh rốn và dấu hiệu nhiễm trùng/xét nghiệm; trích dẫn trong claim_evidence_map cũng không hỗ trợ cho claim."
+        },
+        "query_type_match": {
+          "ok": false,
+          "detail": "Câu hỏi chủ yếu hỏi về tương tác/ảnh hưởng của petadine với vaccine Pentaxim và xét nghiệm cần làm, không phải câu hỏi về tác dụng không mong muốn của vắc xin."
+        },
+        "query_wellformed": {
+          "ok": true,
+          "detail": "Câu hỏi tiếng Việt rõ ràng, tự đủ, nêu cụ thể Pentaxim và petadine, không có placeholder hay chỉ thị dành cho trợ lý."
+        }
+      },
+      "issues": [
+        {
+          "severity": "critical",
+          "check": "answerability_match",
+          "detail": "Nhãn PARTIALLY_ANSWERABLE không khớp; chunks không trả lời được câu hỏi về ảnh hưởng của petadine đến vaccine Pentaxim hoặc xét nghiệm cần làm."
+        },
+        {
+          "severity": "critical",
+          "check": "answer_grounded",
+          "detail": "REFERENCE_ANSWER bịa đặt/không được chunks hỗ trợ, đặc biệt các khẳng định về petadine, vệ sinh rốn và xét nghiệm; claim_evidence_map trích dẫn không liên quan để chứng minh claim."
+        },
+        {
+          "severity": "major",
+          "check": "query_type_match",
+          "detail": "QUERY_TYPE ADVERSE_EFFECT không phù hợp với câu hỏi về tương tác/ảnh hưởng của petadine và xét nghiệm."
+        }
+      ],
+      "failed_checks": [
+        "answerability_match",
+        "answer_grounded",
+        "query_type_match"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset_masked.part2.json"
+    },
+    {
+      "QUERY_ID": "VAX_Q_0776",
+      "error": null,
+      "raw_reply": "answerability_match: FAIL - Các chunks chỉ nêu chống chỉ định chung của Adacel, không có thông tin về Basedow nên không trả lời được câu hỏi; nhãn PARTIALLY_ANSWERABLE không phù hợp, đúng hơn là UNANSWERABLE.\nanswer_grounded: FAIL - REFERENCE_ANSWER khẳng định người bị Basedow có thể tiêm Adacel nếu không quá mẫn, nhưng chunks không hề nêu Basedow/tuyến giáp; đây là suy diễn ngoài chunks.\nquery_type_match: PASS - Câu hỏi hỏi về khả năng tiêm vắc xin khi có bệnh nền, thuộc loại CONTRAINDICATION.\nquery_wellformed: PASS - Câu hỏi tiếng Việt đơn lẻ, rõ vắc xin Adacel và tình trạng Basedow, không mơ hồ.\n\nISSUE critical answerability_match: Nhãn ANSWERABILITY là PARTIALLY_ANSWERABLE nhưng chunks không đề cập Basedow, không trả lời được câu hỏi; phù hợp hơn là UNANSWERABLE.\nISSUE critical answer_grounded: REFERENCE_ANSWER đưa ra kết luận cho người Basedow dựa trên chống chỉ định quá mẫn của Adacel, trong khi chunks không có thông tin về Basedow.",
+      "deterministic": {
+        "reference_answer_present": {
+          "ok": true,
+          "detail": "REFERENCE_ANSWER is non-empty."
+        },
+        "answerability_label_valid": {
+          "ok": true,
+          "detail": "ANSWERABILITY='PARTIALLY_ANSWERABLE' is a known label."
+        },
+        "query_present": {
+          "ok": true,
+          "detail": "QUERY is non-empty."
+        },
+        "citations_resolve": {
+          "ok": true,
+          "detail": "Every [CHUNK_ID] in REFERENCE_ANSWER resolves to a relevant chunk."
+        },
+        "claim_evidence_present": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry carries a chunk id and an evidence quote."
+        },
+        "claim_chunk_ids_valid": {
+          "ok": true,
+          "detail": "Every claim_evidence_map entry cites a relevant chunk."
+        },
+        "claim_quotes_verbatim": {
+          "ok": true,
+          "detail": "Every evidence_quote appears verbatim in its cited chunk."
+        }
+      },
+      "semantic": {
+        "answerability_match": {
+          "ok": false,
+          "detail": "Các chunks chỉ nêu chống chỉ định chung của Adacel, không có thông tin về Basedow nên không trả lời được câu hỏi; nhãn PARTIALLY_ANSWERABLE không phù hợp, đúng hơn là UNANSWERABLE."
+        },
+        "answer_grounded": {
+          "ok": false,
+          "detail": "REFERENCE_ANSWER khẳng định người bị Basedow có thể tiêm Adacel nếu không quá mẫn, nhưng chunks không hề nêu Basedow/tuyến giáp; đây là suy diễn ngoài chunks."
+        },
+        "query_type_match": {
+          "ok": true,
+          "detail": "Câu hỏi hỏi về khả năng tiêm vắc xin khi có bệnh nền, thuộc loại CONTRAINDICATION."
+        },
+        "query_wellformed": {
+          "ok": true,
+          "detail": "Câu hỏi tiếng Việt đơn lẻ, rõ vắc xin Adacel và tình trạng Basedow, không mơ hồ."
+        }
+      },
+      "issues": [
+        {
+          "severity": "critical",
+          "check": "answerability_match",
+          "detail": "Nhãn ANSWERABILITY là PARTIALLY_ANSWERABLE nhưng chunks không đề cập Basedow, không trả lời được câu hỏi; phù hợp hơn là UNANSWERABLE."
+        },
+        {
+          "severity": "critical",
+          "check": "answer_grounded",
+          "detail": "REFERENCE_ANSWER đưa ra kết luận cho người Basedow dựa trên chống chỉ định quá mẫn của Adacel, trong khi chunks không có thông tin về Basedow."
+        }
+      ],
+      "failed_checks": [
+        "answerability_match",
+        "answer_grounded"
+      ],
+      "verdict": "FAIL",
+      "part": "test_dataset_masked.part2.json"
+    }
+  ]
+}
