@@ -730,8 +730,9 @@ class QwenLabelVerifier:
         pending: list[tuple[int, dict[str, Any]]] = []
 
         for i, record in enumerate(records):
-            if self.checkpoint is not None:
-                cached = self.checkpoint.get_verification(record.get("SOURCE_QUERY_ID"))
+            key = record.get("SOURCE_QUERY_ID")
+            if self.checkpoint is not None and key is not None:
+                cached = self.checkpoint.get_verification(key)
                 if cached is not None:
                     results[i] = cached
                     continue
@@ -741,13 +742,19 @@ class QwenLabelVerifier:
             batch = pending[start : start + self.batch_size]
             for (idx, record), result in zip(batch, self._generate_batch(batch)):
                 results[idx] = result
-                if self.checkpoint is not None:
-                    self.checkpoint.put_verification(
-                        record.get("SOURCE_QUERY_ID"),
-                        answerability=result["answerability"],
-                        reference_answer=result["reference_answer"],
-                        claim_map=result["claim_evidence_map"],
-                    )
+                # Only a clean, model-produced result is worth caching. The
+                # UNANSWERABLE fallback stands in for an unparseable model
+                # payload; caching it would make a transient malfunction
+                # permanent, so a resume would never retry those records.
+                if self.checkpoint is not None and result.get("clean", False):
+                    key = record.get("SOURCE_QUERY_ID")
+                    if key is not None:
+                        self.checkpoint.put_verification(
+                            key,
+                            answerability=result["answerability"],
+                            reference_answer=result["reference_answer"],
+                            claim_map=result["claim_evidence_map"],
+                        )
             if self.checkpoint is not None:
                 self.checkpoint.save()
 
@@ -758,6 +765,7 @@ class QwenLabelVerifier:
             "answerability": "UNANSWERABLE",
             "reference_answer": UNANSWERABLE_FALLBACK_ANSWER,
             "claim_evidence_map": [],
+            "clean": False,
         }
 
     def _generate_batch(
@@ -774,8 +782,12 @@ class QwenLabelVerifier:
             text = out.outputs[0].text if out and out.outputs else ""
             data = _extract_json(text) or {}
             answerability = str(data.get("answerability", "")).strip().upper()
-            if answerability not in ANSWERABILITY_VALUES:
-                answerability = "UNANSWERABLE"
+            clean = bool(data) and answerability in ANSWERABILITY_VALUES
+            if not clean:
+                # An unparseable payload is not a verdict: fall back to
+                # UNANSWERABLE for this run, but do not cache it.
+                results.append(self._fallback())
+                continue
             if answerability == "UNANSWERABLE":
                 results.append(
                     {
@@ -785,6 +797,7 @@ class QwenLabelVerifier:
                         ).strip()
                         or UNANSWERABLE_FALLBACK_ANSWER,
                         "claim_evidence_map": [],
+                        "clean": True,
                     }
                 )
                 continue
@@ -796,13 +809,12 @@ class QwenLabelVerifier:
                     ).strip()
                     or UNANSWERABLE_FALLBACK_ANSWER,
                     "claim_evidence_map": data.get("claim_evidence_map", []) or [],
+                    "clean": True,
                 }
             )
         return results
 
     def _build_prompt(self, record: dict[str, Any]) -> str:
-        from .postprocess import relevant_chunk_texts
-
         chunks_context = "\n\n---\n\n".join(
             f"CHUNK_ID: {c.get('CHUNK_ID')}\nNỘI DUNG:\n{c.get('TEXT')}"
             for c in record.get("RELEVANT_CHUNKS", []) or []

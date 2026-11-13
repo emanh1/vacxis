@@ -522,3 +522,60 @@ def test_verifier_sees_the_post_mask_query(tmp_path, monkeypatch):
     prompt = llm.calls[0][0]
     assert "tiêu chảy" in prompt      # the post-mask query reached the model
     assert "đau đầu" not in prompt    # the pre-mask query did not
+
+
+def test_verifier_does_not_cache_an_unparseable_payload(tmp_path, monkeypatch):
+    """A transient model malfunction must be retried on resume, not cached."""
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    cp = VLLMCheckpoint(tmp_path / "ckpt.json", model="m", seed=1)
+    llm = _VerifyFakeLLM("not json at all")
+    client = VLLMClient(llm=llm, model="m")
+    verifier = vr.QwenLabelVerifier(client, checkpoint=cp, batch_size=8)
+    results = verifier.verify([_verify_record("q", "text")])
+    # The record still gets a consistent, safe shape for this run ...
+    assert results[0]["answerability"] == "UNANSWERABLE"
+    assert results[0]["clean"] is False
+    # ... but the fallback is not cached, so a resume will try again.
+    assert cp.get_verification(1) is None
+
+
+def test_verifier_caches_a_clean_unanswerable_verdict(tmp_path, monkeypatch):
+    """A real UNANSWERABLE verdict from the model is cached normally."""
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    payload = json.dumps(
+        {"answerability": "UNANSWERABLE", "reference_answer": "không có thông tin",
+         "claim_evidence_map": []}
+    )
+    cp = VLLMCheckpoint(tmp_path / "ckpt.json", model="m", seed=1)
+    llm = _VerifyFakeLLM(payload)
+    client = VLLMClient(llm=llm, model="m")
+    verifier = vr.QwenLabelVerifier(client, checkpoint=cp, batch_size=8)
+    results = verifier.verify([_verify_record("q", "text")])
+    assert results[0]["clean"] is True
+    assert cp.get_verification(1)["answerability"] == "UNANSWERABLE"
+
+
+def test_verifier_does_not_collapse_records_without_a_source_id(tmp_path, monkeypatch):
+    """Records without SOURCE_QUERY_ID must not share one cache entry."""
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    cp = VLLMCheckpoint(tmp_path / "ckpt.json", model="m", seed=1)
+    llm = _VerifyFakeLLM(json.dumps(
+        {"answerability": "ANSWERABLE", "reference_answer": "[c1]",
+         "claim_evidence_map": []}
+    ))
+    client = VLLMClient(llm=llm, model="m")
+    verifier = vr.QwenLabelVerifier(client, checkpoint=cp, batch_size=8)
+    first = {"QUERY_ID": "VAX_Q_1", "QUERY": "q",
+             "RELEVANT_CHUNKS": [{"CHUNK_ID": "c1", "TEXT": "t", "RELEVANCE_SCORE": 3}]}
+    second = {"QUERY_ID": "VAX_Q_2", "QUERY": "q",
+              "RELEVANT_CHUNKS": [{"CHUNK_ID": "c1", "TEXT": "t", "RELEVANCE_SCORE": 3}]}
+    verifier.verify([first, second])
+    # Neither record may be keyed on the string "None".
+    assert cp.get_verification("None") is None
+    assert "None" not in cp.verifications
