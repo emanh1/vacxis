@@ -49,6 +49,9 @@ QUERY_TYPE_VALUES: tuple[str, ...] = tuple(t["type"] for t in QUERY_TYPE_DEFS)
 # rejected rather than silently mixing incompatible outputs.
 PROMPT_VERSION = 2
 
+# Bump when the verification prompt changes.
+VERIFY_VERSION = 1
+
 ANSWERABILITY_VALUES: tuple[str, ...] = (
     "ANSWERABLE",
     "PARTIALLY_ANSWERABLE",
@@ -61,7 +64,7 @@ class VLLMError(RuntimeError):
 
 
 class VLLMCheckpoint:
-    """Durable store for the two expensive vLLM stages (rewrites, answers).
+    """Durable store for the expensive vLLM stages (rewrites, answers, masks).
 
     A single JSON file lets a crashed or killed run (Colab session timeout,
     GPU OOM) resume instead of regenerating everything. Both stages are
@@ -72,6 +75,10 @@ class VLLMCheckpoint:
     A ``meta`` header (model, seed, prompt version) is checked on load: a
     checkpoint from a different model/seed/prompt is rejected loudly rather
     than mixed into a new run.
+
+    The ``verifications`` store and ``verify_version`` meta key are optional
+    and additive: a checkpoint that predates them still loads, it just
+    starts without any cached verification results.
     """
 
     def __init__(
@@ -86,10 +93,12 @@ class VLLMCheckpoint:
             "model": model,
             "seed": seed,
             "prompt_version": PROMPT_VERSION,
+            "verify_version": VERIFY_VERSION,
         }
         self.rewrites: dict[str, dict[str, Any]] = {}
         self.answers: dict[str, dict[str, Any]] = {}
         self.masks: dict[str, list[dict[str, str]]] = {}
+        self.verifications: dict[str, dict[str, Any]] = {}
 
     @staticmethod
     def _key(source_id: Any) -> str:
@@ -117,9 +126,13 @@ class VLLMCheckpoint:
         self.masks = {
             self._key(k): v for k, v in (data.get("masks") or {}).items()
         }
+        self.verifications = {
+            self._key(k): v for k, v in (data.get("verifications") or {}).items()
+        }
         print(
             f"  -> checkpoint resumed: {len(self.rewrites)} rewrites, "
-            f"{len(self.answers)} answers, {len(self.masks)} masks cached"
+            f"{len(self.answers)} answers, {len(self.masks)} masks, "
+            f"{len(self.verifications)} verifications cached"
         )
 
     def save(self) -> None:
@@ -130,6 +143,7 @@ class VLLMCheckpoint:
             "rewrites": self.rewrites,
             "answers": self.answers,
             "masks": self.masks,
+            "verifications": self.verifications,
         }
         tmp = self.path.with_name(self.path.name + ".tmp")
         tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
@@ -158,6 +172,23 @@ class VLLMCheckpoint:
 
     def put_mask(self, source_id: Any, pairs: list[dict[str, str]]) -> None:
         self.masks[self._key(source_id)] = pairs
+
+    def get_verification(self, source_id: Any) -> dict[str, Any] | None:
+        return self.verifications.get(self._key(source_id))
+
+    def put_verification(
+        self,
+        source_id: Any,
+        *,
+        answerability: str,
+        reference_answer: str,
+        claim_map: list[dict[str, Any]],
+    ) -> None:
+        self.verifications[self._key(source_id)] = {
+            "answerability": answerability,
+            "reference_answer": reference_answer,
+            "claim_evidence_map": claim_map,
+        }
 
 
 class Rewriter(Protocol):
@@ -399,6 +430,22 @@ class QwenRewriter:
 # generator so the two paths produce byte-compatible record fields.
 _JSON_SCHEMA_HINT = json.dumps(REFERENCE_ANSWER_FORMAT["json_schema"]["schema"])
 
+# The verifier decides the answerability label too, so its schema extends the
+# reference-answer schema with that one enum field.
+_VERIFY_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "answerability": {"type": "string", "enum": list(ANSWERABILITY_VALUES)},
+        **REFERENCE_ANSWER_FORMAT["json_schema"]["schema"]["properties"],
+    },
+    "required": [
+        "answerability",
+        *REFERENCE_ANSWER_FORMAT["json_schema"]["schema"]["required"],
+    ],
+}
+_VERIFY_SCHEMA_HINT = json.dumps(_VERIFY_SCHEMA)
+
 
 class QwenAnswerGenerator:
     """Offline-capable, vLLM-backed reference answer generator.
@@ -620,3 +667,155 @@ class QwenSymptomMasker:
                         )
             pairs.append(cleaned)
         return pairs
+
+
+_VERIFY_SYSTEM = """Bạn là chuyên gia kiểm định một bản ghi trong bộ dữ liệu đánh giá RAG về vắc xin.
+
+Bạn nhận MỘT câu hỏi cùng các đoạn CHỨNG CỨ (chunks) là bằng chứng duy nhất được phép dùng.
+
+Hãy làm hai việc:
+
+1. Chọn ANSWERABILITY cho câu hỏi, dựa DUY NHẤT vào mức độ mà các chunks trả lời được câu hỏi:
+   - ANSWERABLE: các chunks trả lời đầy đủ câu hỏi.
+   - PARTIALLY_ANSWERABLE: các chunks chỉ trả lời được một phần của câu hỏi.
+   - UNANSWERABLE: các chunks không trả lời được câu hỏi (kể cả khi có chunk liên quan đến cùng loại vaccine).
+
+2. Viết REFERENCE_ANSWER trả lời câu hỏi, chỉ dùng thông tin trong các chunks. Sau mỗi khẳng định, chèn [CHUNK_ID] và cung cấp claim cùng evidence_quote là trích dẫn NGUYÊN VĂN từ chunk tương ứng.
+   - Nếu ANSWERABILITY là UNANSWERABLE, trả lời rằng tài liệu không cung cấp thông tin và để claim_evidence_map rỗng.
+   - Nếu là PARTIALLY_ANSWERABLE, chỉ trả lời phần có bằng chứng và nêu rõ phần thiếu.
+   - evidence_quote phải là một đoạn con nguyên văn của chunk, không được diễn giải lại.
+
+Chỉ trả JSON, không dùng Markdown."""
+
+_VERIFY_USER_TMPL = """CÂU HỎI: {query}
+
+CÁC CHUNKS BẰNG CHỨNG:
+{chunks}
+
+Trả JSON theo schema:
+{schema}"""
+
+
+class QwenLabelVerifier:
+    """Re-derives the answerability label and the reference answer.
+
+    The symptom masker rewrites the query but leaves the label and the
+    answer describing the pre-masking question. This stage runs after the
+    masking step and re-derives both from the *final* query and its
+    evidence, so the shipped record is internally consistent.
+
+    The model returns the answerability label, the reference answer and the
+    claim/evidence map in one call. The caller applies the result with
+    :func:`relabel.apply_verification` and then checks it with
+    :func:`relabel.verify_record`.
+
+    Results are cached in the checkpoint like the other LLM stages, so a
+    resumed run does not recompute them.
+    """
+
+    def __init__(
+        self,
+        client: VLLMClient,
+        *,
+        checkpoint: VLLMCheckpoint | None = None,
+        batch_size: int = 64,
+    ) -> None:
+        self.client = client
+        self.checkpoint = checkpoint
+        self.batch_size = max(1, batch_size)
+
+    def verify(self, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Return one verification result per record, in input order."""
+        results: list[dict[str, Any] | None] = [None] * len(records)
+        pending: list[tuple[int, dict[str, Any]]] = []
+
+        for i, record in enumerate(records):
+            if self.checkpoint is not None:
+                cached = self.checkpoint.get_verification(record.get("SOURCE_QUERY_ID"))
+                if cached is not None:
+                    results[i] = cached
+                    continue
+            pending.append((i, record))
+
+        for start in range(0, len(pending), self.batch_size):
+            batch = pending[start : start + self.batch_size]
+            for (idx, record), result in zip(batch, self._generate_batch(batch)):
+                results[idx] = result
+                if self.checkpoint is not None:
+                    self.checkpoint.put_verification(
+                        record.get("SOURCE_QUERY_ID"),
+                        answerability=result["answerability"],
+                        reference_answer=result["reference_answer"],
+                        claim_map=result["claim_evidence_map"],
+                    )
+            if self.checkpoint is not None:
+                self.checkpoint.save()
+
+        return [r if r is not None else self._fallback() for r in results]
+
+    def _fallback(self) -> dict[str, Any]:
+        return {
+            "answerability": "UNANSWERABLE",
+            "reference_answer": UNANSWERABLE_FALLBACK_ANSWER,
+            "claim_evidence_map": [],
+        }
+
+    def _generate_batch(
+        self, batch: list[tuple[int, dict[str, Any]]]
+    ) -> list[dict[str, Any]]:
+        self.client.ensure_loaded()
+        prompts = [self._build_prompt(record) for _, record in batch]
+
+        sampling = self.client.sample(max_tokens=1024)
+        outputs = self.client.llm.generate(prompts, sampling)
+
+        results: list[dict[str, Any]] = []
+        for out in outputs:
+            text = out.outputs[0].text if out and out.outputs else ""
+            data = _extract_json(text) or {}
+            answerability = str(data.get("answerability", "")).strip().upper()
+            if answerability not in ANSWERABILITY_VALUES:
+                answerability = "UNANSWERABLE"
+            if answerability == "UNANSWERABLE":
+                results.append(
+                    {
+                        "answerability": answerability,
+                        "reference_answer": str(
+                            data.get("reference_answer", "")
+                        ).strip()
+                        or UNANSWERABLE_FALLBACK_ANSWER,
+                        "claim_evidence_map": [],
+                    }
+                )
+                continue
+            results.append(
+                {
+                    "answerability": answerability,
+                    "reference_answer": str(
+                        data.get("reference_answer", "")
+                    ).strip()
+                    or UNANSWERABLE_FALLBACK_ANSWER,
+                    "claim_evidence_map": data.get("claim_evidence_map", []) or [],
+                }
+            )
+        return results
+
+    def _build_prompt(self, record: dict[str, Any]) -> str:
+        from .postprocess import relevant_chunk_texts
+
+        chunks_context = "\n\n---\n\n".join(
+            f"CHUNK_ID: {c.get('CHUNK_ID')}\nNỘI DUNG:\n{c.get('TEXT')}"
+            for c in record.get("RELEVANT_CHUNKS", []) or []
+            if isinstance(c, dict) and c.get("RELEVANCE_SCORE", 0) >= 3
+        )
+        user = _VERIFY_USER_TMPL.format(
+            query=record.get("QUERY", ""),
+            chunks=chunks_context or "(không có chứng cứ)",
+            schema=_VERIFY_SCHEMA_HINT,
+        )
+        return self.client.render(
+            [
+                {"role": "system", "content": _VERIFY_SYSTEM},
+                {"role": "user", "content": user},
+            ]
+        )

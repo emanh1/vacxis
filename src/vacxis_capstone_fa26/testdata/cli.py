@@ -32,9 +32,11 @@ from .generator import (
 )
 from .validator import validate
 from .postprocess import apply_replacements, filter_no_han, split_records
+from .relabel import apply_verification, verify_record
 from .vllm_rewrite import (
     DEFAULT_VLLM_MODEL,
     QwenAnswerGenerator,
+    QwenLabelVerifier,
     QwenRewriter,
     QwenSymptomMasker,
     VLLMCheckpoint,
@@ -203,6 +205,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Drop records containing any Han (CJK) character before writing.",
     )
     p.add_argument(
+        "--relabel",
+        action="store_true",
+        help=(
+            "Re-derive ANSWERABILITY, REFERENCE_ANSWER and CLAIM_EVIDENCE_MAP "
+            "from the final query and its evidence, then drop records that do "
+            "not satisfy the invariants. Needs the vLLM path."
+        ),
+    )
+    p.add_argument(
+        "--relabel-scope",
+        choices=["all", "masked"],
+        default="all",
+        help=(
+            "Which records --relabel covers: 'all' (default) or only the "
+            "symptom-masked tail. Only used with --relabel."
+        ),
+    )
+    p.add_argument(
+        "--verify-batch-size",
+        type=int,
+        default=64,
+        help="vLLM source only: verification batch size (default: %(default)s).",
+    )
+    p.add_argument(
         "--mask-symptoms",
         action="store_true",
         help=(
@@ -363,6 +389,72 @@ class _NoopMasker:
         return [[] for _ in records]
 
 
+def _build_verifier(
+    args: argparse.Namespace,
+    chunks,
+    rng: random.Random,
+    checkpoint: VLLMCheckpoint | None,
+    seed: int,
+):
+    """Build the label/answer verifier for the ``--relabel`` stage.
+
+    Needs the vLLM path: without it there is no model to re-derive the
+    label and the answer from the final query.
+    """
+    if not _resolve_use_vllm(args):
+        raise VLLMError("--relabel needs the vLLM path (--vllm).")
+    client = VLLMClient(
+        model=args.vllm_model,
+        gpu_memory_utilization=args.vllm_gpu_memory,
+        seed=seed,
+    )
+    print(f"Verifying records with Qwen via vLLM: {args.vllm_model}")
+    return QwenLabelVerifier(
+        client,
+        checkpoint=checkpoint,
+        batch_size=args.verify_batch_size,
+    )
+
+
+def _apply_relabel(
+    records: list[dict],
+    verifier,
+) -> tuple[list[dict], list[tuple[str, str]]]:
+    """Re-derive labels and answers, then drop records that fail the checks.
+
+    Returns the surviving records and the list of ``(QUERY_ID, reason)``
+    pairs for the records that were dropped.
+    """
+    results = verifier.verify(records)
+    kept: list[dict] = []
+    dropped: list[tuple[str, str]] = []
+
+    for record, result in zip(records, results):
+        updated = apply_verification(
+            record,
+            answerability=result["answerability"],
+            reference_answer=result["reference_answer"],
+            claim_evidence_map=result["claim_evidence_map"],
+        )
+        keep, reason = verify_record(updated)
+        if keep:
+            kept.append(updated)
+        else:
+            dropped.append((str(record.get("QUERY_ID", "?")), reason))
+
+    return kept, dropped
+
+
+def _report_dropped(scope: str, dropped: list[tuple[str, str]]) -> None:
+    if not dropped:
+        return
+    print(f"  -> --relabel: dropped {len(dropped)} {scope} record(s):")
+    for query_id, reason in dropped[:20]:
+        print(f"       {query_id}: {reason}")
+    if len(dropped) > 20:
+        print(f"       ... and {len(dropped) - 20} more")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
@@ -473,6 +565,18 @@ def main(argv: list[str] | None = None) -> int:
             applied_total += len(report["applied"])
             masked_tail.append(updated)
 
+        # The masker rewrote the queries, so the labels and answers of the
+        # tail (and of the head, when it is covered too) describe the old
+        # question. Re-derive them from the final queries.
+        if args.relabel:
+            verifier = _build_verifier(args, chunks, rng, checkpoint, seed)
+            head_dropped: list[tuple[str, str]] = []
+            if args.relabel_scope == "all":
+                head, head_dropped = _apply_relabel(head, verifier)
+            masked_tail, tail_dropped = _apply_relabel(masked_tail, verifier)
+            _report_dropped("head", head_dropped)
+            _report_dropped("masked", tail_dropped)
+
         with open(args.out, "w", encoding="utf-8") as f:
             json.dump(head, f, ensure_ascii=False, indent=2)
         print(f"Wrote {len(head)} unmasked records to {args.out}")
@@ -488,6 +592,11 @@ def main(argv: list[str] | None = None) -> int:
             f"({applied_total} symptoms replaced)"
         )
         return 0
+
+    if args.relabel:
+        verifier = _build_verifier(args, chunks, rng, checkpoint, seed)
+        queries, dropped = _apply_relabel(queries, verifier)
+        _report_dropped("dataset", dropped)
 
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(queries, f, ensure_ascii=False, indent=2)

@@ -348,3 +348,141 @@ def test_symptom_masker_tolerates_bad_payload(tmp_path, monkeypatch):
     masker = vr.QwenSymptomMasker(client, batch_size=8)
     pairs = masker.mask([_mask_record("q", "chunk")])
     assert pairs == [[]]
+
+
+class _VerifyFakeLLM:
+    """Fake LLM returning a fixed verification payload."""
+
+    def __init__(self, payload: str) -> None:
+        self.payload = payload
+        self.calls: list[list[str]] = []
+        self._tokenizer = _FakeTokenizer()
+
+    def generate(self, prompts, sampling):
+        self.calls.append(prompts)
+        return [_FakeCompletion(self.payload) for _ in prompts]
+
+    def get_tokenizer(self):
+        return self._tokenizer
+
+
+def _verify_record(query: str, chunk_text: str, source_id: int = 1) -> dict:
+    return {
+        "QUERY_ID": "VAX_Q_0001",
+        "SOURCE_QUERY_ID": source_id,
+        "QUERY": query,
+        "ANSWERABILITY": "ANSWERABLE",
+        "RELEVANT_CHUNKS": [
+            {"CHUNK_ID": "c1", "TEXT": chunk_text, "RELEVANCE_SCORE": 3}
+        ],
+        "RELEVANT_DOCS": ["doc"],
+        "EVIDENCE_COMPLETENESS": "COMPLETE",
+    }
+
+
+def test_verifier_uses_llm_and_checkpoints(tmp_path, monkeypatch):
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    payload = json.dumps(
+        {
+            "answerability": "PARTIALLY_ANSWERABLE",
+            "reference_answer": "chỉ một phần [c1]",
+            "claim_evidence_map": [
+                {"claim": "chỉ một phần", "chunk_id": "c1",
+                 "evidence_quote": "sốt"}
+            ],
+        }
+    )
+    llm = _VerifyFakeLLM(payload)
+    client = VLLMClient(llm=llm, model="m")
+    cp = VLLMCheckpoint(tmp_path / "ckpt.json", model="m", seed=1)
+    verifier = vr.QwenLabelVerifier(client, checkpoint=cp, batch_size=8)
+
+    results = verifier.verify([_verify_record("q", "có sốt")])
+    assert len(llm.calls) == 1
+    assert results[0]["answerability"] == "PARTIALLY_ANSWERABLE"
+    assert results[0]["reference_answer"] == "chỉ một phần [c1]"
+    assert cp.get_verification(1)["reference_answer"] == "chỉ một phần [c1]"
+
+
+def test_verifier_unanswerable_drops_claims(tmp_path, monkeypatch):
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    payload = json.dumps(
+        {
+            "answerability": "UNANSWERABLE",
+            "reference_answer": "tài liệu không có thông tin",
+            "claim_evidence_map": [{"claim": "x", "chunk_id": "c1"}],
+        }
+    )
+    llm = _VerifyFakeLLM(payload)
+    client = VLLMClient(llm=llm, model="m")
+    verifier = vr.QwenLabelVerifier(client, batch_size=8)
+    results = verifier.verify([_verify_record("q", "text")])
+    # An unanswerable record must not keep claims, even if the model sent some.
+    assert results[0]["claim_evidence_map"] == []
+
+
+def test_verifier_falls_back_on_bad_payload(tmp_path, monkeypatch):
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    llm = _VerifyFakeLLM("not json")
+    client = VLLMClient(llm=llm, model="m")
+    verifier = vr.QwenLabelVerifier(client, batch_size=8)
+    results = verifier.verify([_verify_record("q", "text")])
+    assert results[0]["answerability"] == "UNANSWERABLE"
+    assert results[0]["claim_evidence_map"] == []
+
+
+def test_verifier_resumes_from_checkpoint(tmp_path, monkeypatch):
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    cp = VLLMCheckpoint(tmp_path / "ckpt.json", model="m", seed=1)
+    cp.put_verification(
+        1,
+        answerability="ANSWERABLE",
+        reference_answer="cached",
+        claim_map=[{"claim": "c", "chunk_id": "c1", "evidence_quote": "e"}],
+    )
+    cp.save()
+
+    cp2 = VLLMCheckpoint(tmp_path / "ckpt.json", model="m", seed=1)
+    cp2.load()
+    llm = _VerifyFakeLLM("{}")
+    client = VLLMClient(llm=llm, model="m")
+    verifier = vr.QwenLabelVerifier(client, checkpoint=cp2, batch_size=8)
+    results = verifier.verify([_verify_record("q", "text", source_id=1)])
+    assert results[0]["reference_answer"] == "cached"
+    assert llm.calls == []
+
+
+def test_checkpoint_adds_verification_additively(tmp_path):
+    """A checkpoint without the verifications key still loads."""
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+
+    path = tmp_path / "old.json"
+    # Simulate a checkpoint written before the verification stage existed.
+    import json as _json
+    path.write_text(
+        _json.dumps(
+            {
+                "meta": {"model": "m", "seed": 1, "prompt_version": 2},
+                "rewrites": {},
+                "answers": {},
+                "masks": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    cp = VLLMCheckpoint(path, model="m", seed=1)
+    cp.load()
+    assert cp.verifications == {}
+    cp.put_verification(9, answerability="ANSWERABLE", reference_answer="a", claim_map=[])
+    cp.save()
+    cp2 = VLLMCheckpoint(path, model="m", seed=1)
+    cp2.load()
+    assert cp2.get_verification("9")["reference_answer"] == "a"

@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Iterable
 
 from .chunks import Chunk
+from .relabel import verify_record
 
 
 @dataclass
@@ -112,6 +113,13 @@ def validate(
                 rpt.failures.append(
                     f"{qid} distractor references unknown CHUNK_ID {d.get('CHUNK_ID')!r}"
                 )
+
+        # The answer and its claim map must be grounded in the record's own
+        # evidence. These are warnings rather than failures so a dataset
+        # without answers still validates.
+        keep, reason = verify_record(q)
+        if not keep and reason != "ok":
+            rpt.warnings.append(f"{qid} answer/claim map check: {reason}")
 
     for t in expected_types:
         if type_counts.get(t, 0) == 0:
