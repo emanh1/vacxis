@@ -7,6 +7,12 @@ Two sources are supported:
   by Qwen2.5 via vLLM (``--vllm``) or by an offline rule-based rewriter
   (``--no-vllm``). Reference answers follow the same flag.
 * ``--source templates``: the legacy template/paraphrase generator.
+
+Optional post-stages (vLLM path): ``--mask-symptoms`` rewrites the query
+symptoms of the records past ``--split-at`` to ones the evidence discusses;
+``--relabel`` re-derives the answerability label, the reference answer and
+the claim map from the *final* query, and drops records whose citations do
+not resolve or whose evidence quotes are not verbatim.
 """
 from __future__ import annotations
 
