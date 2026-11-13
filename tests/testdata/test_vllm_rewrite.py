@@ -366,6 +366,13 @@ class _VerifyFakeLLM:
         return self._tokenizer
 
 
+class _EchoTokenizer:
+    """Tokenizer that renders the message contents verbatim."""
+
+    def apply_chat_template(self, messages, add_generation_prompt=True, tokenize=False):
+        return "\n".join(m.get("content", "") for m in messages)
+
+
 def _verify_record(query: str, chunk_text: str, source_id: int = 1) -> dict:
     return {
         "QUERY_ID": "VAX_Q_0001",
@@ -486,3 +493,32 @@ def test_checkpoint_adds_verification_additively(tmp_path):
     cp2 = VLLMCheckpoint(path, model="m", seed=1)
     cp2.load()
     assert cp2.get_verification("9")["reference_answer"] == "a"
+
+
+def test_verifier_sees_the_post_mask_query(tmp_path, monkeypatch):
+    """The bug being fixed: the verifier must run on the masked query."""
+    import json as _json
+    import vacxis_capstone_fa26.testdata.vllm_rewrite as vr
+    from vacxis_capstone_fa26.testdata.postprocess import apply_replacements
+
+    monkeypatch.setattr(vr, "SamplingParams", lambda **kw: kw)
+    llm = _VerifyFakeLLM(_json.dumps(
+        {"answerability": "ANSWERABLE", "reference_answer": "[c1]",
+         "claim_evidence_map": []}
+    ))
+    # Echo the messages so the rendered prompt still carries the query text.
+    llm._tokenizer = _EchoTokenizer()
+    client = VLLMClient(llm=llm, model="m")
+    verifier = vr.QwenLabelVerifier(client, batch_size=8)
+
+    record = _verify_record("Tôi bị đau đầu sau khi tiêm?", "sốt, tiêu chảy")
+    # Masking swaps the symptom into one the chunk actually discusses.
+    masked, report = apply_replacements(
+        record, [{"original": "đau đầu", "replacement": "tiêu chảy"}]
+    )
+    assert report["applied"] == ["đau đầu"]
+
+    verifier.verify([masked])
+    prompt = llm.calls[0][0]
+    assert "tiêu chảy" in prompt      # the post-mask query reached the model
+    assert "đau đầu" not in prompt    # the pre-mask query did not
