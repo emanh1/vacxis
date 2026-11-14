@@ -649,7 +649,6 @@ Trang 11/20
   <em>n: Số đối tượng được xác nhận mắc cúm qua xét nghiệm</em><br>
   <em>CI: Khoảng tin cậy</em>
 </p>
-</table>
 
 * Vắc-xin não mô cầu
 N: Số trẻ sơ sinh được đưa vào phân tích
