@@ -21,7 +21,6 @@ from vacxis_capstone_fa26.evaluation.generation import (
     citation_recall,
     citation_validity,
     compute_rouge,
-    evidence_span_coverage,
     exact_match,
     normalize_text,
     refusal_correctness,
@@ -233,21 +232,6 @@ def test_citation_metrics():
 
     val = citation_validity(citations, retrieved, invalid_citations=["invalid_bracket"])
     assert pytest.approx(val, 0.01) == 2.0 / 3.0  # 2 valid / 3 total
-
-
-def test_evidence_span_coverage():
-    relevant_chunks = [
-        {"CHUNK_ID": "c1", "EVIDENCE_SPANS": [{"START": 10, "END": 50}]},
-        {"CHUNK_ID": "c2", "EVIDENCE_SPANS": []},
-        {"CHUNK_ID": "c3", "EVIDENCE_SPANS": [{"START": 0, "END": 20}]},
-    ]
-    # Cited c1 only
-    cov = evidence_span_coverage(["c1"], relevant_chunks)
-    assert cov == 0.5  # c1 cited out of [c1, c3]
-
-    # Cited both
-    cov2 = evidence_span_coverage(["c1", "c3"], relevant_chunks)
-    assert cov2 == 1.0
 
 
 def test_refusal_correctness():

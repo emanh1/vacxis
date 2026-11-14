@@ -1,10 +1,14 @@
-"""Connect corpus preparation, dataset generation, RAG and evaluation."""
+"""Connect corpus preparation, RAG and evaluation.
+
+The dataset stage is the testdata CLI (`generate-test-dataset`, vLLM on the
+GPU host); this workflow prepares the corpus, then benchmarks the pipeline
+against a dataset it finds at ``config.dataset_path``.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
-import random
 from typing import Any
 
 from .evaluation.evaluator import VacxisRAGEvaluator, validate_query_ids
@@ -29,9 +33,6 @@ class WorkflowConfig:
     retrieval: RetrievalConfig = field(default_factory=RetrievalConfig)
     generation: GenerationConfig = field(default_factory=GenerationConfig)
     recreate: bool = False
-    per_type: int = 3
-    distractors: int = 2
-    seed: int | None = None
 
     def __post_init__(self) -> None:
         self.project_root = Path(self.project_root).resolve()
@@ -40,8 +41,8 @@ class WorkflowConfig:
             if value is not None:
                 value = Path(value)
                 setattr(self, name, value if value.is_absolute() else self.project_root / value)
-        if self.per_type < 1 or self.distractors < 0 or self.retrieval.top_k < 1:
-            raise ValueError("per_type/top_k must be positive and distractors nonnegative.")
+        if self.retrieval.top_k < 1:
+            raise ValueError("top_k must be positive.")
         paths = [self.chunks_path, self.dataset_path, self.results_path, self.report_json, self.report_md]
         if len({p.resolve() for p in paths}) != len(paths):
             raise ValueError("Workflow artifact paths must be distinct.")
@@ -70,37 +71,6 @@ def prepare(config: WorkflowConfig, **ingestion_dependencies: Any) -> int:
     if not count:
         raise ValueError("No chunks were indexed; downstream stages cannot run.")
     return count
-
-
-def create_dataset(config: WorkflowConfig) -> list[dict[str, Any]]:
-    """Generate and validate references from exactly the indexed corpus."""
-    from .testdata.answer_generator import ExtractiveAnswerGenerator, OpenRouterAnswerGenerator
-    from .testdata.chunks import load_chunks
-    from .testdata.generator import derive_default_seed, generate_and_validate
-
-    if not config.generation.dry_run:
-        validate_config(config.generation.model)
-    chunks = load_chunks(config.chunks_path)
-    if not chunks:
-        raise ValueError("Cannot generate a dataset from an empty corpus.")
-    seed = config.seed if config.seed is not None else derive_default_seed(chunks, config.per_type)
-    mapping_path = config.mapping_path
-    if mapping_path is None:
-        mapping_path = config.project_root / "75_vaccine_names_mapping.json"
-        if not mapping_path.exists():
-            mapping_path = config.project_root / "vaccine_name_mapping.json"
-    mapping = json.loads(mapping_path.read_text(encoding="utf-8")) if mapping_path.exists() else {}
-    generator = (ExtractiveAnswerGenerator() if config.generation.dry_run
-                 else OpenRouterAnswerGenerator(model=config.generation.model))
-    items, report = generate_and_validate(
-        chunks, random.Random(seed), config.per_type, config.distractors,
-        vaccine_mapping=mapping, answer_generator=generator, expected_per_type=config.per_type,
-    )
-    if not report.ok:
-        raise ValueError("Generated dataset failed validation: " + report.render())
-    validate_query_ids(items)
-    write_json(config.dataset_path, items)
-    return items
 
 
 def build_pipeline(config: WorkflowConfig) -> VacxisRAGPipeline:
@@ -146,9 +116,12 @@ def benchmark(config: WorkflowConfig) -> Any:
 
 
 def run(config: WorkflowConfig) -> Any:
-    """Execute stages in dependency order, stopping immediately on failure."""
+    """Prepare the corpus, then benchmark against the dataset at dataset_path.
+
+    The dataset itself is produced by the testdata CLI (`generate-test-dataset`,
+    vLLM on the GPU host) and must already exist at ``config.dataset_path``.
+    """
     if not config.generation.dry_run:
         validate_config(config.generation.model)
     prepare(config)
-    create_dataset(config)
     return benchmark(config)

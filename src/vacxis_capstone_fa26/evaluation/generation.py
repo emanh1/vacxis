@@ -246,24 +246,6 @@ def citation_validity(
     return valid / float(len(all_citations))
 
 
-def evidence_span_coverage(
-    citations: Sequence[str],
-    relevant_chunks: Sequence[dict[str, Any]],
-) -> float:
-    """Fraction of chunks containing evidence spans that were cited."""
-    spanned_chunk_ids = [
-        c.get("CHUNK_ID") or c.get("chunk_id")
-        for c in relevant_chunks
-        if isinstance(c, dict) and c.get("EVIDENCE_SPANS")
-    ]
-    spanned_chunk_ids = [cid for cid in spanned_chunk_ids if cid]
-    if not spanned_chunk_ids:
-        return 1.0
-    cited_set = set(citations)
-    covered = sum(1 for cid in spanned_chunk_ids if cid in cited_set)
-    return covered / float(len(spanned_chunk_ids))
-
-
 def refusal_correctness(is_refusal: bool, expected_answerability: str) -> float:
     """Compute whether model refusal matches ground-truth answerability.
     
@@ -332,8 +314,6 @@ def evaluate_generation_query(
     metrics["citation_validity"] = citation_validity(
         citations, retrieved_chunk_ids or [], invalid_citations
     )
-    if any(isinstance(c, dict) and c.get("EVIDENCE_SPANS") for c in raw_relevant):
-        metrics["evidence_span_coverage"] = evidence_span_coverage(citations, raw_relevant)
 
     # Refusal
     metrics["refusal_correctness"] = refusal_correctness(is_refusal, expected_answerability)

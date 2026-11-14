@@ -14,7 +14,7 @@ cp .env.example .env
 | Biến | Công dụng |
 | --- | --- |
 | `OPENROUTER_API_KEY` | Key OpenRouter dùng chung cho mọi lời gọi LLM. |
-| `VACXIS_GENERATION_MODEL` | Model trả lời và reference answer. `--model` hoặc `--answers-model` ghi đè theo CLI tương ứng. |
+| `VACXIS_GENERATION_MODEL` | Model trả lời. `--model` ghi đè theo CLI tương ứng. |
 | `VACXIS_QUERY_PLANNER_MODEL` | Model planner cho backend website gọi `run_turn()`. CLI và batch không gọi planner. |
 
 Ứng dụng chỉ đọc biến môi trường bằng `os.getenv()`, không đọc `.env` hay gọi `load_dotenv()`. `uv run --env-file .env ...` nạp biến vào môi trường tiến trình. Mọi lời gọi LLM dùng OpenAI SDK tại `https://openrouter.ai/api/v1`; không còn backend hay alias LiteLLM.
@@ -32,20 +32,22 @@ uv run vacxis-pipeline prepare
 # Hỏi đáp, không planner
 uv run --env-file .env vacxis-pipeline ask --query "Verorab có phản ứng phụ nào?"
 
-# Tạo dataset từ corpus đã index, kèm reference answer
-uv run --env-file .env generate-test-dataset --generate-answers
+# Tạo dataset (GPU host): vLLM rewrite + answer, tách 300, mask triệu chứng phần cuối
+uv run generate-test-dataset --vllm-model <model> --checkpoint ckpt.json
 
 # Dataset → batch RAG → evaluation
 uv run --env-file .env vacxis-pipeline benchmark --dataset test_dataset.json
 
-# Chạy toàn bộ: prepare → dataset → benchmark
+# Chạy toàn bộ: prepare → benchmark (đòi dataset đã có ở --dataset)
 uv run --env-file .env vacxis-pipeline run
 
-# Toàn bộ luồng với generation và reference answer offline
+# Toàn bộ luồng với generation offline
 uv run vacxis-pipeline run --dry-run
 ```
 
-Các lệnh điều phối nhận `--project-root`, `--collection-name`, `--qdrant-host`, `--qdrant-port`, `--model-path`, `--reranker-path`, `--top-k`, `--skip-rerank`. Đường dẫn artifact tương đối được tính từ `--project-root`. `prepare`/`run` nhận `--chunks`, `--mapping`, `--recreate`; `benchmark`/`run` nhận `--dataset`, `--results`, `--report-json`, `--report-md`; `run` nhận thêm `--per-type`, `--distractors`, `--seed`.
+`generate-test-dataset` đọc `scrape_dataset/query.parquet` và `chunks_storage/chunks.parquet`: Qwen qua vLLM viết lại câu hỏi theo hướng vaccine và sinh reference answer, sau đó tách tại `--split-at` (mặc định 300): phần đầu viết vào `--out` (mặc định `test_dataset.json`), phần cuối được mask triệu chứng theo chunk bằng chứng (dữ kiện chứng minh) và viết vào `--out-masked` (mặc định `test_dataset_masked.json`). Cờ chính: `--source-queries`, `--vllm-model`, `--vllm-gpu-memory`, `--limit`, `--per-type`, `--distractors`, `--seed`, `--checkpoint`, `--answers-batch-size`, `--rewrite-batch-size`, `--verify-batch-size`, `--filter-no-han`, `--no-validate`, `--strict-validation`, `--dry-run-answers` (answer trích xuất offline thay vì vLLM), và `--relabel` (xác thực lại nhãn/trả lời/bằng chứng từ câu hỏi cuối; `--relabel-scope` `masked` (mặc định) hay `all`; loại các bản ghi vi phạm bất biến). Chạy trên GPU host vì cần vLLM.
+
+Các lệnh điều phối nhận `--project-root`, `--collection-name`, `--qdrant-host`, `--qdrant-port`, `--model-path`, `--reranker-path`, `--top-k`, `--skip-rerank`. Đường dẫn artifact tương đối được tính từ `--project-root`. `prepare`/`run` nhận `--chunks`, `--mapping`, `--recreate`; `benchmark`/`run` nhận `--dataset`, `--results`, `--report-json`, `--report-md`.
 
 Artifact mặc định:
 
@@ -57,7 +59,7 @@ Artifact mặc định:
 
 Collection được giữ mặc định; chỉ `--recreate` mới xóa và tạo lại. Point ID dùng UUID ổn định từ chunk ID, nên ingest lại cùng corpus không nhân đôi point. Collection cũ dùng ID số hoặc corpus đã xóa/đổi chunk cần rebuild có chủ đích bằng `prepare --recreate` để loại point cũ. Pipeline không tự chạy bước phụ thuộc sau khi một bước lỗi.
 
-Các CLI `vacxis-generation`, `vacxis-retrieval`, `vacxis-eval`, `vacxis-evaluation` và `generate-test-dataset` vẫn được giữ. `vacxis-generation` không còn các cờ planner/làm rõ; dành chức năng đó cho API Python bên dưới. Tên lớp mới trong testdata là `OpenRouterAnswerGenerator`, không có alias cho tên lớp cũ.
+Các CLI `vacxis-generation`, `vacxis-retrieval`, `vacxis-eval`, `vacxis-evaluation` và `generate-test-dataset` vẫn được giữ. `vacxis-generation` không còn các cờ planner/làm rõ; dành chức năng đó cho API Python bên dưới. Reference answer của `generate-test-dataset` dùng Qwen qua vLLM (hoặc trích xuất offline với `--dry-run-answers`); không còn chế độ OpenRouter cho dataset.
 
 ## Web UI
 
@@ -103,6 +105,6 @@ Test offline không cần key thật, tải model hoặc dịch vụ ngoài. Cá
 
 ## Testdata Structured Outputs
 
-Reference answer dùng JSON Schema strict và `provider.require_parameters=true` qua OpenRouter. Model/provider phải hỗ trợ structured outputs; lỗi sẽ dừng với QUERY_ID và model, không tự retry hoặc chuyển offline. Chỉ schema kiểm soát cấu trúc; quote, citation và claim không được đối chiếu với corpus. Nội dung chưa được xác minh vẫn giữ VERIFIED=false.
+Reference answer của `generate-test-dataset` dùng Qwen qua vLLM với JSON Schema strict; `--dry-run-answers` trả về answer trích xuất offline. Schema kiểm soát cấu trúc; citation và claim không được đối chiếu với corpus khi sinh, chỉ `--relabel` mới tái kiểm tra từ câu hỏi cuối. Nội dung chưa được xác minh vẫn giữ VERIFIED=false.
 
-Dataset mới luôn lưu EVIDENCE_SPANS=null ở mọi chunk. Cờ --refine-spans và API refiner đã bị xóa. Không gọi LLM hoặc thuật toán để tạo spans. Evaluation bỏ metric evidence_span_coverage khi không có spans; dataset cũ có spans vẫn được hỗ trợ.
+Trang `EVIDENCE_SPANS` (và metric `evidence_span_coverage`) đã bị xóa khỏi dataset và evaluation. Cờ `--refine-spans` đã bị xóa; parser từ chối nó như cờ lạ.

@@ -1,4 +1,4 @@
-"""OpenRouter wire contract and strict online failure tests."""
+"""OpenRouter wire contract and safe online-failure tests for the app LLM path."""
 import json
 from unittest.mock import Mock
 
@@ -10,7 +10,6 @@ from vacxis_capstone_fa26 import llm
 from vacxis_capstone_fa26.generation.generator import MedicalGenerator
 from vacxis_capstone_fa26.generation.schemas import GenerationConfig
 from vacxis_capstone_fa26.query import QueryPlanner
-from vacxis_capstone_fa26.testdata.answer_generator import OpenRouterAnswerGenerator
 
 
 def chat_response(content="Answer [c1].", finish_reason="stop"):
@@ -129,66 +128,6 @@ def test_planner_uses_shared_transport(router):
     body = json.loads(requests[0].content)
     assert body["model"] == "fixture/planner"
     assert body["response_format"] == {"type": "json_object"}
-
-
-def test_reference_answer_uses_strict_schema_and_routing(router):
-    result, requests, _ = router
-    item = {"QUERY": "Question", "ANSWERABILITY": "ANSWERABLE", "RELEVANT_CHUNKS": [
-        {"CHUNK_ID": "c1", "TEXT": "Evidence.", "RELEVANCE_SCORE": 3},
-    ]}
-    result["body"] = chat_response(json.dumps({
-        "reference_answer": "Evidence [c1].", "claim_evidence_map": [
-            {"claim": "Evidence", "chunk_id": "c1", "evidence_quote": "Evidence."},
-        ],
-    }))
-    OpenRouterAnswerGenerator().generate_answers([item])
-    assert item["REFERENCE_ANSWER"] == "Evidence [c1]."
-    body = json.loads(requests[0].content)
-    assert body["provider"] == {"require_parameters": True}
-    fmt = body["response_format"]
-    assert fmt["type"] == "json_schema"
-    assert fmt["json_schema"]["strict"] is True
-    schema = fmt["json_schema"]["schema"]
-    assert schema["additionalProperties"] is False
-    assert set(schema["required"]) == {"reference_answer", "claim_evidence_map"}
-    assert schema["properties"]["claim_evidence_map"]["items"]["additionalProperties"] is False
-
-
-@pytest.mark.parametrize("content", ["not json", "{}", "[]"])
-def test_reference_answer_errors_include_query_context(router, content):
-    result, _, _ = router
-    result["body"] = chat_response(content)
-    item = {"QUERY_ID": "Q42", "QUERY": "Question", "RELEVANT_CHUNKS": [
-        {"CHUNK_ID": "c1", "TEXT": "Evidence.", "RELEVANCE_SCORE": 3},
-    ]}
-    with pytest.raises(llm.LLMError, match="QUERY_ID=Q42 model=fixture/generation"):
-        OpenRouterAnswerGenerator().generate_answers([item])
-    assert "REFERENCE_ANSWER" not in item
-
-
-def test_schema_response_is_not_checked_against_corpus(router):
-    result, _, _ = router
-    result["body"] = chat_response(json.dumps({
-        "reference_answer": "Answer [unknown].", "claim_evidence_map": [
-            {"claim": "Unsupported claim", "chunk_id": "unknown", "evidence_quote": "Absent quote"},
-        ],
-    }))
-    item = {"QUERY": "Question", "ANSWERABILITY": "PARTIALLY_ANSWERABLE", "RELEVANT_CHUNKS": [
-        {"CHUNK_ID": "c1", "TEXT": "Evidence.", "RELEVANCE_SCORE": 3},
-    ]}
-    OpenRouterAnswerGenerator().generate_answers([item])
-    assert item["REFERENCE_ANSWER"] == "Answer [unknown]."
-    assert item["ANSWERABILITY"] == "PARTIALLY_ANSWERABLE"
-
-
-def test_provider_schema_failure_has_context(router):
-    result, _, _ = router
-    result.update(status=400, body={"error": {"message": "Unsupported schema"}})
-    item = {"QUERY_ID": "Q7", "QUERY": "Question", "RELEVANT_CHUNKS": [
-        {"CHUNK_ID": "c1", "TEXT": "Evidence", "RELEVANCE_SCORE": 3},
-    ]}
-    with pytest.raises(llm.LLMError, match="QUERY_ID=Q7"):
-        OpenRouterAnswerGenerator().generate_answers([item])
 
 
 def test_removed_refine_flag_is_rejected():

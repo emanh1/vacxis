@@ -552,3 +552,49 @@ def _emit_sub_chunk(section: dict, content: str, sub_idx: int, has_table: bool, 
         "has_table": has_table,
     })
 
+
+
+# --- Sentence spans (moved from testdata/spans.py; used by tests) ---------
+
+_SPANS_TABLE_LINE_RE = re.compile(r"^\s*\|.*\|\s*$")
+_SPANS_TABLE_SEP_RE = re.compile(r"^[\s|:-]+$")
+_SPANS_HTML_TABLE_LINE_RE = re.compile(r"^\s*</?(?:table|thead|tbody|tfoot|tr|td|th)\b", re.IGNORECASE)
+_SPANS_HTML_TABLE_TAG_RE = re.compile(r"</?(?:table|thead|tbody|tfoot|tr|td|th)\b", re.IGNORECASE)
+_SPANS_HEADER_LINE_RE = re.compile(r"^\[CHỦ ĐỀ:.*\] > \[MỤC:")
+_SPANS_SENTENCE_SPLIT_RE = re.compile(r"(?<=[\.\?\!\n])\s+")
+
+
+def _split_sentences(text: str) -> list[tuple[int, int]]:
+    """Yield (start, end) spans of sentences in ``text``.
+
+    Skips the synthetic ``[CHỦ ĐỀ: ...] > [MỤC: ...]`` header. Sentences
+    shorter than 40 chars and markdown table rows are dropped.
+    """
+    body_start = text.find("\n")
+    if body_start == -1 or body_start > len(text) - 40:
+        body_start = 0
+    else:
+        body_start += 1
+
+    spans: list[tuple[int, int]] = []
+    pos = body_start
+    for match in _SPANS_SENTENCE_SPLIT_RE.finditer(text, pos):
+        start, end = pos, match.start()
+        if end - start >= 40:
+            spans.append((start, end))
+        pos = match.end()
+    if pos < len(text) and len(text) - pos >= 40:
+        spans.append((pos, len(text)))
+
+    cleaned: list[tuple[int, int]] = []
+    for start, end in spans:
+        snippet = text[start:end]
+        first_line = snippet.splitlines()[0] if snippet else ""
+        if _SPANS_HEADER_LINE_RE.match(first_line):
+            continue
+        if _SPANS_TABLE_LINE_RE.match(first_line) or _SPANS_TABLE_SEP_RE.match(first_line):
+            continue
+        if _SPANS_HTML_TABLE_LINE_RE.match(first_line) or _SPANS_HTML_TABLE_TAG_RE.search(snippet):
+            continue
+        cleaned.append((start, end))
+    return cleaned

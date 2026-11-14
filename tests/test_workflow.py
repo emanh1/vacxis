@@ -46,7 +46,7 @@ def config(tmp_path):
     (tmp_path / "75_vaccine_names_mapping.json").write_text(
         '{"001":"Vax A","002":"Vax B"}', encoding="utf-8",
     )
-    return workflow.WorkflowConfig(project_root=tmp_path, per_type=1, distractors=0,
+    return workflow.WorkflowConfig(project_root=tmp_path,
                                    generation=GenerationConfig(dry_run=True))
 
 
@@ -63,9 +63,21 @@ def test_full_offline_workflow(config, monkeypatch, online):
         rows = pq.read_table(config.chunks_path).to_pylist()
         assert count == len(rows) > 0
         chunk_ids = {row["chunk_id"] for row in rows}
-        items = workflow.create_dataset(config)
-        assert items and all(item["REFERENCE_ANSWER"] for item in items)
-        assert all(c["EVIDENCE_SPANS"] is None for item in items for c in item["RELEVANT_CHUNKS"])
+        # The dataset stage now lives in the testdata CLI (vLLM/GPU host);
+        # the workflow assumes it exists at config.dataset_path.
+        items = [
+            {
+                "QUERY_ID": f"VAX_Q_{i:04d}",
+                "QUERY": f"Câu hỏi {i}",
+                "REFERENCE_ANSWER": "Đáp án mẫu.",
+                "RELEVANT_CHUNKS": [{
+                    "CHUNK_ID": row["chunk_id"], "TEXT": row["text"],
+                    "RELEVANCE_SCORE": 3,
+                }],
+            }
+            for i, row in enumerate(rows[:2], start=1)
+        ]
+        workflow.write_json(config.dataset_path, items)
         assert all(c["CHUNK_ID"] in chunk_ids for item in items for c in item["RELEVANT_CHUNKS"])
         searcher = HybridSearcher(client=client, collection_name=config.retrieval.collection_name)
         retriever = VacxisRetriever(config.retrieval, embed_model=embedder, reranker=reranker,
@@ -92,7 +104,6 @@ def test_full_offline_workflow(config, monkeypatch, online):
         assert [r["QUERY_ID"] for r in results] == [q["QUERY_ID"] for q in items]
         assert summary.num_queries == len(items)
         assert summary.task == "rag"
-        assert "evidence_span_coverage" not in summary.overall_metrics
         assert config.report_json.is_file() and config.report_md.is_file()
         assert reranker.batch_rerank.called
         for result in results:
@@ -105,10 +116,10 @@ def test_full_offline_workflow(config, monkeypatch, online):
         client.close()
 
 
-@pytest.mark.parametrize("stage", ["prepare", "create_dataset", "benchmark"])
+@pytest.mark.parametrize("stage", ["prepare", "benchmark"])
 def test_run_stops_at_first_failed_stage(config, monkeypatch, stage):
     calls = []
-    for name in ("prepare", "create_dataset", "benchmark"):
+    for name in ("prepare", "benchmark"):
         def execute(settings, name=name):
             calls.append(name)
             if name == stage:
@@ -116,7 +127,7 @@ def test_run_stops_at_first_failed_stage(config, monkeypatch, stage):
         monkeypatch.setattr(workflow, name, execute)
     with pytest.raises(ValueError):
         workflow.run(config)
-    assert calls == ["prepare", "create_dataset", "benchmark"][:calls.index(stage) + 1]
+    assert calls == ["prepare", "benchmark"][:calls.index(stage) + 1]
 
 
 @pytest.mark.parametrize("command", ["prepare", "ask", "benchmark", "run"])

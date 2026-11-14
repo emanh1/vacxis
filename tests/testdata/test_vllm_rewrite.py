@@ -1,8 +1,8 @@
-"""Offline tests for the query-driven (source) dataset path.
+"""Offline tests for the query-driven dataset path.
 
-These exercise the rule-based rewriter, grounding, record schema and the
-vLLM JSON-parsing helpers *without* a GPU: the real vLLM path is covered by
-the marked integration test, which is skipped by default.
+These exercise grounding, record schema and the vLLM JSON-parsing helpers
+*without* a GPU: the real vLLM path is covered by the marked integration
+test, which is skipped by default.
 """
 from __future__ import annotations
 
@@ -10,10 +10,7 @@ import json
 
 import pytest
 
-from vacxis_capstone_fa26.testdata.generator import (
-    RuleBasedRewriter,
-    generate_and_validate_from_source,
-)
+from vacxis_capstone_fa26.testdata.generator import generate_and_validate
 from vacxis_capstone_fa26.testdata.vllm_rewrite import (
     QwenAnswerGenerator,
     QwenRewriter,
@@ -45,30 +42,33 @@ def _corpus() -> list:
     ]
 
 
-def test_rule_based_rewriter_shape():
-    import random
-
-    src = [{"id": 1, "query": "răng đau"}, {"id": 2, "query": "sốt"}]
-    out = RuleBasedRewriter(_corpus(), random.Random(0)).rewrite(src)
-    assert [o["id"] for o in out] == [1, 2]
-    for o in out:
-        assert o["vaccine"] in {"Vax A", "Vax B"}
-        assert o["rewritten_query"] in {"răng đau", "sốt"}
-        assert o["query_type"] in {
-            "INDICATION", "DOSAGE", "ADMINISTRATION_ROUTE", "CONTRAINDICATION",
-            "ADVERSE_EFFECT", "COMPOSITION", "STORAGE", "PRECAUTION",
-            "INTERACTION", "SPECIAL_POPULATION",
-        }
-
-
 def test_query_path_records_are_schema_valid_and_grounded():
     import random
 
+    class _FakeRewriter:
+        """Stands in for the vLLM rewriter: one valid result per query."""
+
+        def __init__(self, vaccine: str = "Vax A"):
+            self._vaccine = vaccine
+
+        def rewrite(self, source_queries: list[dict]) -> list[dict]:
+            return [
+                {
+                    "id": sq["id"],
+                    "vaccine": self._vaccine,
+                    "rewritten_query": str(sq.get("query", "")).strip(),
+                    "query_type": "INDICATION" if sq["id"] % 2 else "PRECAUTION",
+                    "answerability": "ANSWERABLE",
+                    "rationale": "fake offline grounding",
+                }
+                for sq in source_queries
+            ]
+
     src = [{"id": i, "query": f"question {i}"} for i in range(5)]
-    queries, rpt = generate_and_validate_from_source(
+    queries, rpt = generate_and_validate(
         _corpus(),
         src,
-        RuleBasedRewriter(_corpus(), random.Random(0)),
+        _FakeRewriter(),
         random.Random(1),
         distractors_per_query=1,
     )

@@ -1,13 +1,9 @@
 """Unit tests for the answer generator and claim-evidence mapper."""
 from __future__ import annotations
 
-import pytest
-
 from vacxis_capstone_fa26.testdata.answer_generator import (
     ExtractiveAnswerGenerator,
-    NoOpAnswerGenerator,
     UNANSWERABLE_FALLBACK_ANSWER,
-    enrich_dataset,
 )
 from vacxis_capstone_fa26.testdata.validator import validate
 
@@ -46,7 +42,6 @@ def test_extractive_answer_single_hop() -> None:
                 "CHUNK_ID": "a_c0",
                 "TEXT": CHUNKS[0].text,
                 "RELEVANCE_SCORE": 3,
-                "EVIDENCE_SPANS": [{"START": 0, "END": len(CHUNKS[0].text)}],
             }
         ],
         "REFERENCE_ANSWER": None,
@@ -70,13 +65,11 @@ def test_extractive_answer_multi_hop() -> None:
                 "CHUNK_ID": "a_c0",
                 "TEXT": CHUNKS[0].text,
                 "RELEVANCE_SCORE": 3,
-                "EVIDENCE_SPANS": [{"START": 0, "END": 10}],
             },
             {
                 "CHUNK_ID": "a_c1",
                 "TEXT": CHUNKS[1].text,
                 "RELEVANCE_SCORE": 3,
-                "EVIDENCE_SPANS": [{"START": 0, "END": 10}],
             },
         ],
         "REFERENCE_ANSWER": None,
@@ -86,27 +79,6 @@ def test_extractive_answer_multi_hop() -> None:
     assert "[a_c0]" in q["REFERENCE_ANSWER"]
     assert "[a_c1]" in q["REFERENCE_ANSWER"]
     assert len(q["CLAIM_EVIDENCE_MAP"]) == 2
-
-
-def test_enrich_dataset_respects_existing_answer() -> None:
-    existing_answer = "Đã có câu trả lời mẫu [a_c0]."
-    q = {
-        "QUERY_ID": "Q4",
-        "QUERY": "Câu hỏi?",
-        "ANSWERABILITY": "ANSWERABLE",
-        "RELEVANT_CHUNKS": [
-            {
-                "CHUNK_ID": "a_c0",
-                "TEXT": CHUNKS[0].text,
-                "RELEVANCE_SCORE": 3,
-                "EVIDENCE_SPANS": [{"START": 0, "END": 10}],
-            }
-        ],
-        "REFERENCE_ANSWER": existing_answer,
-        "CLAIM_EVIDENCE_MAP": [],
-    }
-    enrich_dataset([q], generator=ExtractiveAnswerGenerator(), overwrite=False)
-    assert q["REFERENCE_ANSWER"] == existing_answer
 
 
 def test_validator_with_reference_answer() -> None:
@@ -122,7 +94,6 @@ def test_validator_with_reference_answer() -> None:
                 "CHUNK_ID": "a_c0",
                 "TEXT": CHUNKS[0].text,
                 "RELEVANCE_SCORE": 3,
-                "EVIDENCE_SPANS": [{"START": 0, "END": 10}],
             }
         ],
         "REFERENCE_ANSWER": "Chỉ định cho người lớn [a_c0].",
@@ -132,10 +103,10 @@ def test_validator_with_reference_answer() -> None:
     assert rpt.ok, rpt.render()
 
 
-def test_extractive_answer_handles_null_spans():
+def test_extractive_answer_skips_synthetic_header():
     q = {"ANSWERABILITY": "ANSWERABLE", "RELEVANT_CHUNKS": [
         {"CHUNK_ID": "c1", "TEXT": "[CHỦ ĐỀ: Vax A]\nEvidence.",
-         "RELEVANCE_SCORE": 3, "EVIDENCE_SPANS": None},
+         "RELEVANCE_SCORE": 3},
     ]}
     ExtractiveAnswerGenerator().generate_answers([q])
     assert q["REFERENCE_ANSWER"] == "Theo hướng dẫn sử dụng: Evidence. [c1]"

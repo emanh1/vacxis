@@ -60,14 +60,6 @@ def index_by_category(chunks: list[Chunk]) -> dict[str, list[Chunk]]:
     return dict(index)
 
 
-def index_by_doc(chunks: list[Chunk]) -> dict[str, list[Chunk]]:
-    """Group chunks by document."""
-    index: dict[str, list[Chunk]] = defaultdict(list)
-    for c in chunks:
-        index[c.doc_id].append(c)
-    return dict(index)
-
-
 def index_by_vaccine(chunks: list[Chunk]) -> dict[str, list[Chunk]]:
     """Group chunks by vaccine name (derived from doc_title)."""
     index: dict[str, list[Chunk]] = defaultdict(list)

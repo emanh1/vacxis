@@ -57,10 +57,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             sub.add_argument("--results", type=Path, default=Path("generation_results.json"))
             sub.add_argument("--report-json", type=Path, default=Path("evaluation_report.json"))
             sub.add_argument("--report-md", type=Path, default=Path("evaluation_report.md"))
-        if name == "run":
-            sub.add_argument("--per-type", type=int, default=3)
-            sub.add_argument("--distractors", type=int, default=2)
-            sub.add_argument("--seed", type=int)
     return parser.parse_args(argv)
 
 
@@ -74,8 +70,7 @@ def main(argv: list[str] | None = None) -> int:
     for flag, field in (("chunks", "chunks_path"), ("mapping", "mapping_path"),
                         ("dataset", "dataset_path"), ("results", "results_path"),
                         ("report_json", "report_json"), ("report_md", "report_md"),
-                        ("recreate", "recreate"), ("per_type", "per_type"),
-                        ("distractors", "distractors"), ("seed", "seed")):
+                        ("recreate", "recreate")):
         if hasattr(args, flag):
             options[field] = getattr(args, flag)
     try:

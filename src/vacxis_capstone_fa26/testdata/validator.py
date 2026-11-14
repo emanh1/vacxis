@@ -85,14 +85,6 @@ def validate(
                 f"{qid} TEXT in RELEVANT_CHUNKS does not match chunks.parquet"
             )
 
-        # New datasets have null spans; retain bounds checks for legacy datasets.
-        for chunk in relevant:
-            for span in chunk.get("EVIDENCE_SPANS") or []:
-                start, end = span.get("START"), span.get("END")
-                if (type(start) is not int or type(end) is not int
-                        or not 0 <= start < end <= len(chunk.get("TEXT", ""))):
-                    rpt.failures.append(f"{qid} EVIDENCE_SPAN out of bounds")
-
         # MULTI_HOP / INTERACTION should pull a second doc; other types should
         # not (per the strict pairing rules).
         if q.get("QUERY_COMPLEXITY") == "MULTI_HOP":

@@ -13,7 +13,6 @@ from vacxis_capstone_fa26.evaluation.generation import (
     citation_recall,
     citation_validity,
     compute_rouge,
-    evidence_span_coverage,
     exact_match,
     normalize_text,
     refusal_correctness,
@@ -62,7 +61,6 @@ __all__ = [
     "citation_recall",
     "citation_f1",
     "citation_validity",
-    "evidence_span_coverage",
     "refusal_correctness",
     # Evaluators
     "RetrievalEvaluator",

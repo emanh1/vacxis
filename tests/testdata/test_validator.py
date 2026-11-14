@@ -26,7 +26,6 @@ def _query(**overrides):
                 "CHUNK_ID": "a_c0",
                 "TEXT": CHUNKS[0].text,
                 "RELEVANCE_SCORE": 3,
-                "EVIDENCE_SPANS": [{"START": 0, "END": len(CHUNKS[0].text)}],
             }
         ],
     }
@@ -34,32 +33,12 @@ def _query(**overrides):
     return base
 
 
-def test_answerable_with_span_passes() -> None:
+def test_answerable_passes() -> None:
     rpt = validate(
         [_query()], CHUNKS, by_category={"chỉ định": [CHUNKS[0]]},
         expected_per_type=1, expected_types=["INDICATION"],
     )
     assert rpt.ok, rpt.render()
-
-
-def test_answerable_with_null_span_passes() -> None:
-    q = _query()
-    q["RELEVANT_CHUNKS"][0]["EVIDENCE_SPANS"] = None
-    rpt = validate(
-        [q], CHUNKS, by_category={"chỉ định": [CHUNKS[0]]},
-        expected_per_type=1, expected_types=["INDICATION"],
-    )
-    assert rpt.ok, rpt.render()
-
-
-def test_out_of_bounds_span_fails() -> None:
-    q = _query()
-    q["RELEVANT_CHUNKS"][0]["EVIDENCE_SPANS"] = [{"START": 0, "END": 999_999}]
-    rpt = validate(
-        [q], CHUNKS, by_category={"chỉ định": [CHUNKS[0]]},
-        expected_per_type=1, expected_types=["INDICATION"],
-    )
-    assert not rpt.ok
 
 
 def test_unanswerable_must_have_empty_chunks() -> None:
@@ -89,7 +68,6 @@ def test_interaction_multihop_requires_two_docs() -> None:
                 "CHUNK_ID": "a_c0",
                 "TEXT": CHUNKS[0].text,
                 "RELEVANCE_SCORE": 3,
-                "EVIDENCE_SPANS": [{"START": 0, "END": 1}],
             }
         ],
     )

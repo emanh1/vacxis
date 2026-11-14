@@ -18,7 +18,7 @@ from vacxis_capstone_fa26.indexing.indexer import (
 from vacxis_capstone_fa26.indexing.main import run_indexing_pipeline
 from vacxis_capstone_fa26.indexing.parser import parse_markdown_to_sections
 from vacxis_capstone_fa26.indexing.schemas import detect_content_type
-from vacxis_capstone_fa26.testdata.spans import _split_sentences
+from vacxis_capstone_fa26.indexing.chunker import _split_sentences
 
 
 def test_convert_sparse_to_qdrant_empty():
