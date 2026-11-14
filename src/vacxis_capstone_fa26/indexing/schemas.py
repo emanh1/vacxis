@@ -50,14 +50,49 @@ def classify_category(header: str, parent_header: str = "") -> str:
     return "thông tin chung"
 
 
+_HTML_TABLE_BLOCK_RE = re.compile(r"<table\b[^>]*>.*?</table\s*>", re.IGNORECASE | re.DOTALL)
+_HTML_TABLE_OPEN_RE = re.compile(r"<table\b", re.IGNORECASE)
+_HTML_TABLE_CLOSE_RE = re.compile(r"</table\s*>", re.IGNORECASE)
+
+
 def detect_content_type(content: str, has_table: bool) -> str:
     """Detect whether chunk content is text, table, or mixed."""
     if not has_table:
         return "text"
-    lines = [line for line in content.strip().splitlines() if line.strip()]
-    table_lines = sum(1 for line in lines if line.strip().startswith("|"))
-    ratio = table_lines / len(lines) if lines else 0
-    if ratio > 0.6:
+
+    stripped = content.strip()
+    if not stripped:
+        return "mixed"
+
+    # Compute token (word) ratio for HTML tables + Markdown pipe lines
+    total_words = len(stripped.split())
+    html_table_spans = _HTML_TABLE_BLOCK_RE.findall(stripped)
+    html_table_words = sum(len(span.split()) for span in html_table_spans)
+    outside_html = _HTML_TABLE_BLOCK_RE.sub(" ", stripped)
+    md_table_words = sum(
+        len(line.split())
+        for line in outside_html.splitlines()
+        if line.strip().startswith("|")
+    )
+    word_ratio = (html_table_words + md_table_words) / total_words if total_words else 0.0
+
+    # Also compute non-empty line ratio (handles multi-line HTML tables and Markdown tables)
+    lines = [line for line in stripped.splitlines() if line.strip()]
+    table_lines = 0
+    in_html_table = False
+    for line in lines:
+        line_clean = line.strip()
+        if in_html_table or _HTML_TABLE_OPEN_RE.search(line_clean):
+            table_lines += 1
+            if _HTML_TABLE_OPEN_RE.search(line_clean):
+                in_html_table = True
+            if _HTML_TABLE_CLOSE_RE.search(line_clean):
+                in_html_table = False
+        elif line_clean.startswith("|"):
+            table_lines += 1
+
+    line_ratio = table_lines / len(lines) if lines else 0.0
+    if max(word_ratio, line_ratio) > 0.6:
         return "table"
     return "mixed"
 

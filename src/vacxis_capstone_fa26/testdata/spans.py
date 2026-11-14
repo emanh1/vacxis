@@ -12,9 +12,11 @@ import random
 import re
 
 # A markdown table row starts with a pipe and a separator row is just pipes
-# and dashes.
+# and dashes. HTML table blocks/rows start with table markup tags.
 _TABLE_LINE_RE = re.compile(r"^\s*\|.*\|\s*$")
 _TABLE_SEP_RE = re.compile(r"^[\s|:-]+$")
+_HTML_TABLE_LINE_RE = re.compile(r"^\s*</?(?:table|thead|tbody|tfoot|tr|td|th)\b", re.IGNORECASE)
+_HTML_TABLE_TAG_RE = re.compile(r"</?(?:table|thead|tbody|tfoot|tr|td|th)\b", re.IGNORECASE)
 _HEADER_LINE_RE = re.compile(r"^\[CHỦ ĐỀ:.*\] > \[MỤC:")
 
 # Sentence splitter. The corpus uses `. `, `? `, `! ` and `.\n` a lot.
@@ -50,6 +52,8 @@ def _split_sentences(text: str) -> list[tuple[int, int]]:
         if _HEADER_LINE_RE.match(first_line):
             continue
         if _TABLE_LINE_RE.match(first_line) or _TABLE_SEP_RE.match(first_line):
+            continue
+        if _HTML_TABLE_LINE_RE.match(first_line) or _HTML_TABLE_TAG_RE.search(snippet):
             continue
         cleaned.append((start, end))
     return cleaned

@@ -30,13 +30,31 @@ BOLD_HEADING_PATTERN = re.compile(
     r"^\*\*(?:([0-9]{1,2}(?:\.[0-9]{1,2})*\.?)\s*)?([^\*]+)\*\*:?\s*$"
 )
 PAGE_MARKER_PATTERN = re.compile(
-    r"^(?:Page\s+\d+\s+of\s+\d+|TRANG\s+\d+.*|---|\d+/\d+|\[Page\s*\d+\])$",
+    r"^(?:#{1,6}\s*(?:\[?\s*(?:PAGE|Trang)\s*\d+[^\]]*\]?)|Page\s+\d+\s+of\s+\d+|TRANG\s+\d+.*|---|\d+/\d+|\\?\[Page\s*\d+\\?\])$",
     re.IGNORECASE,
 )
 TABLE_LINE_PATTERN = re.compile(r"^\|.*\|")
 NUMBERED_HEADER_PATTERN = re.compile(
     r"^(?:([0-9]{1,2}(?:\.[0-9]{1,2})*\.?)\s+)[A-ZÀ-Ỹ]"
 )
+
+# HTML patterns for table state, headings, captions, and wrapper divs
+HTML_TABLE_OPEN_PATTERN = re.compile(r"<table\b", re.IGNORECASE)
+HTML_TABLE_CLOSE_PATTERN = re.compile(r"</table\s*>", re.IGNORECASE)
+HTML_HEADING_PATTERN = re.compile(r"^<h([1-6])\b[^>]*>(.*?)</h\1\s*>$", re.IGNORECASE)
+HTML_P_PATTERN = re.compile(r"^<p\b[^>]*>(.*?)</p\s*>$", re.IGNORECASE)
+HTML_EMPHASIS_PATTERN = re.compile(
+    r"^(?:<(?:strong|b|u)\b[^>]*>\s*)+(.+?)(?:\s*</(?:strong|b|u)\s*>)+$",
+    re.IGNORECASE,
+)
+HTML_DIV_ONLY_PATTERN = re.compile(r"^</?div\b[^>]*>$", re.IGNORECASE)
+HTML_DIV_WRAPPER_STRIP_PATTERN = re.compile(r"^(?:<div\b[^>]*>\s*)+|(?:\s*</div\s*>)+$", re.IGNORECASE)
+HTML_TAG_STRIP_PATTERN = re.compile(r"<[^>]+>")
+
+
+def _strip_html_tags(text: str) -> str:
+    """Remove HTML tags and normalize surrounding whitespace."""
+    return " ".join(HTML_TAG_STRIP_PATTERN.sub(" ", text).split())
 
 
 def _is_boilerplate(text: str) -> bool:
@@ -66,6 +84,58 @@ def _is_page_marker(line: str) -> bool:
     return bool(PAGE_MARKER_PATTERN.match(line_clean))
 
 
+def _update_html_table_state(line_clean: str, in_html_table: bool) -> bool:
+    """Update whether parser is currently inside an HTML <table> block."""
+    last_open = -1
+    for m in HTML_TABLE_OPEN_PATTERN.finditer(line_clean):
+        last_open = m.start()
+    last_close = -1
+    for m in HTML_TABLE_CLOSE_PATTERN.finditer(line_clean):
+        last_close = m.start()
+
+    if last_open == -1 and last_close == -1:
+        return in_html_table
+    if last_open > last_close:
+        return True
+    return False
+
+
+def _match_html_heading_or_caption(line_clean: str) -> tuple[bool, int, str]:
+    """Detect HTML headings (<h1..h6>) and <p>-wrapped headings or table captions."""
+    matched_hh = HTML_HEADING_PATTERN.match(line_clean)
+    if matched_hh:
+        raw_text = _strip_html_tags(matched_hh.group(2)).strip()
+        if raw_text and not _is_boilerplate(raw_text) and not _is_page_marker(raw_text):
+            matched_tb = TABLE_HEADER_PATTERN.match(raw_text)
+            if matched_tb or re.match(r"^Bảng(?:\s+\d+)?[:\.]", raw_text, re.IGNORECASE):
+                return True, 4, matched_tb.group(2).strip() if matched_tb else raw_text
+            return True, int(matched_hh.group(1)), raw_text
+        return False, 2, ""
+
+    matched_p = HTML_P_PATTERN.match(line_clean)
+    if matched_p:
+        inner = matched_p.group(1).strip()
+        plain_text = _strip_html_tags(inner).strip()
+        if not plain_text:
+            return False, 2, ""
+
+        matched_tb = TABLE_HEADER_PATTERN.match(plain_text)
+        if matched_tb:
+            return True, 4, matched_tb.group(2).strip()
+
+        matched_em = HTML_EMPHASIS_PATTERN.match(inner)
+        if matched_em and len(plain_text.split()) <= 20 and not _is_boilerplate(plain_text):
+            matched_num = re.match(r"^([0-9]{1,2}(?:\.[0-9]{1,2})*\.?)\s+(.+)$", plain_text)
+            if matched_num:
+                parts = [p for p in matched_num.group(1).split(".") if p]
+                return True, min(1 + len(parts), 5), plain_text
+            words = plain_text.split()
+            level = 2 if words and all(w.isupper() for w in words) else 3
+            return True, level, plain_text
+
+    return False, 2, ""
+
+
 def _is_noise_line(line: str) -> bool:
     """Check if line is OCR artifact or watermark."""
     line_clean = line.strip()
@@ -93,6 +163,7 @@ def parse_markdown_to_sections(md_text: str) -> list[dict]:
     current_level = 1
     current_body: list[str] = []
     current_has_table = False
+    in_html_table = False
 
     # Heading hierarchy stack: list of (level, header_text)
     heading_stack: list[tuple[int, str]] = []
@@ -114,6 +185,12 @@ def parse_markdown_to_sections(md_text: str) -> list[dict]:
     for line in lines:
         line_clean = line.strip()
 
+        if in_html_table or HTML_TABLE_OPEN_PATTERN.search(line_clean):
+            current_has_table = True
+            current_body.append(line)
+            in_html_table = _update_html_table_state(line_clean, in_html_table)
+            continue
+
         if not line_clean:
             if current_body:
                 current_body.append("")
@@ -122,17 +199,22 @@ def parse_markdown_to_sections(md_text: str) -> list[dict]:
         if _is_page_marker(line_clean) or _is_noise_line(line_clean):
             continue
 
+        if HTML_DIV_ONLY_PATTERN.match(line_clean):
+            continue
+
         if TABLE_LINE_PATTERN.match(line_clean):
             current_has_table = True
             current_body.append(line)
             continue
+
+        heading_candidate = HTML_DIV_WRAPPER_STRIP_PATTERN.sub("", line_clean).strip()
 
         is_new_section = False
         new_header = ""
         new_level = 2
 
         # 1. Table caption pattern: Bảng 1: ..., **Bảng 3: ...**
-        matched_tb = TABLE_HEADER_PATTERN.match(line_clean)
+        matched_tb = TABLE_HEADER_PATTERN.match(heading_candidate)
         if matched_tb:
             is_new_section = True
             new_level = 4
@@ -140,16 +222,24 @@ def parse_markdown_to_sections(md_text: str) -> list[dict]:
 
         # 2. Standard markdown heading: # / ## / ### / ####
         if not is_new_section:
-            matched_h = HEADING_PATTERN.match(line_clean)
+            matched_h = HEADING_PATTERN.match(heading_candidate)
             if matched_h:
                 is_new_section = True
                 new_level = len(matched_h.group(1))
                 new_header = matched_h.group(2).strip()
 
+        # 2b. HTML heading (<h1..h6>) or <p>-wrapped heading / table caption
+        if not is_new_section:
+            matched_html, html_level, html_header = _match_html_heading_or_caption(heading_candidate)
+            if matched_html:
+                is_new_section = True
+                new_level = html_level
+                new_header = html_header
+
         # 3. Bold heading: **3.1. Chỉ định** or **THÀNH PHẦN**
         if not is_new_section:
-            matched_b = BOLD_HEADING_PATTERN.match(line_clean)
-            if matched_b and len(line_clean.split()) <= 20:
+            matched_b = BOLD_HEADING_PATTERN.match(heading_candidate)
+            if matched_b and len(heading_candidate.split()) <= 20:
                 raw_text = matched_b.group(2).strip()
                 if not _is_boilerplate(raw_text):
                     is_new_section = True
@@ -164,22 +254,22 @@ def parse_markdown_to_sections(md_text: str) -> list[dict]:
                         new_header = raw_text
 
         # 4. Uppercase text heading without markdown tag (e.g. CHỈ ĐỊNH ĐIỀU TRỊ)
-        if not is_new_section and _is_all_caps_heading(line_clean):
+        if not is_new_section and _is_all_caps_heading(heading_candidate):
             is_new_section = True
             new_level = 2
-            new_header = line_clean
+            new_header = heading_candidate
 
         # 5. Numbered heading without markdown tag (e.g. 1. Mô tả, 6. Liều dùng)
         if not is_new_section:
-            matched_num = NUMBERED_HEADER_PATTERN.match(line_clean)
-            if matched_num and len(line_clean.split()) <= 12:
-                line_lower = line_clean.lower()
-                if any(kw in line_lower for kw in MEDICAL_KEYWORDS) and not _is_boilerplate(line_clean):
+            matched_num = NUMBERED_HEADER_PATTERN.match(heading_candidate)
+            if matched_num and len(heading_candidate.split()) <= 12:
+                line_lower = heading_candidate.lower()
+                if any(kw in line_lower for kw in MEDICAL_KEYWORDS) and not _is_boilerplate(heading_candidate):
                     is_new_section = True
                     num_str = matched_num.group(1)
                     parts = [p for p in num_str.split(".") if p]
                     new_level = min(1 + len(parts), 5)
-                    new_header = line_clean
+                    new_header = heading_candidate
 
         if is_new_section:
             _flush_section()

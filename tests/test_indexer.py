@@ -16,6 +16,9 @@ from vacxis_capstone_fa26.indexing.indexer import (
     load_chunks_from_parquet,
 )
 from vacxis_capstone_fa26.indexing.main import run_indexing_pipeline
+from vacxis_capstone_fa26.indexing.parser import parse_markdown_to_sections
+from vacxis_capstone_fa26.indexing.schemas import detect_content_type
+from vacxis_capstone_fa26.testdata.spans import _split_sentences
 
 
 def test_convert_sparse_to_qdrant_empty():
@@ -307,3 +310,131 @@ def test_indexing_budgets_final_embedding_text(tmp_path):
     parts = [record["text"].splitlines()[1:] for record in records[2:]]
     assert all(lines[:2] == heading for lines in parts)
     assert parts[1][2:7] == parts[0][-5:]
+
+
+def test_parser_detects_html_headings_tables_divs_and_page_markers():
+    md = "\n".join([
+        "<h2>THÀNH PHẦN</h2>",
+        "<p>Mỗi liều 0.5 ml chứa kháng nguyên.</p>",
+        "<div>",
+        "<p><strong>Bảng 1: Thành phần vắc xin</strong></p>",
+        "<table>",
+        "<thead><tr><th>Hoạt chất</th><th>Hàm lượng</th></tr></thead>",
+        "<tbody>",
+        "<tr><td># Không tách mục trong bảng</td><td>10 mcg</td></tr>",
+        "</tbody>",
+        "</table>",
+        "# PAGE 12",
+        r"\[Page 13\]",
+        "<p><sup>a</sup> Chú thích quan trọng sau bảng.</p>",
+        "</div>",
+        "<p><u><strong>2. Liều dùng</strong></u></p>",
+        "<p>Tiêm bắp.</p>",
+    ])
+
+    sections = parse_markdown_to_sections(md)
+
+    assert [s["header"] for s in sections] == [
+        "THÀNH PHẦN",
+        "Bảng 1: Thành phần vắc xin",
+        "2. Liều dùng",
+    ]
+    assert sections[0]["has_table"] is False
+    assert sections[1]["has_table"] is True
+    assert sections[1]["parent_header"] == "THÀNH PHẦN"
+    assert sections[1]["level"] == 4
+    assert "<sup>a</sup>" in sections[1]["content"]
+    assert "# PAGE 12" not in sections[1]["content"]
+    assert r"\[Page 13\]" not in sections[1]["content"]
+    assert sections[2]["level"] == 2
+
+
+def test_count_tokens_accounts_for_html_tags_without_changing_plain_text():
+    assert _count_tokens("một hai ba bốn") == 4
+    assert _count_tokens("giá trị a < b là đúng") == 7
+    html_row = "<tr><td>A</td><td>B</td></tr>"
+    assert _count_tokens(html_row) > len(html_row.split())
+
+
+def test_chunker_keeps_small_html_table_with_footnote():
+    html_table = (
+        "<table>\n"
+        "<thead><tr><th>Nhóm tuổi</th><th>Liều</th></tr></thead>\n"
+        "<tbody><tr><td>Trẻ em</td><td>0.5 ml</td></tr></tbody>\n"
+        "</table>\n"
+        "<p><sup>a</sup> Tiêm nhắc lại sau 6 tháng.</p>"
+    )
+    section = _section(html_table, header="Bảng 1: Lịch tiêm", has_table=True)
+
+    chunk, = create_medical_chunks([section], max_tokens=_count_tokens(html_table) + 10)
+
+    assert chunk["has_table"] is True
+    assert chunk["content_type"] == "table"
+    assert "<sup>a</sup>" in chunk["content"]
+    assert "<table>" in chunk["content"]
+
+
+def test_chunker_splits_large_html_table_repeating_thead_and_overlap():
+    thead = "<thead><tr><th>Nhóm</th><th>Giá trị</th></tr></thead>"
+    rows = [
+        f"<tr><td>nhóm-{i}</td><td>một hai ba bốn năm</td></tr>"
+        for i in range(12)
+    ]
+    html = f"<table>\n{thead}\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>"
+    section = _section(html, header="Bảng 2: Dữ liệu", has_table=True)
+
+    chunks = create_medical_chunks([section], max_tokens=120, chunk_overlap_tokens=30)
+
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert chunk["has_table"] is True
+        assert chunk["content_type"] == "table"
+        assert thead in chunk["content"]
+        assert "<table>" in chunk["content"]
+        assert "</table>" in chunk["content"]
+        assert _count_tokens(chunk["content"]) <= 120
+
+
+def test_chunker_promotes_first_th_row_when_thead_missing_and_splits_oversized_row():
+    header_row = "<tr><th>Cột A</th><th>Cột B</th></tr>"
+    big_row = (
+        "<tr><td>"
+        + " ".join(f"giá-trị-{i}" for i in range(45))
+        + "</td><td>Ngắn</td></tr>"
+    )
+    normal_row = "<tr><td>Nhỏ</td><td>Bình thường</td></tr>"
+    html = f"<table>\n<tbody>\n{header_row}\n{big_row}\n{normal_row}\n</tbody>\n</table>"
+    section = _section(html, header="Bảng 3: Không thead", has_table=True)
+
+    chunks = create_medical_chunks([section], max_tokens=80, chunk_overlap_tokens=0)
+
+    assert len(chunks) >= 2
+    for chunk in chunks:
+        assert "<thead>" in chunk["content"]
+        assert header_row in chunk["content"]
+        assert _count_tokens(chunk["content"]) <= 80
+
+
+def test_detect_content_type_for_html_and_mixed():
+    html_only = "<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
+    assert detect_content_type(html_only, True) == "table"
+    mixed = (
+        "<p>Đoạn văn bản giới thiệu rất dài về chỉ định tiêm chủng cho nhiều đối tượng khác nhau.</p>\n"
+        "<p>Thêm một đoạn giải thích chi tiết về cách sử dụng và bảo quản vắc xin.</p>\n"
+        "<p>Thêm đoạn thứ ba mô tả các lưu ý quan trọng trước khi tiêm.</p>\n"
+        "<table><tr><td>A</td><td>1</td></tr></table>"
+    )
+    assert detect_content_type(mixed, True) == "mixed"
+
+
+def test_spans_split_sentences_skips_html_table_markup():
+    chunk_text = (
+        "[CHỦ ĐỀ: Vắc xin A] > [MỤC: Liều dùng]\n"
+        "<table><thead><tr><th>Độ tuổi</th></tr></thead><tbody><tr><td>Người lớn cần tiêm một liều duy nhất 0.5 ml vào cơ delta.</td></tr></tbody></table>\n\n"
+        "Liều tiêm bắp tiêu chuẩn cho người lớn là 0.5 ml mỗi lần tiêm tại cơ delta."
+    )
+    spans = _split_sentences(chunk_text)
+    extracted = [chunk_text[s:e] for s, e in spans]
+    assert len(extracted) == 1
+    assert "<table>" not in extracted[0]
+    assert "Liều tiêm bắp tiêu chuẩn" in extracted[0]
