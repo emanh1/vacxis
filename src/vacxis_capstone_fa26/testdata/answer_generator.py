@@ -1,10 +1,12 @@
 """Reference answer generator and claim-evidence mapper for Vaccine RAG.
 
 The offline extractive generator (``ExtractiveAnswerGenerator``) is the
-deterministic fallback: it composes the answer from the record's score-3
-chunks without any model call. The vLLM path (``QwenAnswerGenerator`` in
-:mod:`vllm_rewrite`) reuses the shared ``REFERENCE_ANSWER_FORMAT`` and
-``SYSTEM_PROMPT`` below so both paths emit byte-compatible records.
+deterministic fallback for ``--dry-run-answers``: it composes the answer
+from the record's score-3 chunks without any model call, then commits the
+record's derived fields via ``validator.apply_labels``. The LLM path
+(``QwenAnswerStage`` in :mod:`stages`) reuses the shared
+``REFERENCE_ANSWER_FORMAT`` and ``UNANSWERABLE_FALLBACK_ANSWER`` below so
+both paths emit byte-compatible records.
 
 Both generate:
 - ``REFERENCE_ANSWER``: concise, factual Vietnamese medical answers with inline
@@ -48,26 +50,32 @@ REFERENCE_ANSWER_FORMAT = {
     },
 }
 
-SYSTEM_PROMPT = """Bạn tổng hợp câu trả lời tham chiếu tiếng Việt từ CHUNKS được cung cấp.
-Chỉ sử dụng thông tin trong CHUNKS, không tự suy diễn. Giữ nguyên phạm vi câu hỏi.
-Sau mỗi khẳng định, chèn [CHUNK_ID] và cung cấp claim cùng evidence_quote nguyên văn.
-ANSWERABILITY là nhãn đầu vào, không được thay đổi. Với PARTIALLY_ANSWERABLE,
-chỉ trả lời phần có bằng chứng và nêu rõ phần thiếu. Nếu không thể trả lời,
-trả lời rằng tài liệu không cung cấp thông tin và để claim_evidence_map rỗng.
-Trả JSON theo schema được cung cấp, không dùng Markdown."""
+class AnswerStage(Protocol):
+    """Fills label/answer/claim map on records, in place."""
 
-
-class AnswerGenerator(Protocol):
-    def generate_answers(self, queries: list[dict[str, Any]]) -> list[dict[str, Any]]: ...
+    def answer(self, records: list[dict[str, Any]]) -> None: ...
 
 
 class ExtractiveAnswerGenerator:
-    """Offline deterministic answer generator over the record's score-3 chunks."""
+    """Offline deterministic answer generator over the record's score-3 chunks.
 
-    def generate_answers(self, queries: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        for q in queries:
-            self._generate_single(q)
-        return queries
+    Implements :class:`AnswerStage`. After composing the answer it commits
+    the record's derived fields via :func:`validator.apply_labels` so the
+    extractive path and the LLM path agree on ``EVIDENCE_COMPLETENESS`` and
+    evidence clearing for UNANSWERABLE records.
+    """
+
+    def answer(self, records: list[dict[str, Any]]) -> None:
+        from .validator import apply_labels
+
+        for record in records:
+            self._generate_single(record)
+            apply_labels(
+                record,
+                answerability=str(record.get("ANSWERABILITY") or "ANSWERABLE"),
+                reference_answer=str(record.get("REFERENCE_ANSWER") or ""),
+                claim_evidence_map=record.get("CLAIM_EVIDENCE_MAP") or [],
+            )
 
     def _generate_single(self, q: dict[str, Any]) -> None:
         answerability = q.get("ANSWERABILITY")

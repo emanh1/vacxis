@@ -3,8 +3,9 @@
 The query-driven path: raw queries from ``query.parquet`` are rewritten into
 vaccine-domain questions (by Qwen via vLLM, or offline), the proposed
 vaccine is resolved against the corpus, and each record is grounded on a real
-chunk with distractors. Orchestration: :mod:`distractors`, :mod:`validator`,
-reference answer generation.
+chunk with distractors. Orchestration: :mod:`distractors`, :mod:`validator`.
+Labels, reference answers and claim maps are filled in later, by the
+unified answer stage, on the final (possibly masked) query.
 """
 from __future__ import annotations
 
@@ -12,7 +13,6 @@ import hashlib
 import random
 from typing import Any
 
-from .answer_generator import AnswerGenerator
 from .chunks import Chunk, index_by_category, index_by_vaccine
 from .distractors import sample_distractors, score_for
 from .taxonomy import QUERY_TYPE_DEFS
@@ -58,14 +58,14 @@ def build_queries(
     rewriter,
     rng: random.Random,
     distractors_per_query: int,
-    answer_generator: AnswerGenerator | None = None,
 ) -> list[dict]:
     """Ground rewritten source queries onto the corpus and emit records.
 
     The rewriter proposes a ``vaccine`` name; it is resolved against
     ``index_by_vaccine`` (fuzzy: exact, then case-insensitive substring).
     Unresolvable names fall back to a random corpus vaccine so the record
-    always points at a real chunk.
+    always points at a real chunk. ``REFERENCE_ANSWER`` is left as ``None``
+    until the answer stage fills it in on the final query.
     """
     by_category = index_by_category(chunks)
     by_vaccine = index_by_vaccine(chunks)
@@ -154,9 +154,6 @@ def build_queries(
     for i, q in enumerate(queries, start=1):
         q["QUERY_ID"] = f"VAX_Q_{i:04d}"
 
-    if answer_generator is not None:
-        answer_generator.generate_answers(queries)
-
     return queries
 
 
@@ -166,12 +163,10 @@ def generate_and_validate(
     rewriter,
     rng: random.Random,
     distractors_per_query: int,
-    answer_generator: AnswerGenerator | None = None,
 ) -> tuple[list[dict], object]:
     """Ground the queries and validate the result against the corpus."""
     queries = build_queries(
         chunks, source_queries, rewriter, rng, distractors_per_query,
-        answer_generator=answer_generator,
     )
     by_category = index_by_category(chunks)
     # Every real type must appear at least once; the query-driven path has no

@@ -2,11 +2,10 @@
 
 Pipeline: load raw user queries from ``query.parquet``, rewrite them into
 vaccine-domain questions with Qwen2.5 via vLLM (grounded on chunks.parquet),
-generate reference answers (vLLM, or extractive with ``--dry-run-answers``),
-validate, split at ``--split-at`` (default 300), symptom-mask the tail so its
-queries stay consistent with the evidence, optionally re-verify labels with
-``--relabel``, and write two files: the head to ``--out`` and the masked
-tail to ``--out-masked``.
+split at ``--split-at`` (default 300), symptom-mask the tail, run ONE unified
+LLM pass (answer + label, on the final/masked queries) over both files,
+drop records that fail the deterministic invariants, and write two files:
+the head to ``--out`` and the masked tail to ``--out-masked``.
 """
 from __future__ import annotations
 
@@ -19,21 +18,18 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 from .answer_generator import ExtractiveAnswerGenerator
+from .checkpoint import VLLMCheckpoint
 from .chunks import index_by_category, index_by_vaccine, load_chunks
 from .generator import derive_default_seed, generate_and_validate
-from .validator import validate
 from .postprocess import apply_replacements, filter_no_han, split_records
-from .relabel import apply_verification, verify_record
-from .vllm_rewrite import (
-    DEFAULT_VLLM_MODEL,
-    QwenAnswerGenerator,
-    QwenLabelVerifier,
+from .stages import (
+    PROMPT_VERSION,
+    QwenAnswerStage,
     QwenRewriter,
     QwenSymptomMasker,
-    VLLMCheckpoint,
-    VLLMClient,
-    VLLMError,
 )
+from .validator import validate, verify_record
+from .vllm_client import DEFAULT_VLLM_MODEL, VLLMClient, VLLMError
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -46,7 +42,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
             "Generate a golden evaluation dataset grounded on chunks.parquet: "
-            "vLLM rewrite + answers, split, symptom-mask the tail, two outputs."
+            "vLLM rewrite + unified answer/label, split, symptom-mask the tail, "
+            "two outputs."
         ),
     )
     p.add_argument(
@@ -119,16 +116,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "JSON file to cache rewrites + answers + masks + verifications so "
-            "a crashed/killed run can resume. Re-run with the same path to "
-            "continue; the meta header rejects a model/seed/prompt mismatch."
+            "JSON file to cache rewrites + answers + masks so a crashed/killed "
+            "run can resume. Re-run with the same path to continue; the meta "
+            "header rejects a model/seed/prompt mismatch."
         ),
     )
     p.add_argument(
         "--answers-batch-size",
         type=int,
         default=64,
-        help="Answer-generation and masking batch size (default: %(default)s).",
+        help=(
+            "Masking and answer-stage batch size (default: %(default)s). "
+            "Each batch is one LLM call and one checkpoint save point."
+        ),
     )
     p.add_argument(
         "--rewrite-batch-size",
@@ -142,7 +142,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--no-validate",
         action="store_true",
-        help="Skip the post-write validation pass.",
+        help="Skip the post-grounding validation pass.",
     )
     p.add_argument(
         "--strict-validation",
@@ -153,32 +153,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--filter-no-han",
         action="store_true",
         help="Drop records containing any Han (CJK) character before writing.",
-    )
-    p.add_argument(
-        "--relabel",
-        action="store_true",
-        help=(
-            "Re-derive ANSWERABILITY, REFERENCE_ANSWER and CLAIM_EVIDENCE_MAP "
-            "from the final query and its evidence, then drop records that do "
-            "not satisfy the invariants."
-        ),
-    )
-    p.add_argument(
-        "--relabel-scope",
-        choices=["all", "masked"],
-        default="masked",
-        help=(
-            "Which records --relabel covers: only the symptom-masked tail "
-            "(default) or both files ('all'). The head is unmodified, so "
-            "'all' re-checks records whose claims may already be broken and "
-            "can drop them."
-        ),
-    )
-    p.add_argument(
-        "--verify-batch-size",
-        type=int,
-        default=64,
-        help="Verification batch size (default: %(default)s).",
     )
     p.add_argument(
         "--split-at",
@@ -223,39 +197,29 @@ def _cap_by_type(queries: list[dict], per_type: int) -> list[dict]:
     return kept
 
 
-def _apply_relabel(
+def _drop_failed(
     records: list[dict],
-    verifier: QwenLabelVerifier,
 ) -> tuple[list[dict], list[tuple[str, str]]]:
-    """Re-derive labels and answers, then drop records that fail the checks.
+    """Drop records that fail the deterministic invariants.
 
     Returns the surviving records and the list of ``(QUERY_ID, reason)``
     pairs for the records that were dropped.
     """
-    results = verifier.verify(records)
     kept: list[dict] = []
     dropped: list[tuple[str, str]] = []
-
-    for record, result in zip(records, results):
-        updated = apply_verification(
-            record,
-            answerability=result["answerability"],
-            reference_answer=result["reference_answer"],
-            claim_evidence_map=result["claim_evidence_map"],
-        )
-        keep, reason = verify_record(updated)
+    for record in records:
+        keep, reason = verify_record(record)
         if keep:
-            kept.append(updated)
+            kept.append(record)
         else:
             dropped.append((str(record.get("QUERY_ID", "?")), reason))
-
     return kept, dropped
 
 
 def _report_dropped(scope: str, dropped: list[tuple[str, str]]) -> None:
     if not dropped:
         return
-    print(f"  -> --relabel: dropped {len(dropped)} {scope} record(s):")
+    print(f"  -> invariants: dropped {len(dropped)} {scope} record(s):")
     for query_id, reason in dropped[:20]:
         print(f"       {query_id}: {reason}")
     if len(dropped) > 20:
@@ -294,11 +258,16 @@ def main(argv: list[str] | None = None) -> int:
     rng = random.Random(seed)
     print(f"Using seed: {seed}")
 
-    # One checkpoint store shared by all LLM stages (rewrites, answers,
-    # symptom masks, verifications) so a single file resumes the whole run.
+    # One checkpoint store shared by all LLM stages (rewrites, masks,
+    # answers) so a single file resumes the whole run.
     checkpoint: VLLMCheckpoint | None = None
     if args.checkpoint is not None:
-        checkpoint = VLLMCheckpoint(args.checkpoint, model=args.vllm_model, seed=seed)
+        checkpoint = VLLMCheckpoint(
+            args.checkpoint,
+            model=args.vllm_model,
+            seed=seed,
+            prompt_version=PROMPT_VERSION,
+        )
         try:
             checkpoint.load()
         except VLLMError as exc:
@@ -317,105 +286,94 @@ def main(argv: list[str] | None = None) -> int:
         checkpoint=checkpoint,
         rewrite_batch_size=args.rewrite_batch_size,
     )
-    ans_gen = (
+    masker = QwenSymptomMasker(
+        client,
+        checkpoint=checkpoint,
+        batch_size=args.answers_batch_size,
+    )
+    answer_stage = (
         ExtractiveAnswerGenerator()
         if args.dry_run_answers
-        else QwenAnswerGenerator(
+        else QwenAnswerStage(
             client,
             checkpoint=checkpoint,
             batch_size=args.answers_batch_size,
         )
     )
-    print(f"Using Qwen via vLLM: {args.vllm_model}" +
-          (" (extractive answers)" if args.dry_run_answers else ""))
+    if args.dry_run_answers:
+        print("Using offline extractive answers")
+    else:
+        print(f"Using Qwen via vLLM: {args.vllm_model}")
 
     try:
+        # 1-2. rewrite (LLM), ground, validate.
         queries, rpt = generate_and_validate(
             chunks,
             source_queries,
             rewriter,
             rng,
             args.distractors,
-            answer_generator=ans_gen,
         )
-    except VLLMError as exc:
-        print(f"[ERROR] {exc}", file=sys.stderr)
-        return 1
-    print(f"  -> {len(queries)} queries generated")
+        print(f"  -> {len(queries)} queries generated")
 
-    if args.per_type > 0:
-        queries = _cap_by_type(queries, args.per_type)
-        rpt = validate(
-            queries,
-            chunks,
-            index_by_category(chunks),
-            expected_per_type=0,
-            expected_types=sorted({q.get("QUERY_TYPE") for q in queries}),
-        )
-
-    if not args.no_validate:
-        print(rpt.render())
-        if not rpt.ok:
-            print("[ERROR] validation failed; not writing dataset.", file=sys.stderr)
-            return 2
-        if args.strict_validation and rpt.warnings:
-            print(
-                f"[ERROR] --strict-validation: {len(rpt.warnings)} warnings "
-                "treated as failures.",
-                file=sys.stderr,
+        # 3. optional cap + re-validate against the post-cap type union.
+        if args.per_type > 0:
+            queries = _cap_by_type(queries, args.per_type)
+            rpt = validate(
+                queries,
+                chunks,
+                index_by_category(chunks),
+                expected_per_type=0,
+                expected_types=sorted({q.get("QUERY_TYPE") for q in queries}),
             )
-            return 2
 
-    if args.filter_no_han:
-        before = len(queries)
-        queries = filter_no_han(queries)
-        print(f"  -> --filter-no-han: dropped {before - len(queries)} records")
+        # 4. validation gate.
+        if not args.no_validate:
+            print(rpt.render())
+            if not rpt.ok:
+                print("[ERROR] validation failed; not writing dataset.", file=sys.stderr)
+                return 2
+            if args.strict_validation and rpt.warnings:
+                print(
+                    f"[ERROR] --strict-validation: {len(rpt.warnings)} warnings "
+                    "treated as failures.",
+                    file=sys.stderr,
+                )
+                return 2
 
-    # Split and mask the tail.
-    head, tail = split_records(queries, args.split_at)
-    masker = QwenSymptomMasker(
-        client,
-        checkpoint=checkpoint,
-        batch_size=args.answers_batch_size,
-    )
-    print(f"Masking symptoms of the tail with Qwen via vLLM: {args.vllm_model}")
-    try:
+        # 5. han filter.
+        if args.filter_no_han:
+            before = len(queries)
+            queries = filter_no_han(queries)
+            print(f"  -> --filter-no-han: dropped {before - len(queries)} records")
+
+        # 6. split head/tail.
+        head, tail = split_records(queries, args.split_at)
+
+        # 7. mask the tail (LLM, or skipped on the dry-run path) and apply
+        # validated replacements.
+        print("Masking symptoms of the tail")
         pairs = masker.mask(tail)
-    except VLLMError as exc:
-        print(f"[ERROR] {exc}", file=sys.stderr)
-        return 1
+        masked_tail: list[dict] = []
+        applied_total = 0
+        for record, record_pairs in zip(tail, pairs):
+            updated, report = apply_replacements(record, record_pairs)
+            applied_total += len(report["applied"])
+            masked_tail.append(updated)
 
-    masked_tail: list[dict] = []
-    applied_total = 0
-    for record, record_pairs in zip(tail, pairs):
-        updated, report = apply_replacements(record, record_pairs)
-        applied_total += len(report["applied"])
-        masked_tail.append(updated)
+        # 8. one unified answer+label pass over both files (LLM for the
+        # default path; deterministic for --dry-run-answers).
+        answer_stage.answer(head)
+        answer_stage.answer(masked_tail)
 
-    # The masker rewrote the tail's queries, so the labels and answers of
-    # the tail (and of the head, when it is covered too) describe the old
-    # question. Re-derive them from the final queries.
-    if args.relabel:
-        verifier = QwenLabelVerifier(
-            client,
-            checkpoint=checkpoint,
-            batch_size=args.verify_batch_size,
-        )
-        print(f"Verifying records with Qwen via vLLM: {args.vllm_model}")
-        head_dropped: list[tuple[str, str]] = []
-        if args.relabel_scope == "all":
-            try:
-                head, head_dropped = _apply_relabel(head, verifier)
-            except VLLMError as exc:
-                print(f"[ERROR] {exc}", file=sys.stderr)
-                return 1
-        try:
-            masked_tail, tail_dropped = _apply_relabel(masked_tail, verifier)
-        except VLLMError as exc:
-            print(f"[ERROR] {exc}", file=sys.stderr)
-            return 1
+        # 9. deterministic invariant drop, reported per file.
+        head, head_dropped = _drop_failed(head)
+        masked_tail, tail_dropped = _drop_failed(masked_tail)
         _report_dropped("head", head_dropped)
         _report_dropped("masked", tail_dropped)
+    except VLLMError as exc:
+        print(f"[ERROR] {exc}", file=sys.stderr)
+        return 1
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
