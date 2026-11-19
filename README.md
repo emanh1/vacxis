@@ -13,7 +13,7 @@ Pipeline kiểm tra mã trích dẫn có nằm trong các đoạn đã cung cấ
 
 Tài liệu PDF được thu thập từ cổng dịch vụ công của Cục Quản lý Dược tại [dichvucong.dav.gov.vn](https://dichvucong.dav.gov.vn/). Mã trong `scrape_dataset/scrape_data.py` đọc danh sách đăng ký đã lưu và lấy lịch sử cùng thông tin nguyên liệu. `extract_documents.py` trích xuất đường dẫn tài liệu từ danh sách, gồm hướng dẫn sử dụng, nhãn, nhãn kết hợp hướng dẫn sử dụng và tài liệu tiêu chuẩn chất lượng. `download_documents.py` tải tài liệu vào thư mục theo số đăng ký và lưu tiến độ cùng lỗi tải.
 
-Nhóm dùng **Google Gemini** để chuyển PDF thành Markdown trước bước làm sạch và lập chỉ mục. [PLACEHOLDER: bổ sung model và phiên bản Gemini, giao diện hoặc script chuyển đổi, prompt, thời điểm, cấu hình và quy trình kiểm tra chất lượng.]
+Nhóm thu thập ngày 18/09/2026 từ 123 listing, loại 44 listing không có tài liệu, 1 lỗi URL, 2 thư mục rỗng và 1 chỉ có nhãn, còn 75 PDF hướng dẫn sử dụng. PDF được cắt bỏ phần không cần thiết, tải từng tệp lên website **Google Gemini** với model mặc định để chuyển sang Markdown. Ảnh bảng được chuyển thành HTML rồi chèn vào Markdown. Các tệp được rà soát thủ công sau chuyển đổi. [PLACEHOLDER: bổ sung prompt chuyển đổi nếu còn lưu.]
 
 ## Chạy cục bộ
 
@@ -38,7 +38,7 @@ uv run --extra retrieval --extra web --env-file .env vacxis-web
 
 ## Đánh giá và báo cáo
 
-Thứ tự khảo sát là **Naive → Advanced → Hybrid (baseline) → Table-aware → Graph RAG → Agent RAG**. Bản thảo tạm ánh xạ Naive sang BM25. [PLACEHOLDER: xác nhận ánh xạ này bằng cấu hình thí nghiệm.] Advanced dùng truy xuất dense BGE-M3. Hybrid hợp nhất thứ hạng dense và sparse của BGE-M3 và có thể chạy reranker. Xem [hướng dẫn đánh giá](evaluation/README.md) để chạy với cùng dữ liệu và độ sâu truy xuất.
+Thứ tự khảo sát là **Naive → Advanced → Hybrid (baseline) → Table-aware → Graph RAG → Agent RAG**. Naive dùng BM25. Advanced dùng truy xuất dense BGE-M3. Hybrid hợp nhất thứ hạng dense và sparse của BGE-M3 và có thể chạy reranker. Xem [hướng dẫn đánh giá](evaluation/README.md) để chạy với cùng dữ liệu và độ sâu truy xuất.
 
 - **Table-aware** — [PLACEHOLDER: bổ sung phiên bản triển khai riêng, cấu hình xử lý bảng, tập câu hỏi và chỉ số.]
 - **Graph RAG** — [PLACEHOLDER: bổ sung phiên bản triển khai, lược đồ và quy trình truy xuất đồ thị, giao thức đánh giá và chỉ số.]

@@ -5,7 +5,7 @@
 - `eval_dataset_300_final_fixed.json` is the default for live evaluation. It contains 300 working goldens, including 210 answerable and 90 partially answerable records. Sixty records are labeled table reasoning.
 - `eval_dataset_300_final.json` is the earlier version. Ordered source-chunk lists differ for 279 questions.
 - `eval_dataset_300_generation_results.json` contains 300 saved responses matching the corrected goldens. Each response contains four retrieved IDs. Score these rankings at cutoffs up to four.
-- `../test_dataset.json` contains 460 records in the query-driven dataset format and is the CLI default for the separate unanswerable pass. Record the actual subset used to assess abstention.
+- `../test_dataset.json` is a legacy 460-record artifact retained for unanswerable-query testing. Its labels include 222 unanswerable, 164 partially answerable and 74 answerable records. The additional pass loads all supplied records. [PLACEHOLDER: identify the explicitly selected unanswerable subset used for the report.]
 
 [PLACEHOLDER: identify the final adjudicated benchmark export, corpus revision and manifest for the saved responses.]
 
@@ -42,7 +42,7 @@ uv run --extra retrieval vacxis-eval --retrieval-only --top-k 10 \
   --out-json evaluation/hybrid_k10.json --out-md evaluation/hybrid_k10.md
 ```
 
-The `--baseline` CLI switch selects BM25, provisionally mapped to **Naive** in the draft. [PLACEHOLDER: confirm the Naive experiment mapping and run configuration.] **Advanced** searches the dense Qdrant index using the original query. **Hybrid (baseline)** is the study reference. It uses dense and learned sparse BGE-M3 retrieval, reciprocal rank fusion and reranking unless `--skip-rerank` is set.
+The `--baseline` CLI switch selects BM25 for **Naive**. **Advanced** searches the dense Qdrant index using the original query. **Hybrid (baseline)** is the study reference. It uses dense and learned sparse BGE-M3 retrieval, reciprocal rank fusion and reranking unless `--skip-rerank` is set.
 
 For end-to-end evaluation, remove `--retrieval-only`, supply the generation and judge environment via `uv run --extra retrieval --env-file .env vacxis-eval`, and use separate output paths. Record the judge model, generator, prompts, corpus and index revisions, query exclusions and scoring coverage. IR metrics treat labeled chunk IDs as relevant. A supporting alternative passage can receive no credit if absent from those labels.
 
