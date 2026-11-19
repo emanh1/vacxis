@@ -20,4 +20,6 @@ curl -X POST "http://localhost:6333/collections/VacxiS_Capstone_FA26/snapshots/u
 - Windows (PowerShell / CMD):
   curl.exe -s http://localhost:6333/collections/VacxiS_Capstone_FA26
 
-(Expected response: status="green", points_count=1466)
+Check collection health, vector configuration and actual point count after restoration. The checked-in Parquet corpus currently contains 1,744 chunks across 75 document IDs.
+
+[PLACEHOLDER: verify the snapshot's actual point count and chunk IDs against the Parquet corpus and record the matching revision before using it for evaluation.]

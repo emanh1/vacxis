@@ -38,7 +38,7 @@ uv run --extra retrieval --extra web --env-file .env vacxis-web
 
 ## Đánh giá và báo cáo
 
-Thứ tự khảo sát là **Naive → Advanced → Hybrid (baseline) → Table-aware → Graph RAG → Agent RAG**. Naive dùng BM25. Advanced dùng truy xuất dense BGE-M3. Hybrid hợp nhất thứ hạng dense và sparse của BGE-M3 và có thể chạy reranker. Xem [hướng dẫn đánh giá](evaluation/README.md) để chạy với cùng dữ liệu và độ sâu truy xuất.
+Thứ tự khảo sát là **Naive → Advanced → Hybrid (baseline) → Table-aware → Graph RAG → Agent RAG**. Bản thảo tạm ánh xạ Naive sang BM25. [PLACEHOLDER: xác nhận ánh xạ này bằng cấu hình thí nghiệm.] Advanced dùng truy xuất dense BGE-M3. Hybrid hợp nhất thứ hạng dense và sparse của BGE-M3 và có thể chạy reranker. Xem [hướng dẫn đánh giá](evaluation/README.md) để chạy với cùng dữ liệu và độ sâu truy xuất.
 
 - **Table-aware** — [PLACEHOLDER: bổ sung phiên bản triển khai riêng, cấu hình xử lý bảng, tập câu hỏi và chỉ số.]
 - **Graph RAG** — [PLACEHOLDER: bổ sung phiên bản triển khai, lược đồ và quy trình truy xuất đồ thị, giao thức đánh giá và chỉ số.]

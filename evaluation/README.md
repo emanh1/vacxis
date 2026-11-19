@@ -42,7 +42,7 @@ uv run --extra retrieval vacxis-eval --retrieval-only --top-k 10 \
   --out-json evaluation/hybrid_k10.json --out-md evaluation/hybrid_k10.md
 ```
 
-The `--baseline` CLI switch selects BM25 for **Naive**. **Advanced** searches the dense Qdrant index using the original query. **Hybrid (baseline)** is the study reference. It uses dense and learned sparse BGE-M3 retrieval, reciprocal rank fusion and reranking unless `--skip-rerank` is set.
+The `--baseline` CLI switch selects BM25, provisionally mapped to **Naive** in the draft. [PLACEHOLDER: confirm the Naive experiment mapping and run configuration.] **Advanced** searches the dense Qdrant index using the original query. **Hybrid (baseline)** is the study reference. It uses dense and learned sparse BGE-M3 retrieval, reciprocal rank fusion and reranking unless `--skip-rerank` is set.
 
 For end-to-end evaluation, remove `--retrieval-only`, supply the generation and judge environment via `uv run --extra retrieval --env-file .env vacxis-eval`, and use separate output paths. Record the judge model, generator, prompts, corpus and index revisions, query exclusions and scoring coverage. IR metrics treat labeled chunk IDs as relevant. A supporting alternative passage can receive no credit if absent from those labels.
 
