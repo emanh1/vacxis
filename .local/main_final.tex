@@ -1,0 +1,2086 @@
+\documentclass[sn-mathphys, oneside]{sn-jnl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{indentfirst}
+% Used to describe data
+\usepackage{listings}
+\usepackage{xcolor}
+\lstdefinelanguage{json}{
+    basicstyle=\ttfamily\footnotesize,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    literate=
+     *{0}{{{\color{blue}0}}}{1}
+      {1}{{{\color{blue}1}}}{1}
+      {2}{{{\color{blue}2}}}{1}
+      {3}{{{\color{blue}3}}}{1} 
+}      
+%
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{placeins}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[font=small,labelfont=bf,labelsep=colon]{caption}
+\captionsetup[table]{textfont=it, name=Table, labelsep=colon, skip=6pt}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode} 
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage[numbers]{natbib}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{float}
+\usepackage{mathptmx} 
+\usepackage[most]{tcolorbox}
+% \documentclass{article}
+% \usepackage[utf8]{inputenc}
+% \usepackage[vietnamese]{babel}
+\usepackage{tikz}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{tocloft} % Package for customizing the table of contents
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\makeatletter
+\newenvironment{breakablealgorithm}
+  {% \begin{breakablealgorithm}
+   \begin{center}
+     \refstepcounter{algorithm}%
+     \hrule height.8pt depth0pt \kern2pt%
+     \renewcommand{\caption}[2][\relax]{%
+       {\raggedright\textbf{\ALG@name~\thealgorithm} ##2\par}%
+       \ifx\relax##1\relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+       \else
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+       \fi
+       \kern2pt\hrule\kern2pt
+     }
+  }{%
+     \kern2pt\hrule\relax%
+   \end{center}
+  }
+\makeatother
+
+% 1. Prepend "Figure" before the number
+\renewcommand{\cftfigpresnum}{Figure } 
+
+% 2. Increase the space reserved for the figure number
+% (Without this, "Figure 1" label would overlap with the caption)
+\setlength{\cftfignumwidth}{4.5em} 
+
+
+\usetikzlibrary{shapes, arrows.meta, positioning, calc, fit, shadows}
+
+% 
+% --- INSERT THIS BLOCK INTO THE PREAMBLE (AFTER PACKAGE IMPORTS) ---
+\geometry{
+    paper=a4paper,      % A4 paper size
+    left=2.5cm,         % Left margin 2.5cm
+    right=2.5cm,        % Right margin 2.5cm (matches left margin)
+    top=2.5cm,          % Top margin
+    bottom=2.5cm,       % Bottom margin
+    bindingoffset=0cm   % Important: keep binding offset at 0 to avoid text shift
+}
+\raggedbottom
+% -----------------------------------------------------------
+% Start a new page for the main content
+\begin{document}
+
+% --- Title page ---
+\begin{titlepage}
+    \centering
+    
+    % --- Header Section: Logo and Ministry of Education and Training ---
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushleft}
+            % Make sure logo.png has proper proportions, or adjust width accordingly
+            \includegraphics[width=5cm]{logo.png} 
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \begin{flushright}
+            \textbf{MINISTRY OF EDUCATION AND TRAINING}
+        \end{flushright}
+    \end{minipage}
+
+    \vspace{2.5cm}
+
+    % --- University name ---
+    {\Huge \textbf{FPT UNIVERSITY}\par}
+
+    \vspace{2.5cm}
+
+    % --- Document type ---
+    {\huge Capstone Project Document \par}
+
+    \vspace{0.5cm}
+    % % Horizontal rule
+    % \rule{\textwidth}{0.4pt}
+    % \vspace{0.5cm}
+
+    % --- Thesis title ---
+    {\Large \textbf{VaxiS: An Evidence-Grounded Retrieval-Augmented Generation System for Vietnamese Vaccine Information Retrieval} \par}
+
+    \vspace{2.5cm}
+
+    % --- 4. INFORMATION TABLE (framed as in the reference image) ---
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5} % Increase row height for readability
+        \setlength{\arrayrulewidth}{0.8pt} % Table border thickness
+        
+        % Create table: Column 1 (4.5cm), Column 2 (10cm)
+        \begin{tabular}{|p{4.5cm}|p{10cm}|}
+            \hline
+            % Group heading row (merged cells)
+            \multicolumn{2}{|c|}{\textbf{AIP491 GROUP 1}} \\ 
+            \hline
+            \textbf{Group Members} & 
+           Nguyen Manh Hung - HE194092  \newline
+           Tran Trong Nghia - HE190336
+            \newline
+            Ho Minh Hieu - HE194091 \\
+            \hline
+            \textbf{Supervisor} &  Mr Tran Van Ha\\ % Mr
+            \hline
+            \textbf{Capstone Project code} & AIP491  \\
+            \hline
+        \end{tabular}
+    \end{center}
+
+    \vfill
+
+    % --- Footer: Location and date ---
+    {\large - Hanoi, 4/2026 - \par}
+    
+\end{titlepage}
+
+\clearpage % new page for the article body following sn-jnl
+%=====================================
+% 2) Front matter following sn-jnl convention
+%=====================================
+\begin{center}
+    \bfseries\Large Abstract
+\end{center}
+
+Environmental, Social, and Governance (ESG) disclosures have become increasingly important in sustainability assessment, risk management, and investment decision-making in the banking sector. However, ESG and financial reports are typically lengthy, heterogeneous, and semi-structured, making systematic assessment difficult and time-consuming. This thesis introduces a GRI-aligned ESG assessment system for Vietnamese banks based on a Knowledge Graph-enhanced Retrieval-Augmented Generation (KG-RAG) architecture integrated with Large Language Models (LLMs) for question answering and automated fact-checking. The designed system comprises five main modules: (i) an ESG metadata module that converts official Global Reporting Initiative (GRI) standards into a normalized, machine-readable metadata layer aligned with disclosure indicators; (ii) an ESG report processing module that linearizes, segments, and labels Vietnamese banking sustainability and annual reports into structured statement-level evidence; (iii) an ESG knowledge graph that explicitly represents companies, reports, statements, GRI indicators, and ESG categories with full provenance; (iv) a hybrid KG-driven retrieval and answer generation module that combines graph filtering, semantic embeddings, and keyword matching to produce evidence-grounded answers with traceable citations; and (v) an automated fact-checking layer that decomposes generated answers into atomic claims, retrieves supporting evidence from internal and external sources, and assigns claim-level verification labels to improve factual reliability. The system is evaluated on an expert-supported benchmark of 120 ESG questions covering Environmental, Social, and Governance dimensions across Vietnamese banking reports. Experimental results show that the designed framework achieves an overall answer accuracy of 88.14\% on the evaluation subset, while the fact-checking component further enhances transparency and reduces the risk of unsupported ESG statements in high-stakes analytical settings.
+
+\textbf{Keywords}: ESG, GRI Standards, Knowledge Graph-RAG, Vietnamese Banks, Large Language Model
+
+% ... sau \maketitle
+\newpage
+\begin{center}
+    \bfseries\Large Acknowledgments
+\end{center}
+
+We sincerely thank all those who contributed to the completion of this capstone project.
+
+First, our deepest appreciation goes to our supervisor, Mr. Tran Van Ha, whose expert guidance, thoughtful direction, and extensive domain knowledge were indispensable throughout every phase of this work. His constructive feedback, patience, and consistent encouragement enabled the team to refine both the conceptual foundations and technical implementation of this system to the highest standard we could achieve.
+
+We are equally grateful to FPT University for providing a rigorous and stimulating academic environment. The knowledge imparted by faculty members across the department established the theoretical groundwork upon which this project was built. The university's infrastructure, research resources, and high standards of academic training created the conditions necessary for us to explore and realize our ideas with confidence.
+
+We would also like to acknowledge our peers and colleagues for their candid discussions, willingness to share knowledge, and constructive critique. Their perspectives helped us examine the problem from multiple angles and materially improved the quality of this work.
+
+Finally, and most profoundly, we thank our families for their unwavering support and understanding throughout this process. Their encouragement and the conditions they provided allowed us to devote ourselves fully to this research.
+\newpage
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\section{Introduction}
+
+\subsection{Motivation}
+
+Environmental, Social, and Governance (ESG) disclosure has become increasingly important in sustainability assessment, corporate transparency, and investment decision-making. Over the past decade, ESG information has been used not only to evaluate firms’ non-financial performance but also to support broader judgments about long-term resilience, responsible management, and value creation. Existing literature shows that ESG disclosure has gradually moved from a peripheral reporting practice to a central source of information for investors, regulators, and other stakeholders who seek a more comprehensive view of corporate performance beyond traditional financial metrics~\cite{tsang2023,ref_article1}.
+
+The growing importance of ESG disclosure is closely tied to the expansion of international reporting frameworks and market expectations for transparency. In this context, the Global Reporting Initiative (GRI)\footnote{https://www.globalreporting.org/} has emerged as one of the most widely adopted standards for sustainability reporting, providing structured guidance for organizations to disclose their economic, environmental, and social impacts in a more systematic and comparable manner. At the same time, the recognition that sustainability-related information matters for capital markets has reinforced the role of ESG disclosure as an important bridge between corporate reporting and long-term financial decision-making~\cite{ungc2004,gri}.
+
+This issue is particularly significant in the banking sector. Unlike many other industries, banks are deeply exposed to environmental and social risks indirectly through their lending, investment, and risk management activities. Climate-related events, transition risks, social controversies, and governance failures can all propagate into conventional financial risks such as credit risk, reputational risk, and strategic risk. For this reason, banking regulators have increasingly emphasized climate- and sustainability-related supervision, while in Vietnam policy guidance has also encouraged green credit growth and environmental--social risk management in lending activities~\cite{bcbs2022,sbv2015}.
+
+Despite this progress, the practical use of ESG disclosures remains difficult. Sustainability reports, annual reports, and financial statements are often lengthy, heterogeneous, and semi-structured, combining narrative explanations, quantitative indicators, tabular disclosures, and appendix materials distributed across multiple sections. For analysts and stakeholders, verifying a specific ESG claim or tracing evidence related to a disclosure topic often requires substantial manual effort. This process is time-consuming, difficult to scale, and vulnerable to omission when relevant information is scattered across different parts of a report or across multiple reporting documents.
+
+Recent advances in large language models (LLMs), document question answering, and Retrieval-Augmented Generation (RAG) have opened new opportunities for automating the analysis of complex corporate disclosures. These approaches make it possible to retrieve supporting passages and generate grounded answers from large document collections. However, prior studies also suggest that retrieval quality, provenance preservation, and reliable evidence selection remain major challenges, especially in knowledge-intensive settings where relevant facts may be distributed across different sections or expressed in different forms~\cite{lewis2020rag,mishra2024docqa}.
+
+These limitations are especially relevant in the context of Vietnamese banks. ESG-related information in this domain is often distributed across sustainability reports, annual reports, and financial statements, with substantial variation in reporting depth, terminology, and structure across institutions. As a result, stakeholders need tools that can do more than retrieve isolated passages: they must also connect dispersed evidence, preserve traceability to source documents, and support explainable analysis for ESG-related questions. This creates a strong motivation for a more structured and auditable question-answering framework tailored to Vietnamese banking disclosures.
+
+To address this need, this thesis proposes a GRI-aligned ESG assessment framework based on Knowledge Graph-enhanced Retrieval-Augmented Generation (KG-RAG). The designed framework combines structured ESG knowledge representation, graph-aware retrieval, semantic similarity matching, and evidence-grounded answer generation to support transparent question answering over sustainability reports and financial statements of Vietnamese banks. Compared with standard retrieval pipelines, this approach is intended to better support provenance-preserving evidence aggregation, multi-hop reasoning across ESG-finance relations, and more explainable ESG analysis in a banking-specific setting.
+
+\subsection{Objectives}
+
+The overall objective of this thesis is to develop an evidence-grounded and fact-checked question-answering framework for analyzing ESG disclosures in the sustainability reports and financial statements of Vietnamese banks. To achieve this goal, the thesis pursues the following specific objectives:
+
+\begin{itemize}
+    \item To design a GRI-aligned KG-RAG framework that extracts structured ESG evidence from Vietnamese banking reports, organizes it in a domain-specific knowledge graph, and retrieves it through hybrid graph-based, semantic, and keyword matching.
+
+    \item To incorporate an automated fact-checking mechanism that verifies generated answers at the claim level using evidence from internal ESG documents and external sources.
+
+    \item To build an expert-annotated benchmark for Vietnamese ESG question answering and empirically evaluate the designed framework against strong retrieval baselines in terms of answer accuracy, evidence grounding, and factual consistency.
+\end{itemize}
+%
+\section{Related Work}
+
+\subsection{Automated Assessment from Sustainability Reports}
+
+A growing body of research has investigated the possibility of conducting automated ESG assessment directly from sustainability reports and related disclosures. This line of research treats sustainability reports as primary textual data sources from which meaningful ESG-related signals can be computationally extracted. This perspective is particularly important because sustainability reports contain not only descriptive narratives of corporate responsibility efforts, but also structured and semi-structured disclosures regarding environmental targets, social initiatives, governance mechanisms, and performance outcomes.
+
+Early studies in this area demonstrated that text-mining techniques can be applied to sustainability disclosures to derive quantitative measures of similarity and reporting affinity. Computational analysis of GRI-based sustainability reports, for example, has shown that linguistic patterns can be systematically captured to compare firms' reporting practices and identify underlying similarities across reports. Such findings indicate that sustainability reports are not merely qualitative communication documents, but also analyzable corpora that lend themselves to large-scale automated comparison~\cite{gutierrez2022nlp}.
+
+More recent research has further examined how specific textual attributes of sustainability reports shape downstream analysis. Evidence suggests that characteristics such as report length, completeness, tone, redundancy, and the use of boilerplate language are significantly associated with automated ESG evaluation. These findings imply that automated ESG assessment may be influenced not only by the substantive information disclosed in a report, but also by the style and structure of the disclosure itself. This highlights an important methodological issue in automated ESG analytics: textual signals linked to disclosure quality or presentation style may shape ESG-related judgments alongside more substantive performance indicators~\cite{huang2024textual}.
+
+Related work has also begun to examine higher-level discourse properties, particularly readability, as a factor associated with ESG disclosure quality. Recent evidence shows that more readable sustainability reports tend to enable more consistent automated analysis. From an analytical perspective, readability can therefore be interpreted as a meaningful proxy that connects linguistic quality, communication effectiveness, and assessment outcomes. The incorporation of large language models into this process has further expanded the ability to estimate such nuanced textual properties in a context-sensitive manner, going beyond earlier approaches based primarily on surface-level lexical or syntactic features~\cite{shimamura2025readability}.
+
+The emergence of large language model-based methods has significantly extended the scope of automated ESG assessment. Instead of focusing only on document-level textual proxies, recent studies have explored more structured workflows that combine information extraction, semantic interpretation, and domain-specific assessment. LLM-based ESG evaluation frameworks have been proposed to integrate multiple tasks, including extracting ESG-relevant information from reports and generating intelligent assessments tailored to specific industry contexts. These developments suggest that LLMs are increasingly being viewed not just as tools for generic text analysis, but as promising mechanisms for domain-aware interpretation of sustainability disclosures~\cite{cai2025esg}.
+
+A closely related direction involves the use of generative language models to derive structured insights from sustainability reports, such as initiatives, commitments, performance indicators, and governance practices. This reflects an important methodological shift: from coarse document-level representation toward structured signal extraction. This shift improves the analytical richness of ESG assessment and opens the possibility for more fine-grained, evidence-aware evaluation~\cite{bronzini2024glitter}.
+
+Taken together, the literature shows a clear progression in automated ESG analytics, moving from surface-level textual analysis toward more content-sensitive and semantically informed interpretation of corporate disclosure. Nevertheless, despite these advances, existing work typically produces firm-level assessments without supporting users to inspect the specific claims, metrics, and disclosures behind them. In many real-world settings, analysts, auditors, regulators, and other stakeholders need to examine individual sustainability statements, trace supporting evidence, and verify how a particular aspect of ESG performance is represented in the report. Further research is therefore still needed to support more interpretable, fine-grained, and claim-level analysis of sustainability reports.
+
+\subsection{ESG Question Answering over Sustainability Reports}
+To address the limitations of firm-level ESG assessment, a growing body of research has begun to reframe ESG analysis as a question answering (QA) task over sustainability disclosures. Instead of producing only a coarse firm-level summary, ESG QA enables users to ask targeted questions about emissions, governance structures, labor practices, sustainability targets, or year-to-year changes, while grounding the answers in the underlying reports. This shift is important because sustainability analysis often requires claim-level inspection rather than high-level summarization. In this setting, ESG QA supports a more transparent and evidence-based interaction with corporate disclosures by linking answers to the specific textual or tabular evidence from which they are derived~\cite{mishra2024docqa}.
+
+From a system perspective, retrieval is a central component of ESG QA, especially because sustainability reports are typically long, heterogeneous, and information-dense documents. Relevant evidence may be scattered across narrative sections, tabular disclosures, appendices, or footnotes, making accurate retrieval essential for reliable question answering. Sparse lexical retrieval methods such as BM25 remain strong and efficient baselines, particularly for questions involving explicit terminology or keyword-based matching~\cite{robertson2009bm25}. Dense retrieval models such as DPR, in contrast, improve semantic matching by learning dense representations of queries and passages, thereby helping recover relevant evidence even when the wording of the question differs from that of the report~\cite{karpukhin2020dpr}. This is especially useful in ESG settings, where similar concepts may be expressed through varied reporting styles, industry-specific terminology, or different disclosure frameworks.
+
+Large language models have recently been investigated across multiple stages of the retrieval pipeline, including query rewriting, retrieval, reranking, and answer generation. These developments suggest that LLM-based systems can strengthen ESG QA by enabling deeper semantic understanding of both user questions and disclosure content. They may help interpret underspecified queries, reformulate analyst questions, and synthesize retrieved evidence into coherent answers. However, their application also raises concerns regarding hallucination, reliability, and faithfulness, particularly in high-stakes domains such as ESG analysis, where unsupported claims may lead to misleading financial, regulatory, or reputational judgments~\cite{zhu2023llm4ir}. For this reason, recent work increasingly emphasizes retrieval-augmented and evidence-grounded architectures in which answers remain tightly connected to verifiable source documents.
+
+Beyond text-only retrieval, structured knowledge representations have also been proposed to support more explicit reasoning in ESG QA systems. Knowledge graphs offer a formal representation of entities, relations, and schema constraints, which can facilitate evidence organization and multi-hop reasoning over complex disclosure content~\cite{hogan2021kg}. This is especially relevant in sustainability reporting, where information is often distributed across multiple sections and linked through relationships among policies, targets, actions, and outcomes. Recent studies further indicate that LLMs can assist the construction of knowledge graphs from unstructured text through prompting-based extraction pipelines, thereby reducing the manual effort required for entity and relation extraction~\cite{carta2023iterative,trajanoska2023enhancing}. Nevertheless, such approaches still require careful normalization, disambiguation, and quality control to ensure that the resulting graph structures are sufficiently consistent and reliable for downstream use.
+
+Another key prerequisite for ESG QA lies in document parsing. In practice, sustainability reports are usually distributed as long PDF documents with visually complex layouts that combine text, tables, bullet lists, and section hierarchies. Reliable parsing is therefore essential for downstream retrieval and question answering. Recent vision-language OCR systems aim to convert such PDFs into clean linearized text while preserving important structural elements such as headings, tables, and lists~\cite{poznanski2025olmocr}. These capabilities are particularly relevant for ESG document understanding, since failures in layout preservation or table extraction can directly degrade retrieval performance and weaken answer grounding.
+
+The development of ESG-specific benchmarks has further strengthened this research direction. Benchmark datasets for information retrieval from corporate climate disclosures show that retrieval remains a major bottleneck in analyst-style ESG querying, even when downstream answer generation is relatively strong~\cite{schimanski2024climretrieve}. Broader ESG and sustainability QA benchmarks similarly demonstrate that even advanced language models benefit substantially from grounding in authoritative documents rather than relying solely on internal parametric knowledge~\cite{he2025esgenius}. These findings reinforce the view that ESG QA should be treated as a document-grounded reasoning task rather than a purely generative one.
+
+Recent benchmark work has also highlighted the difficulty of table-centric reasoning in ESG analysis. Sustainability reports frequently present environmental and performance information in structured tables, meaning that many questions require systems to locate, interpret, and compare values across multiple tabular sources. Existing evidence shows that multi-table and multi-step reasoning remains challenging for current QA systems, particularly when questions require comparison, aggregation, or integration of evidence across sections~\cite{contalbo2025griqa}. Complementing this, domain-specific retrieval datasets for ESG reporting suggest that ESG-specialized retrieval representations can outperform generic baselines and transfer more effectively across reporting frameworks such as GRI and ESRS~\cite{ahmed2025esgcid}. This indicates that domain adaptation is an important factor in improving retrieval quality for ESG QA.
+
+The literature has also begun to move toward more integrated end-to-end ESG analysis systems. Recent systems combine comparative ESG benchmarking with interactive claim verification over sustainability reports, suggesting that ESG QA is evolving beyond simple answer extraction toward broader evidence-grounded analysis. This development reflects a shift from static assessment to interactive exploration, where users can inspect supporting evidence, verify claims, and compare disclosures across firms within a unified analytical workflow~\cite{santacroce2026clariesg}.
+
+Overall, the literature suggests that ESG question answering is emerging as an important direction for interpretable sustainability analysis. While firm-level assessment approaches emphasize summarization and comparability, ESG QA places greater emphasis on interpretability, evidence grounding, and user-directed analysis. This is particularly appropriate for sustainability reporting, where relevant information is often dispersed across long and complex documents, and where stakeholders frequently need to inspect specific claims rather than rely only on firm-level summaries. At the same time, existing work makes clear that effective ESG QA depends on the joint performance of several components, including document parsing, retrieval, grounding, and reasoning over both text and tables. These challenges indicate that ESG QA remains an active and technically demanding research area, with substantial room for improvement in retrieval quality, evidence traceability, and fine-grained analytical support.
+\section{Methodology}
+\subsection{Overview of ESG Question-Answering System}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/overview_sys.png} 
+    \caption{System architecture overview}
+    \label{fig:system_overview}
+\end{figure}
+As shown in Figure~\ref{fig:system_overview}, the designed ESG question-answering framework consists of five interconnected modules that jointly support structured, evidence-grounded ESG analysis over sustainability reports. The \textit{ESG Metadata Module} in Section~\ref{subsec:esg-metadata} extracts and organizes key concepts from the GRI framework to form a standardized ESG metadata layer. The \textit{ESG Reports Processing Module} in Section~\ref{subsec:esg-reports-processing} processes raw sustainability reports and converts them into statement-level ESG representations linked to relevant indicators. The \textit{ESG Knowledge Graph Module} in Section~\ref{subsec:esg-kg} integrates metadata and extracted statements into a unified graph structure for semantic organization and traceable reasoning. Based on this graph, the \textit{KG-driven Retrieval-Augmented Generation Module} in Section~\ref{subsec:kg-rag} retrieves relevant evidence and generates grounded answers to user questions. Finally, the \textit{Automated Fact-Checking Module} in Section~\ref{subsec:fact-checking} verifies generated outputs through claim decomposition, evidence retrieval, and label prediction. Together, these modules form a transparent and trustworthy pipeline for ESG question answering.
+\subsection{ESG Metadata Module}
+\label{subsec:esg-metadata}
+
+The \textbf{ESG Metadata Module} is designed to convert raw GRI standard documents into a
+normalized and machine-readable ESG metadata layer that can be used by downstream retrieval,
+knowledge graph construction, and question-answering components. Since official GRI standards
+are published as long and heterogeneous PDF documents, their content is not directly suitable
+for structured computation. This module addresses that gap by transforming unstructured
+standard documents into standardized metadata records aligned with GRI disclosure units.
+As illustrated in Figure~\ref{fig:gri_pipeline}, the module consists of four main stages:
+document ingestion, PDF parsing, LLM-based extraction, and structured metadata construction.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/overview_gri.png}
+    \caption{GRI standard processing pipeline}
+    \label{fig:gri_pipeline}
+\end{figure}
+
+
+\textbf{GRI Standard Documents:} The input corpus consists of official GRI standard documents, including the universal standards
+(GRI 1, 2, and 3) and topic-specific standards from the 200, 300, and 400 series
+\cite{gri2021}. These documents define the reporting principles, disclosure requirements,
+and indicator-level guidance that organizations use when preparing sustainability reports.Figure~\ref{fig:gri_document_example} shows an example page from a GRI standard document,
+illustrating the semi-structured reporting format used as input to the metadata extraction pipeline.
+Each document is distributed in Portable Document Format (PDF) and contains hierarchically
+organized sections, disclosure identifiers, and explanatory guidance spanning Environmental,
+Social, and Governance dimensions. In our framework, these documents serve as the authoritative
+source for constructing the ESG metadata schema.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/input_gri.png}
+    \caption{GRI standard documents used as input to the ESG Metadata Module}
+    \label{fig:gri_document_example}
+\end{figure}
+
+\textbf{PDF Parsing and Disclosure Segmentation:} Before semantic extraction can be performed, the raw PDF documents must be converted into
+clean and processable text. We use \texttt{PyMuPDF} \cite{pymupdf2023} for PDF parsing
+because it enables efficient extraction while preserving reading order and structural layout.
+The parser iterates over all pages and extracts positionally ordered text blocks, after which
+a cleaning procedure is applied to remove repetitive headers, footers, page numbers, and
+typographic artefacts. The cleaned text is then segmented into disclosure-level chunks using
+rule-based boundary detection over GRI identifiers such as \texttt{GRI 305-1}. Each chunk is
+constructed to correspond, as closely as possible, to a coherent disclosure unit together
+with its associated explanatory content.Figure~\ref{fig:gri_parsing_segmentation} illustrates
+this process, showing how raw GRI PDF content is parsed, cleaned, and segmented into
+disclosure-level units. This process yields a structured document collection
+$\mathcal{D} = \{d_1, d_2, \ldots, d_n\}$, where each segment $d_i$ represents a candidate
+unit for metadata extraction.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/gri_parsing.png}
+    \caption{Illustration of PDF parsing and disclosure segmentation for GRI standard documents}
+    \label{fig:gri_parsing_segmentation}
+\end{figure}
+\textbf{LLM-Based Extraction with In-Context Learning:} Given the diversity of writing styles and structural patterns across GRI documents, simple
+rule-based extraction is insufficient for obtaining a complete and semantically consistent
+representation of disclosure content. To address this, we adopt a prompt-based extraction
+strategy using a large language model (LLM) \cite{brown2020gpt3}. Each segment $d_i$ is
+processed together with an expert-curated ESG knowledge context that summarizes reporting
+scope, definitional boundaries, and inter-indicator relations derived from the GRI framework.
+To improve robustness across heterogeneous disclosure structures, we employ
+\textbf{In-Context Learning (ICL)}, where representative few-shot examples
+are embedded in the prompt to guide the model toward consistent field extraction \cite{dong2022icl}.Figure~\ref{fig:llm_extraction_pipeline} illustrates this extraction process, showing how
+a disclosure segment, together with ESG knowledge and few-shot examples, is combined into a
+structured prompt and passed to the LLM to generate normalized metadata fields.
+
+The prompt for each segment is formulated as:
+\begin{equation}
+    P(d_i) = [\text{System Instruction}] \oplus [\text{ESG Knowledge}]
+              \oplus [\text{Few-shot Examples}] \oplus [d_i]
+    \label{eq:prompt}
+\end{equation}
+where $\oplus$ denotes sequential prompt concatenation.
+
+This design enables the model to interpret both the local disclosure text and the broader
+GRI reporting context, thereby improving its ability to extract structured metadata even
+when disclosure boundaries or guidance patterns are expressed differently across documents.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/llm_extract.png}
+    \caption{Illustration of LLM-based ESG metadata extraction with in-context learning}
+    \label{fig:llm_extraction_pipeline}
+\end{figure}
+
+\textbf{ESG Metadata Schema:} For each disclosure unit, the module produces a structured ESG metadata record represented
+as a five-tuple:
+\begin{equation}
+    M_i = \langle \textit{Category},\ \textit{Indicator},\ \textit{Title},\
+                  \textit{Disclosure},\ \textit{Detail} \rangle
+    \label{eq:metadata}
+\end{equation}
+
+This schema is designed to capture both the canonical identity of a GRI disclosure and the
+context needed for downstream retrieval and semantic linking. The five fields are defined
+as follows:
+\begin{itemize}
+    \item \textbf{Category}: the high-level ESG dimension (Environmental, Social, or
+          Governance) associated with the disclosure.
+    \item \textbf{Indicator}: the unique alphanumeric disclosure identifier
+          (e.g., \texttt{GRI 305-1}), used as the primary anchor for traceability and
+          cross-module linking.
+    \item \textbf{Title}: the official disclosure title provided by the GRI standard,
+          serving as a concise human-readable label.
+    \item \textbf{Disclosure}: the core reporting requirement associated with the indicator,
+          including quantitative, qualitative, or procedural reporting obligations.
+    \item \textbf{Detail}: supplementary contextual information such as definitions,
+          reporting boundaries, compilation guidance, and interpretive notes.
+\end{itemize}
+
+Together, these fields form a normalized metadata layer that standardizes GRI knowledge and
+provides a semantic bridge between reporting standards, extracted report statements, and
+knowledge graph entities.
+
+\textbf{Post-processing and Validation:} After extraction, each metadata record $M_i$ is subjected to a validation step to ensure
+structural completeness and semantic consistency. This step checks whether all required
+fields are present, whether disclosure identifiers follow the expected GRI format, and
+whether extracted titles and disclosure descriptions remain aligned with the original source
+content. Ambiguous or incomplete records are flagged for expert review. In addition, the
+final metadata collection is cross-referenced against the official GRI index
+to preserve traceability and reduce the risk of missing or incorrectly normalized disclosure
+units \cite{gri2021}.
+
+
+\subsection{ESG Reports Processing Module}
+\label{subsec:esg-reports-processing}
+
+Raw ESG reports present major challenges for automated analysis because they often combine
+multi-column layouts, embedded tables, inconsistent heading hierarchies, and heterogeneous
+formatting across issuers. To address these issues, we design a four-stage processing
+pipeline that transforms unstructured ESG PDFs into annotated, GRI-indexed segments suitable
+for downstream retrieval and question answering. As shown in
+Figure~\ref{fig:report_pipeline}, the module consists of document linearization,
+structure-aware alignment, semantic segmentation, and hierarchical label prediction.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/report_pipeline.png}
+    \caption{Detailed pipeline of the ESG Reports Processing Module.}
+    \label{fig:report_pipeline}
+\end{figure}
+\textbf{Document Linearization:} The purpose of this stage is to convert visually complex ESG reports into a clean and
+ordered text representation that can be processed reliably in later stages. We adopt
+\textbf{OLMoCR}, a layout-aware PDF linearization toolkit that preserves
+reading order while handling common report structures such as multi-column text, tables,
+headings, and captions \cite{olmocr2024}. Figure~\ref{fig:linearization_pipeline} illustrates this stage,
+showing how raw ESG PDF pages are traversed, decomposed into content blocks, reordered
+according to layout structure, and reconstructed into a linearized sequence for downstream
+processing. Formally, let $\mathcal{D}$ denote an ESG document comprising
+$P$ pages. OLMoCR processes each page $p$ and produces a linearized set of content blocks:
+
+\begin{equation}
+    \mathcal{D}_p = \{(w_i,\ b_i,\ c_i,\ p)\}_{i=1}^{N_p}
+    \label{eq:linearize}
+\end{equation}
+
+\noindent where $w_i$ is the textual content of block $i$,
+$b_i = (x_{\min}, y_{\min}, x_{\max}, y_{\max})$ is the bounding box in normalized
+page coordinates, $c_i \in \{\texttt{text, table, heading, caption}\}$ denotes the
+block type, and $N_p$ is the total number of blocks on page $p$. The global linearized
+sequence is then obtained by concatenating all pages in reading order:
+
+\begin{equation}
+    \mathcal{D} = \mathcal{D}_1 \oplus \mathcal{D}_2 \oplus \cdots \oplus \mathcal{D}_P
+    \label{eq:concat}
+\end{equation}
+
+Compared with naive OCR pipelines, this step preserves structural layout and reconstructs
+tables in a form that remains usable for subsequent alignment and segmentation.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/linearization.png}
+    \caption{Document linearization process in the ESG Reports Processing Module.}
+    \label{fig:linearization_pipeline}
+\end{figure}
+\textbf{Table of Contents Parsing and Structure-Aware Alignment:} The purpose of this stage is to recover the document hierarchy and align it with the
+linearized report content. Since most ESG reports contain an explicit Table of Contents
+(ToC), we first extract this structure using \textbf{Region-Aware Prompting (RAP)}, a
+visual prompting strategy that leverages layout and textual cues to identify heading
+entries and their associated page references. Figure~\ref{fig:toc_alignment_pipeline}
+illustrates this process, showing how ToC entries are parsed into hierarchical headings
+and then aligned with the linearized body text through exact matching, fuzzy matching,
+and context-aware insertion. RAP produces a hierarchical heading set:
+
+\begin{equation}
+    \mathcal{T} = \{(t_k,\ \ell_k,\ \rho_k)\}_{k=1}^{M}
+    \label{eq:toc}
+\end{equation}
+
+\noindent where $t_k$ is the heading text, $\ell_k \in \{1,2,3,4\}$ is the inferred
+hierarchy level, and $\rho_k$ is the referenced page number.
+
+After obtaining both $\mathcal{T}$ and the linearized sequence $\mathcal{D}$, we align
+them using the \textbf{ALIGN} algorithm (Anchor-based Linguistic Indexing for Granular
+Navigation). ALIGN proceeds through three stages: exact matching, fuzzy matching using
+Levenshtein similarity \cite{levenshtein1966}, and context-aware insertion using an LLM.
+The exact match function is defined as:
+
+\begin{equation}
+    \text{Match}_{\text{exact}}(t_k, b_j) =
+        \mathbf{1}\big[\texttt{norm}(t_k) = \texttt{norm}(w_j)\big]
+    \label{eq:exact}
+\end{equation}
+
+For unresolved headings, the \textbf{Context-aware Insertion Prompt (CIP)} estimates the
+most suitable insertion point $j^*$ within an anchor-defined window $\mathcal{W}_k$:
+
+\begin{equation}
+    j^* = \arg\max_{j \in \mathcal{W}_k}\ \text{Score}_{\text{CIP}}(t_k,\ b_j)
+    \label{eq:cip}
+\end{equation}
+
+This stage produces a structure-aware document representation in which heading anchors are
+aligned with the corresponding report content.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/toc_alignment.png}
+    \caption{Table of Contents parsing and structure-aware alignment in the ESG Reports Processing Module.}
+    \label{fig:toc_alignment_pipeline}
+\end{figure}
+\textbf{LLM-Aware Semantic Segmentation:} The purpose of this stage is to divide the aligned report into semantically coherent
+segments that better reflect ESG topics and disclosure boundaries. Let
+$\mathcal{B} = (b_1, b_2, \ldots, b_N)$ denote the ordered block sequence. We apply a
+sliding-window strategy with width $W$, stride $s$, and overlap
+$\delta = \lfloor 0.1 \cdot W \rfloor$. Figure~\ref{fig:semantic_segmentation_pipeline}
+illustrates this process, showing how the aligned block sequence is scanned through
+overlapping windows, how the LLM predicts semantic breakpoints within each window, and
+how these local boundaries are merged into a global segmentation of the report.
+\begin{equation}
+    \mathcal{W}^{(t)} = \big(b_{t \cdot s},\ b_{t \cdot s+1},\
+    \ldots,\ b_{t \cdot s + W - 1}\big)
+    \label{eq:window}
+\end{equation}
+Within each window, \textbf{Qwen3-4B} \cite{qwen2025} predicts boundary indices
+$\mathcal{F}^{(t)}$ at positions where topic, GRI theme, or disclosure type changes.
+The union of all predicted boundaries forms a global boundary set
+$\mathcal{F} = \bigcup_t \mathcal{F}^{(t)}$, which partitions the document into
+$K$ semantic segments:
+\begin{equation}
+    \mathcal{S} = \{S_1, S_2, \ldots, S_K\}, \quad
+    S_k = \big(b_{f_{k-1}+1}, \ldots, b_{f_k}\big)
+    \label{eq:segments}
+\end{equation}
+
+This segmentation step is important because ESG reports often interleave multiple themes
+within the same page or section, making fixed-size chunking insufficient for downstream
+reasoning.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{figures/segmentation.png}
+    \caption{LLM-aware semantic segmentation of aligned ESG report blocks.}
+    \label{fig:semantic_segmentation_pipeline}
+\end{figure}
+
+\textbf{Hierarchical Label Prediction via MLPDH:} The purpose of this stage is to assign each segment a structured label path that captures
+its ESG category, disclosure relevance, statement type, and sentiment. Each segment
+$S_k$ is annotated using the \textbf{Multi-Level Prediction with Document Hierarchy
+(MLPDH)} framework, which produces a four-level label path:
+
+\begin{equation}
+    \lambda_k = (\text{ESG-N},\ \text{GRI-Indicator},\ \text{Statement},\
+    \text{Sentiment})
+    \label{eq:labelpath}
+\end{equation}
+Figure~\ref{fig:label_prediction_pipeline} illustrates this stage, showing how each
+semantic segment is encoded through the combination of textual, structural, and positional
+signals, and how the model predicts a coherent hierarchical label path through multi-level
+classification and consistency constraints.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/label_prediction.png}
+    \caption{Hierarchical label prediction for ESG report segments using MLPDH.}
+    \label{fig:label_prediction_pipeline}
+\end{figure}
+
+To support this prediction, the model combines textual, structural, and positional
+signals into a unified block representation:
+
+\begin{equation}
+    e_{\text{blk}} = E_{\text{text}} + E_{\text{lvl}} + E_{\text{pos}}
+    \label{eq:embed}
+\end{equation}
+
+The framework then applies cross-level attention and sigmoid classification, together
+with a parent--child consistency constraint, to encourage coherent label paths across
+hierarchical levels. The hierarchical penalty is defined as:
+
+\begin{equation}
+    \mathcal{L}_{\text{hier}} = \sum_{h=2}^{H} \sum_{c_h}
+    \max\!\Big(0,\ P(c_h) - P\!\big(\text{parent}(c_h)\big)\Big)
+    \label{eq:hier}
+\end{equation}
+
+The total training objective is:
+
+\begin{equation}
+    \mathcal{L}_{\text{total}} = \sum_{h=1}^{H} \text{BCE}(P_h,\ Y_h)
+    + \lambda \cdot \mathcal{L}_{\text{hier}}
+    \label{eq:loss}
+\end{equation}
+
+During inference, labels with $P > 0.5$ are selected at each level to form the final
+label path. For example, a segment describing scope 1 greenhouse gas emissions may be
+assigned the path
+$\text{E} \rightarrow \texttt{GRI-305} \rightarrow \textit{quantitative}
+\rightarrow \textit{neutral}$.
+
+\subsection{ESG Knowledge Graph Module}
+\label{subsec:esg-kg}
+
+The \textbf{ESG Knowledge Graph Module} is designed to transform extracted ESG content
+from sustainability reports into a structured representation that supports traceable
+storage, graph-based retrieval, and evidence-aware reasoning. While the previous modules
+convert raw reports into segmented and annotated ESG statements, this module organizes
+those outputs into an entity--relation graph instantiated in Neo4j. Knowledge graphs are
+well suited to this task because they support explicit semantic representation, linkage
+across heterogeneous sources, and structured navigation over interconnected entities
+\cite{hogan2021kg}. In our framework, the ESG-KG links report-level evidence to
+standardized GRI disclosures \cite{gri2021} and enriched ESG taxonomy information
+\cite{kang2022finsim}, thereby enabling provenance tracking, evidence aggregation,
+and hybrid retrieval for downstream question answering.
+
+\textbf{Graph Schema:} The purpose of the graph schema is to define a structured and interpretable backbone
+for representing ESG evidence, report metadata, and standardized disclosure topics.
+As illustrated in Figure~\ref{fig:esg_kg}, the ESG-KG contains five main node types.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{figures/esg_kg.pdf}
+    \caption{Schema of the ESG Knowledge Graph and its core node and relation types.}
+    \label{fig:esg_kg}
+\end{figure}
+\textbf{Node types:}
+\textit{Company} represents an organization in the dataset and serves as the top-level
+anchor for provenance tracking. Each node is uniquely identified by
+\texttt{company\_id} and \texttt{company\_name}.
+
+\textit{Report} represents a specific sustainability or annual report issued by a
+company in a given year. It stores attributes such as \texttt{report\_id},
+\texttt{company\_id}, \texttt{type\_of\_report}, and \texttt{year}, allowing the graph
+to distinguish multiple reports published by the same company over time.
+
+\textit{ESG\_Statement} is the central evidence node in the graph. Each node corresponds
+to an ESG-relevant sentence or short paragraph extracted from a report and contains
+\texttt{statement\_id}, \texttt{content}, \texttt{embedding\_content}, \texttt{page},
+and optional heading context. This node type provides the main unit for retrieval and
+evidence grounding.
+
+\textit{GRI\_Indicator} represents a standardized disclosure topic defined by the GRI
+framework. It stores attributes such as \texttt{indicator\_id},
+\texttt{indicator\_name}, \texttt{GRI\_disclosure\_detail}, and \texttt{topic\_title},
+which together provide a normalized semantic anchor for aligning report content to
+formal reporting requirements \cite{gri2021}.
+
+\textit{ESG\_Category} represents the three high-level ESG dimensions, namely
+Environmental, Social, and Governance. These nodes support coarse-grained analysis,
+filtering, and aggregation across disclosure topics.
+
+\textbf{Edge types:}
+Edges encode both provenance and semantic alignment relationships, as summarized in
+Table~\ref{tab:edges}. The relation \texttt{HAS\_REPORT} links each company to its
+reports, and \texttt{CONTAINS} connects each report to its extracted ESG statements.
+The relation \texttt{RELATED\_TO} links a statement to the most relevant GRI indicator,
+while \texttt{BELONGS\_TO} connects each indicator to its ESG category. In addition,
+we retain a direct \texttt{CATEGORIZED\_AS} edge from \textit{ESG\_Statement} to
+\textit{ESG\_Category}. Although this category can be inferred indirectly through
+\texttt{RELATED\_TO} and \texttt{BELONGS\_TO}, the direct edge is useful for fast
+coarse-level filtering and for cases where category-level classification is reliable
+even when indicator-level alignment remains uncertain.
+
+\begin{table}[htbp]
+\centering
+\caption{Edge types in the ESG-KG}
+\label{tab:edges}
+\begin{tabular}{llll}
+\hline
+\textbf{Relation} & \textbf{From} & \textbf{To} & \textbf{Semantics} \\
+\hline
+HAS\_REPORT      & Company        & Report         & Company publishes a report \\
+CONTAINS         & Report         & ESG\_Statement & Report contains a statement \\
+RELATED\_TO      & ESG\_Statement & GRI\_Indicator & Statement aligned to a GRI indicator \\
+BELONGS\_TO      & GRI\_Indicator & ESG\_Category  & Indicator mapped to an ESG category \\
+CATEGORIZED\_AS  & ESG\_Statement & ESG\_Category  & Statement directly classified as E/S/G \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Graph Construction Pipeline:} The purpose of the construction pipeline is to materialize segmented report evidence as
+graph nodes and connect them to standardized ESG concepts. The pipeline consists of
+three main steps: statement materialization, LLM-assisted alignment, and provenance
+preservation.
+
+\textbf{Statement materialization:}
+For each \textit{Report} node, the source PDF is processed using the report pipeline
+described in Section~\ref{subsec:esg-reports-processing}. The resulting semantically
+segmented evidence units are materialized as \textit{ESG\_Statement} nodes in Neo4j.
+This design ensures that each node is small enough to capture a focused ESG disclosure
+signal, while still retaining enough context for reliable interpretation. For each
+statement, a semantic embedding vector is computed and stored in
+\texttt{embedding\_content} to support downstream similarity-based retrieval.
+
+\textbf{LLM-assisted classification and alignment:}
+The next step links each \textit{ESG\_Statement} node to the appropriate ESG category
+and GRI indicator. This step combines structured GRI metadata with LLM-based inference,
+following recent work showing that prompting strategies can support schema-conformant
+knowledge graph construction from unstructured text
+\cite{carta2023iterative,trajanoska2023enhancing}. For each statement, the system first
+predicts its high-level ESG category, then identifies the most relevant GRI indicator
+using the official disclosure descriptions as guidance, and finally materializes the
+corresponding \texttt{CATEGORIZED\_AS} and \texttt{RELATED\_TO} edges. By grounding the
+LLM in standardized GRI metadata, this step reduces ambiguity and improves consistency
+across heterogeneous reporting styles.
+
+\textbf{Provenance preservation:}
+A key design principle of the ESG-KG is end-to-end provenance preservation. Every
+statement node retains report metadata such as company, report type, publication year,
+and source page number. This allows any retrieved evidence or generated answer to be
+traced back to its documentary origin, supporting verification, error analysis, and
+citation-aware response generation.
+
+\textbf{Role of ESG-KG in the RAG Pipeline:} The purpose of the ESG-KG in the overall system is not only to store structured ESG
+knowledge, but also to improve retrieval quality in the RAG pipeline. It plays two
+main roles.
+
+\textbf{Evidence prioritization:}
+Because statements are explicitly linked to GRI indicators and ESG categories, the graph
+can be used to estimate evidence support for each topic based on the number, diversity,
+and provenance of aligned statements. Indicators supported by multiple pieces of
+evidence can therefore be prioritized during retrieval, improving the representativeness
+and robustness of the context supplied to the generative model.
+
+\textbf{Hybrid retrieval:}
+The ESG-KG also enables a hybrid retrieval strategy that combines vector similarity over
+\texttt{embedding\_content} with graph-structural filtering. In practice, this allows
+the system to restrict retrieval by company, report year, report type, ESG dimension,
+or GRI topic before ranking candidate evidence semantically. Compared with vector-only
+retrieval, this combination provides greater precision and interpretability, especially
+for analytical queries that require both semantic relevance and structural constraints
+\cite{zhu2023llm}.
+
+Overall, the ESG-KG serves as the structured semantic layer of the designed system. It
+connects extracted report statements to formal ESG taxonomy, preserves provenance for
+evidence tracing, and enhances retrieval through graph-aware organization of disclosure
+content.
+
+
+
+\subsection{KG-driven Retrieval-Augmented Generation Module}
+\label{subsec:kg-rag}
+
+The \textbf{KG-driven Retrieval-Augmented Generation Module} is designed to answer
+user questions about ESG disclosures with responses that are both semantically relevant
+and explicitly grounded in traceable evidence. Building on the ESG Knowledge Graph,
+this module transforms a natural language question into a provenance-linked answer by
+combining graph-aware retrieval with LLM-based response generation. As illustrated in
+Figure~\ref{fig:kg_rag_pipeline}, the module consists of two main components:
+(i) a hybrid graph-aware retriever that identifies relevant ESG evidence through
+structured filtering, semantic similarity, and keyword matching; and
+(ii) a provenance-grounded answer generator that synthesizes the retrieved evidence
+into a concise and verifiable response.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/rag_kg.png}
+    \caption{Overview of the KG-driven Retrieval-Augmented Generation Module.}
+    \label{fig:kg_rag_pipeline}
+\end{figure}
+
+\textbf{Hybrid Graph-Aware Retrieval:}\label{subsubsec:kg_retrieval} The purpose of the retrieval component is to identify a compact but informative set
+of ESG statements that are most relevant to the user question. Given a question $q$,
+the retriever returns a hybrid evidence set $S_{\text{context}}$ composed of candidate
+\texttt{ESG\_Statement} nodes selected from the ESG knowledge graph $G=(V,E)$.
+As summarized in Algorithm~\ref{alg:hybrid_retrieval}, the retrieval process consists
+of four steps: question understanding, candidate generation, dual-stream scoring,
+and hybrid evidence fusion.
+
+\textbf{Question understanding and keyword extraction:} The purpose of this step is to derive coarse semantic constraints and salient retrieval
+signals from the user question. Given a question $q$, the system first uses an LLM to
+classify it into one of the three ESG dimensions,
+$c \in \{E, S, G\}$, which acts as a coarse-grained filter over the graph. In parallel,
+the question is parsed into two complementary keyword sets:
+$K_{\text{num}}$, which contains numerical expressions such as years, percentages,
+and units extracted through regular expressions, and
+$K_{\text{txt}}$, which contains topical or entity-level keywords extracted by the LLM.
+These signals are later used to guide both graph retrieval and lexical scoring.
+
+\textbf{Candidate generation via graph traversal:} The purpose of this step is to construct a structurally valid candidate set from the knowledge graph before semantic ranking is applied. Based on the predicted dimension $c$ and the graph schema, the LLM generates a schema-constrained Cypher query
+$Q_{\text{cypher}}$, which is then validated and executed against Neo4j. The resulting
+set of \texttt{ESG\_Statement} nodes is denoted by $S_{\text{cand}}$. If the generated
+query is invalid or returns no result, the system falls back to a broader graph
+retrieval strategy, $\texttt{GetStatementsByCategory}(G, c)$, which retrieves all
+statements associated with the predicted ESG dimension. This fallback mechanism improves
+robustness when the question is underspecified or when graph constraints are overly narrow.
+
+\textbf{Dual-stream scoring:} The purpose of this step is to rank candidate evidence using both semantic relevance and lexical precision. Each statement $s \in S_{\text{cand}}$ is evaluated under two independent scoring streams.
+
+\emph{Semantic similarity.}
+The question $q$ is encoded as a dense vector $\mathbf{e}_q$ using the
+Qwen3 embedding model~\cite{qwen2025}. Each statement $s$ retains a precomputed
+embedding $\mathbf{e}_s$ stored in its \texttt{embedding\_content} field.
+The semantic relevance score is computed by cosine similarity:
+\begin{equation}
+    s.\mathrm{score}_{\mathrm{vec}}
+    = \frac{\mathbf{e}_q \cdot \mathbf{e}_s}{\|\mathbf{e}_q\|\,\|\mathbf{e}_s\|}.
+    \label{eq:cosine}
+\end{equation}
+
+\emph{Keyword overlap.}
+A lexical score $s.\mathrm{score}_{\mathrm{kw}}$ is computed by matching the extracted
+keywords against the statement text and heading context. Numerical keywords from
+$K_{\text{num}}$ receive a higher weight than topical keywords from $K_{\text{txt}}$,
+since exact numerical matches often indicate strong relevance for ESG queries involving
+targets, ratios, or temporal comparisons.
+
+\textbf{Hybrid evidence fusion:} The purpose of this step is to combine the complementary strengths of semantic and keyword-based ranking into a final evidence set. Let $L_{\text{vec}}$ denote the
+top-$k_v$ candidates ranked by semantic similarity, and let $L_{\text{kw}}$ denote
+the top-$k_w$ candidates ranked by keyword overlap. The final retrieval output is
+defined as the deduplicated union of these two ranked lists:
+\begin{equation}
+    S_{\text{context}} = \mathrm{Unique}\!\left(L_{\text{vec}} \cup L_{\text{kw}}\right).
+    \label{eq:fusion}
+\end{equation}
+This design allows the retriever to capture both semantically related evidence and
+exact lexical matches. In practice, semantic retrieval is effective for paraphrastic
+or conceptually similar disclosures, whereas keyword retrieval is particularly useful
+for numerical expressions, named entities, and specific GRI-related terminology.
+
+\begin{algorithm}[!th]
+\caption{Hybrid Graph-Based ESG Retrieval Strategy}
+\label{alg:hybrid_retrieval}
+\begin{algorithmic}[1]
+    \Statex \textbf{Input:} Question $q$, Knowledge Graph $G=(V,E)$,
+            LLM $M_{\text{llm}}$, Embedding Model $M_{\text{emb}}$
+    \Statex \textbf{Parameters:} Vector top-$k$ ($k_v=3$), Keyword top-$k$ ($k_w=2$)
+    \Statex \textbf{Output:} Evidence set $S_{\text{context}}$
+
+    \State $S_{\text{context}} \leftarrow \emptyset$
+    \State $c \leftarrow \text{Classify}(q, M_{\text{llm}})$
+
+    \Statex \textbf{Step 1: Question understanding}
+    \State $K_{\text{num}} \leftarrow \text{RegexExtractNumbers}(q)$
+    \State $K_{\text{txt}} \leftarrow \text{LLMExtractKeywords}(q, M_{\text{llm}})$
+
+    \Statex \textbf{Step 2: Candidate generation}
+    \State $Q_{\text{cypher}} \leftarrow \text{GenerateCypher}(q, c, G.\text{Schema})$
+    \If{$\text{ValidCypher}(Q_{\text{cypher}})$}
+        \State $S_{\text{cand}} \leftarrow \text{ExecuteCypher}(G, Q_{\text{cypher}})$
+    \Else
+        \State $S_{\text{cand}} \leftarrow \emptyset$
+    \EndIf
+    \If{$S_{\text{cand}}$ is empty}
+        \State $S_{\text{cand}} \leftarrow \text{GetStatementsByCategory}(G, c)$
+    \EndIf
+
+    \Statex \textbf{Step 3: Dual-stream scoring}
+    \State $\mathbf{e}_q \leftarrow M_{\text{emb}}.\text{encode}(q)$
+    \For{each statement $s \in S_{\text{cand}}$}
+        \State $s.\text{score}_{\text{vec}} \leftarrow
+               \text{CosineSimilarity}(\mathbf{e}_q, \mathbf{e}_s)$
+        \State $s.\text{score}_{\text{kw}} \leftarrow 0$
+        \For{$k \in K_{\text{num}}$}
+            \If{$k \in s.\text{content}$}
+                \State $s.\text{score}_{\text{kw}} \mathrel{+}= 2$
+            \EndIf
+        \EndFor
+        \For{$k \in K_{\text{txt}}$}
+            \If{$k \in s.\text{content}$}
+                \State $s.\text{score}_{\text{kw}} \mathrel{+}= 1$
+            \EndIf
+        \EndFor
+    \EndFor
+
+    \Statex \textbf{Step 4: Hybrid fusion}
+    \State $L_{\text{vec}} \leftarrow
+           \text{SortDesc}(S_{\text{cand}},\, \text{score}_{\text{vec}})[1{:}k_v]$
+    \State $L_{\text{kw}}  \leftarrow
+           \text{SortDesc}(S_{\text{cand}},\, \text{score}_{\text{kw}})[1{:}k_w]$
+    \State $S_{\text{context}} \leftarrow
+           \text{Unique}(L_{\text{vec}} \cup L_{\text{kw}})$
+    \State \Return $S_{\text{context}}$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Provenance-Grounded Answer Generation:}\label{subsubsec:answer_gen} The purpose of the answer generation component is to synthesize the retrieved evidence
+into a coherent response while preserving explicit links to the original source
+documents. Given the user question $q$ and the evidence set $S_{\text{context}}$,
+the LLM receives a fixed instruction prompt that constrains it to generate an answer
+based only on the retrieved statements. Each evidence item is accompanied by its full
+provenance metadata, including report name, page number, company, year, and associated
+GRI topic. This provenance information is inserted directly into the prompt context so
+that each generated claim remains traceable to its documentary source.
+
+This design improves both factual grounding and auditability. Instead of relying solely
+on the parametric memory of the language model, the system requires the final answer to
+be supported by explicit evidence retrieved from the ESG-KG. As a result, the generated
+response is not only semantically relevant but also verifiable at the statement and
+page level, which is particularly important in ESG analysis where users may need to
+inspect supporting disclosures in detail.
+
+Overall, the KG-RAG pipeline converts a natural language question into a substantiated
+and citable answer by combining graph-structured retrieval, semantic and lexical ranking,
+and provenance-grounded generation. Figure~\ref{fig:kg_rag_pipeline} summarizes the
+complete process, from question understanding and graph-aware retrieval to evidence
+fusion and final answer generation.
+
+\subsection {Automated Fact-Checking}
+\label{subsec:fact-checking}
+While the KG-driven RAG module is designed to generate coherent and context-grounded
+answers, generative synthesis alone cannot guarantee factual correctness for every
+statement. In practice, a response may be fluent and largely accurate while still
+containing isolated factual errors (hallucinations), especially for time-sensitive
+financial indicators or cross-source inconsistencies. To reduce this risk, we introduce
+an \textbf{Automated Fact-Checking} layer that performs post-generation
+verification at claim level. This module takes the answer produced by the KG-driven RAG module as input,
+retrieves evidence from both internal and external sources, and assigns an explicit
+verdict with confidence for each atomic claim.
+
+The verification design follows a six-stage pipeline: (i) answer decomposition into
+atomic claims, (ii) multi-perspective query generation, (iii) parallel hybrid retrieval,
+(iv) semantic reranking and evidence distillation, (v) LLM-as-a-judge verdict inference,
+and (vi) report aggregation with confidence scoring. By combining internal evidence from
+the ESG corpus with external web evidence, the system bridges internal knowledge grounding
+and real-world validation in a unified auditing workflow. Figure~\ref{fig:fact_checking_pipeline} provides a schematic overview of this verification pipeline.
+
+\begin{figure}[]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/fact_checking_pipeline.png}
+    \caption{Automated fact-checking pipeline}
+    \label{fig:fact_checking_pipeline}
+\end{figure}
+
+\textbf{Answer Decomposition via Atomic Claim Extraction:} To perform rigorous, token-level auditing, the first stage converts a long-form generated answer into a set of \textit{atomic factual claims}, following methodologies pioneered by fact-checking frameworks like SAFE \cite{wei2024safe} and prior claim-centric decomposition systems \cite{hassan2017claimbuster,banko2007openie}. Each claim is required to express exactly one independently verifiable proposition. Validating a full paragraph as a single unit is overly coarse-grained and often obscures localized hallucinations nested within otherwise factual prose. By decomposing the text, the system isolates specific data points and enables fine-grained attribution of verification outcomes. For instance, a composite sentence such as ``Bank A reported a 15\% reduction in Scope 1 emissions but missed its renewable energy target by 5\%.'' is strictly decoupled into $c_1$: ``Bank A reported a 15\% reduction in Scope 1 emissions'' and $c_2$: ``Bank A missed its renewable energy target by 5\%''.
+
+\textbf{Claim definition and constraints:} In our setting, a claim is a short declarative statement that can be checked against retrieved evidence in isolation. The extractor is instructed to:
+
+\begin{itemize}
+    \item \textit{Enforce atomicity:} avoid compound propositions connected by conjunctions (\textit{and/or/but}) and split when necessary.
+    \item \textit{Preserve quantitative fidelity:} keep all numbers, percentages, dates/years, and measurement units \emph{exactly as stated} in the answer.
+    \item \textit{Ensure standalone semantics:} rewrite vague references (e.g., ``it'', ``the bank'', ``this target'') into explicit entities such as \textit{Bank A} and include minimal qualifiers needed to interpret the statement.
+\end{itemize}
+
+Formally, let $A$ denote the generated answer text. An LLM-based claim extractor $\Phi_{c}$ maps the answer into an atomic claim set:
+
+\begin{equation}
+    \mathcal{C} = \Phi_{c}(A) = \{c_1, c_2, \ldots, c_N\}
+    \label{eq:claim_extract}
+\end{equation}
+
+where each $c_i$ represents a minimal factual statement. In practice, the extractor prompt requests one claim per line and emphasizes atomicity, numeric fidelity, and self-containment. The raw LLM output is then post-processed by a lightweight validator that (i) removes empty/very short lines, (ii) strips bullet/numbering prefixes, and (iii) flags lines that still contain explicit conjunction patterns (e.g., ``and'', ``or'', ``but'') as \emph{potentially compound} for downstream error analysis.
+
+\textbf{Multi-Perspective Query Generation:} Given an atomic claim, relying on a single surface-form search query heavily restricts recall, as relevant evidence may use alternative lexical phrasing, abbreviations, or structural inversions. To mitigate this brittleness, we employ an LLM-assisted query generator that maps each claim $c_i$ into a \emph{fixed-size}, language-aware query set designed to maximize evidence recall while preserving verifiability signals (entities, years, and numeric values) \cite{wei2024safe}.
+
+\begin{equation}
+    \mathcal{Q}_i = \Phi_q(c_i) = \{q_{i1}, q_{i2}, \ldots, q_{iM}\}
+    \label{eq:query_set}
+\end{equation}
+
+where queries are diversified along two strategic dimensions. First, \textit{entity-centric queries} focus on the primary actors and standard indicators (e.g., ``Bank A Scope 1 emissions 2023 sustainability report''). Second, \textit{metric-centric queries} probe quantitative boundaries (e.g., ``Did Bank A reduce Scope 1 emissions by 15\%?'').
+
+\textbf{Query generation protocol:} Queries are generated per language, with a configurable language set $\mathcal{L}$ and a fixed number of expansions $k$ per language. Unless otherwise stated, $\mathcal{L}=\{\texttt{vi},\texttt{en}\}$ and $k=2$, yielding a total of
+\begin{equation}
+    M = |\mathcal{L}| \cdot k = 2 \cdot 2 = 4
+    \label{eq:query_count}
+\end{equation}
+queries per claim.
+
+Concretely, for each language $\ell \in \mathcal{L}$, the generator prompts the LLM to output a \emph{JSON array} of exactly $k$ items, each containing a \texttt{query} string and a short \texttt{reasoning} field (kept as metadata for traceability). If the claim is not written in the target language, it is translated internally so that the final query text is produced in $\ell$. We additionally apply lightweight safeguards consistent with web-search practice: (i) removal of restrictive domain operators (e.g., \texttt{site:}, \texttt{inurl:}, \texttt{intitle:}), (ii) validation rules that reject overly generic or too-short queries, and (iii) a language check for Vietnamese queries (preferring diacritics or common Vietnamese terms). Duplicate queries are removed case-insensitively within each language, and any missing slots are backfilled with deterministic fallback queries (e.g., appending ``verification/fact check'' for English or ``xac minh/kiem chung'' for Vietnamese), ensuring the pipeline produces \emph{exactly $M$ queries per claim} under normal conditions.
+
+\textbf{Parallel Hybrid Retrieval from Internal and External Sources:} To construct a comprehensive factual baseline, the generated query set $\mathcal{Q}_i$ for claim $c_i$ is injected into a dual-channel retrieval engine that aggregates evidence from both internal (private ESG corpus) and external (web) sources. Retrieval is executed \emph{iteratively over the generated queries}: for each $q \in \mathcal{Q}_i$ we retrieve candidates from both channels and accumulate them into a claim-level evidence pool.
+
+Figure~\ref{fig:retrieval_rerank_flow} illustrates this dual-channel retrieval workflow, showing how evidence gathered across the generated queries is consolidated and distilled into the fixed-size evidence set used for claim verification.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/fact_checking_retrieval_rerank.png}
+    \caption{Retrieval Evidence Construction Flow}
+    \label{fig:retrieval_rerank_flow}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Internal retrieval (local hybrid):} A sparse--dense ensemble over the private ESG corpus produced by the ESG Reports Processing Module. The sparse channel uses BM25 \cite{robertson2009probabilistic}; the dense channel uses sentence-embedding similarity with a FAISS inner-product index (L2-normalized embeddings) \cite{johnson2019billion}.
+    \item \textbf{External retrieval (web):} A Google-compatible web search API (SerpAPI in the reported experiments) returning snippets and URLs for time-sensitive evidence beyond the local corpus.
+\end{itemize}
+
+Consequently, the unified evidence ensemble for a query $q$ resolves to the union:
+
+\begin{equation}
+    R(q) = D_{\mathrm{int}}(q) \cup D_{\mathrm{ext}}(q)
+    \label{eq:retrieval_union}
+\end{equation}
+
+where $D_{\mathrm{int}}$ and $D_{\mathrm{ext}}$ delimit the respective internal and external environments.
+
+Aggregating over all generated queries yields the candidate evidence set for claim $c_i$:
+\begin{equation}
+    R(\mathcal{Q}_i) = \bigcup_{q \in \mathcal{Q}_i} R(q)
+    \label{eq:retrieval_over_queries}
+\end{equation}
+
+\textbf{Evidence objects and scoring:} Each retrieved unit is materialized as an \texttt{Evidence} tuple $d = \langle t, u, s \rangle$, where $t$ is the evidence text (chunk or snippet), $u$ is the provenance identifier (local document source or web URL), and $s$ is a retrieval score. Importantly, $s$ is \emph{source-specific}:
+\begin{itemize}
+    \item \textit{Web score:} a rank-based position score $s_{\mathrm{web}} = 1/(r+1)$ for result rank $r$ (top-5 per query).
+    \item \textit{Dense local score:} cosine-like similarity via inner product of normalized embeddings (top-5 per query).
+    \item \textit{Sparse local score:} BM25Okapi relevance score (top-5 per query).
+\end{itemize}
+These scores are not calibrated to a shared scale across retrieval channels; they are used to preserve the retriever's native ranking signal and to support merging/deduplication prior to cross-encoder reranking in Stage 4.
+
+Given $M$ generated queries per claim (Stage 2), this design yields up to $5M$ web snippets and up to $10M$ local chunks (dense + sparse) before deduplication, i.e., an upper bound of $15M$ candidate evidence units per claim.
+
+\textbf{Merging and deduplication:} Evidence is collected across all queries $q \in \mathcal{Q}_i$ and merged with exact-key deduplication on the pair $(t,u)$ (i.e., identical text and identical source). When duplicates occur across queries or channels, we keep the instance with the highest retrieval score:
+\begin{equation}
+    d^{*}(t,u) = \arg\max_{d\, :\, (t_d,u_d)=(t,u)}\ s(d)
+    \label{eq:dedup_max}
+\end{equation}
+This produces a compact, provenance-preserving candidate evidence pool for downstream reranking and verification.
+
+\textbf{Semantic Reranking and Evidence Distillation:} Stage 3 is recall-oriented and can return evidence that is topically related but not decisively informative for factual judgment. To reduce this noise, we apply a cross-encoder reranking function that models claim--evidence interaction jointly \cite{nogueira2019bert,bge2023embedding}. Let $c_i$ be claim $i$ and $d_{ij}$ be candidate evidence $j$ from the merged retrieval pool $R(\mathcal{Q}_i)$. The relevance score is:
+
+\begin{equation}
+    s_{ij} = f_{\mathrm{cross}}(c_i, d_{ij})
+    \label{eq:cross_score}
+\end{equation}
+
+where $f_{\mathrm{cross}}$ is a sequence-pair scorer with full token-level attention across the concatenated input $[c_i;d_{ij}]$. In contrast to independent encoders, this formulation better captures directional entailment cues such as numeric agreement, temporal consistency, negation, and qualifier mismatch.
+
+After scoring, we perform two-step distillation:
+
+\begin{equation}
+    E_i^{*} = \{d_{ij} \mid s_{ij} > \tau\}, \quad
+    \widetilde{E}_i = \operatorname{TopK}(E_i^{*}, K)
+    \label{eq:topk_filter}
+\end{equation}
+
+where $\tau$ is the minimum admissible relevance and $K$ is the evidence budget passed to Stage 5 (default $K=5$ in the reported experiments). This filtering can be interpreted as approximating the constrained optimization
+
+\begin{equation}
+\max_{\widetilde{E}_i \subseteq R(\mathcal{Q}_i)} \sum_{d \in \widetilde{E}_i} s(c_i,d)
+\quad \text{s.t.} \quad |\widetilde{E}_i| \le K,\; s(c_i,d)>\tau
+\label{eq:stage4_constrained}
+\end{equation}
+
+which maximizes total relevance under context-size constraints.
+
+Reranking is configurable and can be enabled or disabled. When enabled, both retrieval scores and rerank scores are preserved in metadata, allowing direct analysis of rank inversions between retrieval and cross-encoder stages.
+
+\textbf{Factual Verdict via LLM-as-a-Judge:} Given distilled evidence $\widetilde{E}_i$, Stage 5 performs claim-level judgment under a FEVER-style label space \cite{thorne2018fever} with modern LLM-as-a-judge prompting protocols \cite{zheng2023judging}. For each claim, the verifier predicts a single label in
+$\mathcal{Y}=\{\mathrm{SUPPORTS},\mathrm{REFUTES},\mathrm{NOT\_ENOUGH\_INFO}\}$:
+
+\begin{itemize}
+    \item \textbf{SUPPORTS}: Retained evidence explicitly and incontrovertibly validates the claim.
+    \item \textbf{REFUTES}: Retained evidence provides direct refutation or statistically contradictory values.
+    \item \textbf{NOT\_ENOUGH\_INFO}: Available data lacks the specificity requisite to definitively confirm or deny.
+\end{itemize}
+
+Formally, the verifier induces an approximate posterior over labels conditioned on evidence:
+
+\begin{equation}
+p(y \mid c_i, \widetilde{E}_i), \quad y \in \mathcal{Y}
+\label{eq:label_posterior}
+\end{equation}
+
+and outputs $y_i = \arg\max_{y \in \mathcal{Y}} p(y\mid c_i,\widetilde{E}_i)$ together with a confidence scalar $\gamma_i \in [0,1]$. We represent the result as:
+
+\begin{equation}
+    v_i = \langle c_i, y_i, \gamma_i, \mathcal{S}_i \rangle
+    \label{eq:verdict_tuple}
+\end{equation}
+
+where $\mathcal{S}_i$ is the cited evidence index set mapped to provenance (URL for web evidence; document/page references for internal evidence). To ensure auditability, the verifier is required to return a structured payload including: label, confidence, cited evidence indices, evidence-specific justifications, and short rationale.
+
+This stage explicitly separates decision quality from explanation quality, enabling downstream diagnosis when a label appears plausible but citation quality is poor.
+
+When internal and external evidence coexist, the pipeline can apply an optional source-priority bias before verification. This mechanism is a lightweight scoring heuristic rather than a full source-conflict resolver.
+
+\textbf{Report Aggregation and Confidence Scoring:} After claim-level verification, Stage 6 aggregates all tuples into a structured report containing claims, verdicts, evidence citations, query metadata, and summary confidence metrics. Let $N$ be the number of claims and $\gamma_i$ the confidence of claim $i$. The unsigned macro-confidence is:
+
+\begin{equation}
+    CS_{\mathrm{overall}} = \frac{1}{N} \sum_{i=1}^{N} \gamma_i
+    \label{eq:overall_confidence}
+\end{equation}
+
+Because $CS_{\mathrm{overall}}$ ignores directionality (support vs. refute), we define a signed metric using polarity variable
+$l_i \in \{+1,0,-1\}$ for SUPPORTS, NOT\_ENOUGH\_INFO, and REFUTES:
+
+\begin{equation}
+    CS_{\mathrm{final}} = \frac{1}{N} \sum_{i=1}^{N} \left(l_i \cdot \gamma_i\right)
+    \label{eq:final_confidence_signed}
+\end{equation}
+
+Hence, $CS_{\mathrm{overall}} \in [0,1]$ and $CS_{\mathrm{final}} \in [-1,1]$. Operationally, positive values indicate predominantly supportive evidence, values near zero indicate uncertainty or mixed signals, and negative values indicate dominant refutation.
+
+In deployment, these confidence signals are used for automatic risk scoring and
+prioritization in downstream analytics, without requiring a manual-review gate.
+
+Figure~\ref{fig:fact_checking_aggregation} visualizes the aggregation of claim-level verdicts into report-level indicators and risk signals.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/fact_checking_aggregation.png}
+    \caption{Fact Checking Aggregation}
+    \label{fig:fact_checking_aggregation}
+\end{figure}
+From a governance perspective, this aggregation converts claim-level outputs into decision-oriented indicators while preserving full traceability to evidence and query provenance.
+
+Overall, this module acts as a post-generation reliability layer for ESG QA. The KG-driven RAG module emphasizes high-recall answer synthesis over heterogeneous disclosures, whereas this module enforces claim-level verification, evidence attribution, and confidence-aware prioritization. This separation of generation and verification improves transparency and reduces the risk of propagating unsupported ESG statements in high-stakes analytical settings.
+
+
+\section{Dataset}
+\label{sec:dataset}
+
+Our thesis uses a multi-layer dataset consisting of three main resources: a reference
+corpus of GRI standards, a document corpus of ESG-related reports collected from
+Vietnamese banks, and an expert-supported ESG question benchmark used for evaluation.
+Together, these resources support both system construction and experimental assessment.
+Table~\ref{tab:dataset_summary} summarizes the main dataset components used in this thesis,
+while Table~\ref{tab:question_distribution} reports the distribution of evaluation
+questions across the three ESG dimensions.
+\begin{table}[htbp]
+\centering
+\caption{Summary of datasets used in this thesis}
+\label{tab:dataset_summary}
+\begin{tabular}{p{3.8cm}p{3.0cm}p{2.4cm}p{5.0cm}}
+\toprule
+\textbf{Component} & \textbf{Source} & \textbf{Size} & \textbf{Role} \\
+\midrule
+GRI standards corpus & Official GRI standards & GRI 1--3, 200/300/400 series & Metadata construction and disclosure normalization \\
+ESG report corpus & Vietnamese banks & 18 banks, reports from 2023--2024 & Report processing, knowledge graph construction, retrieval, and question answering \\
+ESG QA benchmark & Expert-supported question set & 120 questions & System evaluation \\
+Evaluation subset & Sampled from report corpus & 6 banks, 12 reports & Manual answer assessment \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{GRI standards corpus:} The reference corpus consists of official GRI standard documents, including the
+universal standards (GRI 1, 2, and 3) and topic-specific standards from the
+200, 300, and 400 series. These documents serve as the authoritative source for
+constructing the ESG metadata schema, including standardized categories, indicator
+identifiers, disclosure titles, and reporting details. In the designed framework,
+this corpus is used by the ESG Metadata Module to normalize disclosure concepts
+before they are linked to evidence extracted from bank reports.
+
+
+\textbf{ESG report corpus:} The main document corpus covers 18 Vietnamese commercial banks and includes both
+standalone sustainability reports and annual reports containing sustainability-related
+sections. Among these banks, 10 provide sustainability reports for both 2023 and 2024,
+while the remaining 8 provide annual reports for 2023 and 2024 that contain ESG-related
+content. The reports are moderately long and heterogeneous, with an average length of
+approximately 60 pages per document, ranging from 28 to 80 pages. This corpus forms
+the basis for ESG report processing, knowledge graph construction, retrieval, and
+evidence-grounded question answering.
+
+
+\textbf{ESG question benchmark:} To evaluate the designed framework, we construct an expert-supported benchmark of
+120 ESG questions designed to reflect realistic analyst-style information needs in the
+Vietnamese banking domain. Following domain feedback, the benchmark is distributed
+across the three ESG dimensions as 55 Environmental questions, 32 Social questions,
+and 33 Governance questions, as shown in Table~\ref{tab:question_distribution}.
+The larger share of Governance questions reflects the stronger emphasis of the banking
+sector on governance, risk oversight, compliance, and control-related disclosures.
+The benchmark covers a range of information needs, including fact-based queries,
+indicator-specific questions, and report-grounded analytical questions.
+
+
+\textbf{Evaluation subset:} Although the full corpus contains reports from 18 banks, evaluating all 120 ESG questions across all banks would be costly and require substantial expert annotation. Therefore, we selected 6 banks for the final evaluation using stratified sampling based on report type and report length to reduce sampling bias.The evaluation subset includes 12 reports: 10 sustainability reports and 2 annual reports, ranging from 28 to 80 pages. This composition reflects the corpus, where ESG information is more commonly and comprehensively disclosed in sustainability reports, while annual reports were included to cover cases where ESG content is embedded in broader corporate reporting.For each report, all 120 ESG questions were evaluated, resulting in 1,440 question–document pairs. Generated answers were manually assessed by ESG domain experts based on supporting evidence in the reports. Questions with no applicable or sufficient evidence were labeled as “no sufficient evidence” and handled separately.
+
+
+
+\begin{table}[htbp]
+\centering
+\caption{Distribution of ESG questions in the evaluation benchmark}
+\label{tab:question_distribution}
+\begin{tabular}{lc}
+\toprule
+\textbf{Category} & \textbf{Number of questions} \\
+\midrule
+Environmental & 55 \\
+Social & 32 \\
+Governance & 33 \\
+\midrule
+Total & 120 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Experiments and Results}
+\label{sec:experiments}
+
+\subsection{Experimental Design}
+
+The purpose of the experimental design is to evaluate the designed ESG question-answering
+framework at three complementary levels: retrieval quality, answer quality, and
+claim-level factual verification. The evaluation is conducted in a document-grounded
+setting, where each system must answer ESG questions using evidence retrieved from the
+selected Vietnamese banking reports described in the evaluation subset.
+
+\textbf{Compared systems: }We compare the designed framework against multiple retrieval configurations in order to
+measure the contribution of graph-aware retrieval and hybrid evidence ranking. For a fair comparison, all retrieval configurations operate over the same
+statement-level evidence corpus produced by the preprocessing pipeline. The
+non-graph baselines, including \texttt{BM25}, \texttt{MMR}, and
+\texttt{Dense Retrieval}, index the textual content of these evidence statements.
+The graph-based methods retrieve relevant entities and relations from the ESG
+knowledge graph and then map the retrieved graph results back to the same
+statement-level evidence units. Therefore, all systems return a ranked list of
+candidate evidence statements under the same output format.
+
+\textbf{Answer generation models:} To assess the effect of the answer generator, we evaluate two open-weight large language
+models: \texttt{Llama3.1-8B} and \texttt{Qwen3-8B}. For each retrieval configuration,
+the same prompting strategy is applied so that differences in final performance can be
+attributed primarily to retrieval quality and model capability rather than to prompt variation.
+For reproducibility, decoding is fixed across all runs with deterministic settings
+(\texttt{temperature}=0.0, \texttt{top\_p}=1.0, \texttt{max\_new\_tokens}=2048,
+fixed random seed).
+
+\textbf{Retrieval and answering protocol:} For each question--document pair, the retriever first returns the top-10 candidate
+statements. For answer generation, we pass only the top-3 statements as evidence
+context in order to control context length and reduce irrelevant or redundant evidence.
+Let $q_i$ denote the $i$-th question and let
+$\mathcal{E}_i^{(10)} = \{e_{i1}, e_{i2}, \ldots, e_{i10}\}$ denote the top-10 retrieved
+evidence statements. We define the generation context as the top-3 subset
+$\mathcal{E}_i^{(3)} = \{e_{i1}, e_{i2}, e_{i3}\} \subset \mathcal{E}_i^{(10)}$.
+The answer generator then produces
+\begin{equation}
+    \hat{a}_i = f_{\mathrm{LLM}}(q_i, \mathcal{E}_i^{(3)})
+    \label{eq:answer_generation}
+\end{equation}
+where $f_{\mathrm{LLM}}$ denotes the selected generation model. The generator is
+constrained to answer based only on the retrieved evidence and its associated provenance.
+
+\textbf{Evaluation profile for verification sources:} For answer generation and retriever comparison, evidence is drawn from the local ESG
+report corpus. For the post-generation fact-checking module, verification uses the
+hybrid setting described in Section~\ref{subsec:fact-checking}, where local retrieval
+and web retrieval are both enabled and jointly reranked before claim-level judgment.
+
+\textbf{Answer-level evaluation:} All generated answers are manually assessed by ESG domain experts. Let
+\begin{equation}
+    y_i =
+    \begin{cases}
+        1, & \text{if the answer to } q_i \text{ is judged correct} \\
+        0, & \text{otherwise}
+    \end{cases}
+    \label{eq:binary_correctness}
+\end{equation}
+denote the binary correctness label for question $q_i$. The overall answer accuracy is
+defined as
+\begin{equation}
+    \mathrm{Accuracy}_{\mathrm{overall}}
+    = \frac{1}{N} \sum_{i=1}^{N} y_i
+    \label{eq:overall_accuracy}
+\end{equation}
+where $N$ is the total number of evaluated questions.
+
+To analyze performance across ESG dimensions, we also report category-specific accuracy.
+Let $\mathcal{Q}_c$ denote the subset of questions in category
+$c \in \{\mathrm{E}, \mathrm{S}, \mathrm{G}\}$ and let $N_c = |\mathcal{Q}_c|$.
+Then the accuracy for category $c$ is
+\begin{equation}
+    \mathrm{Accuracy}_{c}
+    = \frac{1}{N_c} \sum_{q_i \in \mathcal{Q}_c} y_i
+    \label{eq:category_accuracy}
+\end{equation}
+We further report macro-average accuracy to summarize balanced performance across the
+three ESG dimensions:
+\begin{equation}
+    \mathrm{Accuracy}_{\mathrm{macro}}
+    = \frac{1}{3}
+    \left(
+    \mathrm{Accuracy}_{\mathrm{E}} +
+    \mathrm{Accuracy}_{\mathrm{S}} +
+    \mathrm{Accuracy}_{\mathrm{G}}
+    \right)
+    \label{eq:macro_accuracy}
+\end{equation}
+
+\textbf{Retriever-level evaluation:} To evaluate retrieval quality, we compare the retrieved evidence list against the
+expert-annotated gold evidence set for each question. Let $\mathcal{G}_i$ denote the
+gold evidence set for question $q_i$. Since the answer generator uses the top-3 retrieved statements as evidence context, we report Recall@3 and Precision@3 as the main retrieval metrics. We also report
+Recall@5 and Recall@10 as secondary metrics to analyze whether relevant evidence
+appears slightly below the generation cut-off or within the full candidate list.
+For a cut-off $k$, define $\mathcal{E}_i^{(k)}$ as the top-$k$ retrieved statements.
+Recall@$k$ is computed as
+\begin{equation}
+    \mathrm{Recall@}k_i
+    = \frac{|\mathcal{E}_i^{(k)} \cap \mathcal{G}_i|}{|\mathcal{G}_i|}.
+    \label{eq:recallk}
+\end{equation}
+Precision@$k$ is computed as
+\begin{equation}
+    \mathrm{Precision@}k_i
+    = \frac{|\mathcal{E}_i^{(k)} \cap \mathcal{G}_i|}{k}.
+    \label{eq:precisionk}
+\end{equation}
+We instantiate these metrics with $k=3$ for the main generation context and report
+Recall@5 and Recall@10 as secondary retrieval metrics. All retrieval metrics are
+macro-averaged across evaluated question--document pairs.
+
+\textbf{Fact-checking evaluation:} The Automated Fact-Checking module is evaluated at the claim level. For each generated
+answer, the system extracts atomic claims and assigns one FEVER-style label
+($\mathrm{SUPPORTS}$, $\mathrm{REFUTES}$, or $\mathrm{NOT\_ENOUGH\_INFO}$) with a confidence
+score. Let $M$ be the number of extracted claims, with claim label $y_j$ and confidence
+$\gamma_j \in [0,1]$ for claim $j$. We summarize verification behavior by:
+\begin{equation}
+    p(\ell) = \frac{1}{M} \sum_{j=1}^{M} \mathbf{1}[y_j = \ell],
+    \quad \ell \in \{\mathrm{SUPPORTS},\mathrm{REFUTES},\mathrm{NOT\_ENOUGH\_INFO}\}
+\end{equation}
+\begin{equation}
+    C_{\mathrm{mean}} = \frac{1}{M} \sum_{j=1}^{M} \gamma_j,
+    \qquad
+    C_{\mathrm{signed}} = \frac{1}{M} \sum_{j=1}^{M} s(y_j)\,\gamma_j
+\end{equation}
+where $s(\mathrm{SUPPORTS})=+1$, $s(\mathrm{NOT\_ENOUGH\_INFO})=0$, and
+$s(\mathrm{REFUTES})=-1$. Finally, we report the review-trigger rate over $N$ evaluated
+answers:
+\begin{equation}
+    R_{\mathrm{review}} = \frac{1}{N} \sum_{i=1}^{N}
+    \mathbf{1}\!\left[C_{\mathrm{signed}}^{(i)} < \tau\right]
+\end{equation}
+where $\tau$ is the predefined review threshold. This setup keeps evaluation fully
+automatic while capturing class balance, certainty, and operational risk.
+
+\textbf{Analysis objective:} This experimental setup enables us to analyze the designed system from four
+perspectives: (i) whether graph-aware retrieval improves evidence selection compared
+with non-graph baselines, (ii) whether improved retrieval leads to higher answer
+accuracy, (iii) whether the generated answers remain faithful and relevant to both
+question and evidence, and (iv) whether the post-generation fact-checking layer can
+reliably provide claim-level verification consistency and evidence attribution.
+
+\subsection{Results}
+
+\textbf{Answer-level accuracy: }We first evaluate the end-to-end question answering performance of the proposed
+framework under different retrieval configurations and answer generation models.
+Each retriever returns the top-10 candidate evidence statements, and the top-3
+ranked statements are passed to the answer generator as evidence context. Accuracy
+is measured as the percentage of correctly answered question--document pairs based
+on expert assessment.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.89\linewidth]{figures/figure_4.pdf}
+    \caption{Answer-level accuracy of \texttt{Llama3.1-8B} and \texttt{Qwen3-8B} across retrieval configurations using top-3 evidence context.}
+    \label{fig:answer_accuracy_top3}
+\end{figure}
+
+Figure~\ref{fig:answer_accuracy_top3} shows that graph-aware retrieval improves
+answer accuracy for both generation models. Compared with non-graph baselines such
+as \texttt{BM25}, \texttt{Dense Retrieval}, and \texttt{MMR}, the graph-based
+configurations achieve stronger performance, indicating that structured ESG
+relationships help the system retrieve more useful evidence for document-grounded
+question answering.
+
+Among all retrieval configurations, \texttt{KG\_Enhanced} achieves the best
+performance for both \texttt{Llama3.1-8B} and \texttt{Qwen3-8B}. This suggests that
+augmenting graph-aware retrieval with a hybrid search component improves the quality
+of the top-3 evidence context passed to the answer generator. The result is especially
+strong for \texttt{Qwen3-8B}, showing that a stronger generation model can better
+exploit high-quality retrieved evidence.
+
+Overall, the answer-level results indicate that final QA performance is driven by
+both retrieval quality and generation model capability. The consistent improvement
+from non-graph retrieval baselines to \texttt{KG} and \texttt{KG\_Enhanced} supports
+the effectiveness of the proposed KG-RAG framework for ESG question answering.
+
+
+\textbf{Category-specific accuracy: }To further analyze performance across ESG dimensions, we report category-specific
+accuracy for the graph-based configurations. The comparison focuses on
+\texttt{KG} and \texttt{KG\_Enhanced}, since these are the main proposed retrieval
+settings.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Category-specific answer accuracy of graph-based configurations}
+    \label{tab:category_accuracy}
+    \begin{tabular}{lcccc}
+    \toprule
+    Configuration & Environmental & Social & Governance & Overall \\
+    \midrule
+    \texttt{KG\_Llama3.1-8B} & 68.65\% & 69.60\% & 70.45\% & 69.57\% \\
+    \texttt{KG\_Qwen3-8B} & 70.62\% & 82.23\% & 78.63\% & 77.16\% \\
+    \texttt{KG\_Enhanced\_Llama3.1-8B} & 70.35\% & 76.82\% & 70.56\% & 72.58\% \\
+    \texttt{KG\_Enhanced\_Qwen3-8B} & \textbf{83.74\%} & \textbf{92.43\%} & \textbf{88.25\%} & \textbf{88.14\%} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Table~\ref{tab:category_accuracy} shows that \texttt{KG\_Enhanced\_Qwen3-8B}
+achieves the best performance across all ESG dimensions, with 83.74\% accuracy on
+Environmental questions, 92.43\% on Social questions, and 88.25\% on Governance
+questions. The strongest category-level result appears in the Social dimension,
+suggesting that the combination of graph-aware retrieval, hybrid search, and
+\texttt{Qwen3-8B} is particularly effective when the required evidence is expressed
+through report statements about employees, communities, customers, and social
+responsibility initiatives.
+
+Compared with the standard \texttt{KG} setting, \texttt{KG\_Enhanced} improves the
+overall accuracy of \texttt{Llama3.1-8B} from 69.57\% to 72.58\%, and improves
+\texttt{Qwen3-8B} from 77.16\% to 88.14\%. The improvement is especially large for
+\texttt{Qwen3-8B}, indicating that the stronger generator benefits more from the
+additional evidence retrieved through the hybrid search component. These results
+suggest that combining structured graph-based retrieval with hybrid search provides
+a richer and more relevant evidence context for ESG question answering.
+
+\textbf{Retriever-level performance: }To further examine whether the improvement in answer-level accuracy is supported by
+better evidence selection, we evaluate the retrieval performance of each configuration
+against the expert-annotated gold evidence sets. Since the answer generator uses only
+the top-3 retrieved statements as evidence context, \textit{Recall@3} and
+\textit{Precision@3} are treated as the main retrieval metrics. We additionally report
+\textit{Recall@5} and \textit{Recall@10} to analyze whether relevant evidence appears
+slightly below the generation cut-off or within the full candidate list returned by
+the retriever.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Retriever-level performance against expert-annotated gold evidence}
+    \label{tab:retrieval_performance}
+    \begin{tabular}{lcccc}
+    \toprule
+    Retrieval method & Recall@3 & Precision@3 & Recall@5 & Recall@10 \\
+    \midrule
+    \texttt{BM25} & 52.5\% & 25.3\% & 65.8\% & 76.2\% \\
+    \texttt{Dense Retrieval} & 68.4\% & 32.1\% & 80.7\% & 88.5\% \\
+    \texttt{MMR} & 66.1\% & 30.8\% & 81.9\% & 89.6\% \\
+    \texttt{KG} & 71.2\% & 33.6\% & 82.4\% & 89.1\% \\
+    \texttt{KG\_Enhanced} & \textbf{83.0\%} & \textbf{39.2\%} & \textbf{90.5\%} & \textbf{94.8\%} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Table~\ref{tab:retrieval_performance} shows that \texttt{KG\_Enhanced} achieves the
+best retrieval performance across all metrics. In the main generation context, it
+reaches 83.0\% Recall@3 and 39.2\% Precision@3, outperforming the standard
+\texttt{KG} retriever by 11.8 percentage points in Recall@3 and 5.6 percentage points
+in Precision@3. This indicates that adding the hybrid search component helps place
+more relevant evidence directly within the top-3 statements passed to the answer
+generator.
+
+Among the non-graph baselines, \texttt{Dense Retrieval} and \texttt{MMR} perform
+substantially better than \texttt{BM25}. \texttt{Dense Retrieval} achieves 68.4\%
+Recall@3, while \texttt{MMR} achieves 66.1\%, compared with 52.5\% for
+\texttt{BM25}. This suggests that semantic similarity and diversity-aware retrieval
+are more effective than lexical matching alone for ESG questions, where the wording
+of the question may differ from the wording used in the reports. However, both
+methods still remain below the graph-based configurations, especially
+\texttt{KG\_Enhanced}.
+
+The secondary recall metrics further show that relevant evidence is often present
+within the broader candidate list. For example, \texttt{KG\_Enhanced} increases from
+83.0\% Recall@3 to 90.5\% Recall@5 and 94.8\% Recall@10. This means that most gold
+evidence can be retrieved by the enhanced graph-based method, and a large proportion
+is already ranked within the top-3 generation context. In contrast, \texttt{BM25}
+shows lower Recall@3 and Recall@10, indicating weaker evidence coverage and less
+effective ranking for this document-grounded ESG QA task.
+
+Overall, the retrieval results support the answer-level findings: configurations that
+retrieve more relevant evidence within the top-3 context also lead to higher answer
+accuracy. The strong performance of \texttt{KG\_Enhanced} confirms that combining
+structured graph-aware retrieval with hybrid search improves evidence selection and
+provides a stronger basis for downstream answer generation.
+
+\textbf{Fact-checking performance: }We next evaluate the post-generation fact-checking module using the automatic
+claim-level indicators defined in the experimental design. For each generated answer,
+the verifier produces FEVER-style labels with confidence scores, and the outputs are
+aggregated into four report-level indicators: label distribution, mean confidence
+$C_{\mathrm{mean}}$, signed confidence $C_{\mathrm{signed}}$, and review-trigger rate
+$R_{\mathrm{review}}$.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Fact-checking results on the evaluation subset}
+    \label{tab:fact_checking_results}
+    \begin{tabular}{lc}
+    \toprule
+    Metric & Value \\
+    \midrule
+    $p(\mathrm{SUPPORTS})$ & 76.0\% \\
+    $p(\mathrm{REFUTES})$ & 8.0\% \\
+    $p(\mathrm{NOT\_ENOUGH\_INFO})$ & 16.0\% \\
+    $C_{\mathrm{mean}}$ & 0.79 \\
+    $C_{\mathrm{signed}}$ & 0.53 \\
+    $R_{\mathrm{review}}$ & 34.0\% \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Table~\ref{tab:fact_checking_results} summarizes the verification behavior of the
+fact-checking pipeline. The label distribution indicates whether the verifier tends to
+confirm claims (SUPPORTS), reject them (REFUTES), or defer under uncertainty
+(NOT\_ENOUGH\_INFO). In parallel, $C_{\mathrm{mean}}$ reflects overall confidence,
+while $C_{\mathrm{signed}}$ captures directional reliability by combining confidence
+with verdict polarity.
+
+The review-trigger rate $R_{\mathrm{review}}$ provides an operational perspective on
+deployment risk: higher values indicate that more answers are flagged for manual
+inspection under the threshold rule $C_{\mathrm{signed}} < \tau$. Together, these
+indicators complement answer-level accuracy by quantifying not only whether the system
+answers correctly, but also how confidently and consistently it supports each generated
+claim.
+
+Overall, the fact-checking results provide a transparent reliability layer for ESG QA.
+While answer-level metrics evaluate final task performance, claim-level verification
+signals provide additional evidence about uncertainty and potential risk in
+high-stakes ESG analysis.
+
+\textbf{Error analysis: }To better characterize where the proposed framework still fails, we manually
+inspect the incorrect cases produced by \texttt{KG\_Enhanced\_Qwen3-8B}, which
+constitute approximately 11.9\% of all evaluated question--document pairs. Each
+incorrect case is assigned to one of five error categories that capture the
+dominant failure mode. Table~\ref{tab:error_distribution} reports the distribution
+of these categories across the three ESG dimensions.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Distribution of error categories on incorrect cases produced by
+    \texttt{KG\_Enhanced\_Qwen3-8B}.}
+    \label{tab:error_distribution}
+    \begin{tabular}{lcccc}
+    \toprule
+    Error category & Environmental & Social & Governance & Overall \\
+    \midrule
+    E1: Annotation interpretation drift & 18\% & 25\% & 21\% & 22\% \\
+    E2: Distractor-rich evidence chunks & 26\% & 12\% & 19\% & 18\% \\
+    E3: Multi-fact composition          & 31\% & 19\% & 22\% & 24\% \\
+    E4: Cross-entity contamination      & 9\%  & 11\% & 16\% & 12\% \\
+    E5: Implicit/inferred reasoning     & 16\% & 33\% & 22\% & 24\% \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{E1: Annotation interpretation drift: }
+Approximately 22\% of incorrect cases stem from gold answers that are not
+explicitly grounded in the report. The expert annotation occasionally marks the
+expected answer as ``Yes'' with explanations of the form
+``\textit{(Standard)}'', ``\textit{(Implied)}'', or ``\textit{(Snippet)}'',
+referring to inferred presence rather than a verbatim statement. In such cases,
+the model correctly indicates that the relevant fact is not present in the
+retrieved evidence and is consequently penalized. We therefore treat E1 as
+benchmark-side noise rather than a retrieval or generation failure.
+
+\textbf{E2: Distractor-rich evidence chunks: }In 18\% of cases, the top-3 evidence does include the correct fact, but the
+generator extracts a numerically similar but semantically unrelated value from
+the same chunk. A representative example is the question
+\textit{``What was the total corporate tax paid by ACB in 2023 (in VND billion)?''},
+whose gold answer is 4{,}003. The top-1 chunk contains both
+\texttt{``4{,}003 corporate tax''} and \texttt{``5{,}214 state budget''}, and the
+model returns the latter. This is the dominant failure mode for Environmental
+questions (26\%), where dense numeric tables co-locate multiple emission and
+energy figures.
+
+\textbf{E3: Multi-fact composition:} The largest single error category (24\% overall, 31\% on Environmental questions)
+arises when the answer requires aggregating evidence from multiple report
+subsections. For example,
+\textit{``Did all three GHG scopes decrease in 2023?''} requires per-scope deltas
+that are typically split across separate paragraphs in the GHG section. The
+retriever places the aggregated reduction (9\%) in the top-3 context, but
+per-scope figures are pushed below the cut-off, leading the generator to refuse
+the answer despite sufficient implicit support.
+
+\textbf{E4: Cross-entity contamination:} In 12\% of cases the retriever returns evidence from a different company or
+reporting year because award titles, certification names, or boilerplate
+phrasing recur verbatim across institutions. For an MSB-2024 award question, the
+top-1 chunk originates from the HDBank-2024 awards table because the award name
+\textit{``Best Annual Report''} matches exactly. Cross-entity contamination is
+most pronounced for Governance questions (16\%), which over-rely on
+institutional reputation signals.
+
+\textbf{E5: Implicit or inferred reasoning:} Roughly 24\% of errors require multi-hop or inferential reasoning beyond
+literal statement matching. This category dominates Social questions (33\%):
+benchmark items such as \textit{``Did the bank establish a trade union for
+staff in 2024?''} are marked correct when the report states broader phrasing
+like \textit{``support staff representative bodies''}. The retriever surfaces
+the relevant chunk, but the generator declines to commit to an explicit claim
+under the strict instruction to answer only based on provided contexts.
+
+\textbf{Implications: }These error patterns suggest three concrete directions for further improvement.
+First, the prevalence of multi-fact composition errors (E3) motivates
+\emph{evidence aggregation at generation time}, where compositional questions
+trigger expansion of the top-$k$ context window to cover complementary subsections.
+Second, cross-entity contamination (E4) can be mitigated through
+\emph{graph-aware} that explicitly leverages company and year
+relationships to discount evidence outside the queried scope. Third, the share
+of annotation drift (E1) indicates that an additional benchmark curation pass --
+or evaluation under a strict literal-grounding gold standard -- would more
+faithfully reflect the framework's true accuracy. Distractor-rich chunks (E2)
+and implicit reasoning (E5) point to the limits of single-pass extractive
+generation and motivate the integration of structured numeric reasoning and
+soft entailment into future versions of the system.
+
+% =====================================================================
+% Section 5.3 — Qualitative ESG Assessment Through Example Questions
+% Insert this block inside the Experiments and Results section, after
+% Subsection 5.2 (Results) and before the Conclusion.
+% =====================================================================
+\subsection{Qualitative ESG Assessment of Vietnamese Banks}
+\label{subsec:case-study}
+ 
+Beyond the quantitative metrics reported in Sections~\ref{sec:experiments},
+this section presents a qualitative evaluation of the framework based on
+representative question--answer cases drawn from the benchmark. The aim is
+threefold: to illustrate how the system supports concrete ESG analysis on
+Vietnamese banks across multiple disclosure themes, to characterize the
+kinds of insights that the framework can deliver in practice, and to surface
+a representative failure pattern that complements the error analysis in
+Section~\ref{sec:experiments}. For each case, we report the user question,
+the system-generated answer with provenance, and a short interpretive
+observation about the underlying ESG signal.
+Table~\ref{tab:case_study_summary} summarizes the cases discussed in this
+section.
+ 
+\begin{table}[htbp]
+    \centering
+    \caption{Summary of representative case examples discussed in the
+    qualitative evaluation. The final column reports whether the
+    system-generated answer matches the expert-annotated expected answer.}
+    \label{tab:case_study_summary}
+    \begin{tabular}{llllc}
+    \toprule
+    Bank & Year & Theme & Question (paraphrased) & Match \\
+    \midrule
+    BIDV    & 2023 & Energy efficiency      & Electricity / revenue reduction      & \checkmark \\
+    BIDV    & 2024 & Energy efficiency      & Electricity / profit reduction       & \checkmark \\
+    HDBank  & 2024 & Resource optimization  & Head Office gasoline reduction       & \checkmark \\
+    ACB     & 2024 & Water management       & Total water consumption reduction    & \checkmark \\
+    VCB     & 2024 & Waste management       & Sludge waste reduction               & \checkmark \\
+    VPBank  & 2024 & Green finance          & Green credit growth (YoY)            & \checkmark \\
+    ACB     & 2023 & Gender equality        & Share of female managerial staff     & \checkmark \\
+    MSB     & 2024 & Investor disclosure    & Increase in shareholder base         & \checkmark \\
+    HDBank  & 2023 & Green finance          & Green finance portfolio threshold    & $\times$ \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+ 
+\textbf{Energy and Resource Efficiency: }A recurring pattern in the corpus is that banks report year-over-year
+reductions in energy consumption normalized to a financial output. The
+framework reliably extracts and contextualizes these disclosures.
+ 
+For the question \textit{``What was the percentage reduction in electricity
+consumption per revenue unit at BIDV in 2023 compared to 2022?''}, the
+system answered \textbf{14.2\%}, citing BIDV's 2023 sustainability report
+(page~49, GRI~302-4). For the follow-up question \textit{``Did BIDV reduce
+electricity consumption per profit after tax by 5.81\% in 2024?''}, the
+system confirmed the claim and located the figure in two parts of the 2024
+report: the green-transformation summary on page~14 and the detailed energy
+section on page~43. Read together, these two answers indicate that BIDV
+consistently reports improvements in electricity efficiency normalized to a
+financial output, although the reference denominator changed between
+reporting cycles (revenue in 2023 versus profit after tax in 2024). This
+illustrates how the framework supports cross-year comparison while
+preserving the original normalization basis.
+ 
+A complementary case is the question \textit{``How much did HDBank's
+gasoline consumption at the Head Office decrease in 2024 compared to
+2023?''}, where the system answered \textbf{40\%} (HDBank, 2024, page~45,
+GRI~302-4). The retrieved evidence further situates this reduction within a
+broader resource-optimization program that also reports a 40\% reduction in
+bank-wide plastic consumption and 2.474 tons of paper saved through digital
+transformation. This demonstrates that the framework can recover not only
+the directly queried figure but also adjacent context that helps interpret
+whether a single metric is part of a coordinated initiative.
+ 
+\textbf{Water and Waste Management: }The framework also handles disclosures involving multiple resource streams
+and absolute--relative pairs of figures. For example, given \textit{``Did
+ACB reduce total water consumption in 2024 compared to 2023?''}, the system
+returned an affirmative answer and explicitly recovered the underlying
+data: total consumption of 260{,}469~m\textsuperscript{3} in 2024,
+representing a 1.3\% reduction despite the addition of four new branches
+and sub-branches (ACB, 2024, page~51). Surfacing the branch-expansion
+qualifier is important for interpretation, as it signals that the headline
+reduction reflects efficiency gains rather than a contraction of operational
+scope.
+ 
+A more demanding case is the question \textit{``By what percentage did
+sludge waste decrease at VCB in 2024 compared to 2023?''}. The system
+answered \textbf{83\%}, citing Vietcombank's 2024 report (page~29,
+GRI~2-27), which records a sludge waste volume of 35~m\textsuperscript{3}
+at the headquarters and the Ho Chi Minh City branch. Notably, the retrieval
+pool also surfaced an internally inconsistent passage on page~22 that
+expresses the same change as ``8.3\%'' rather than 83\%. The system
+correctly selected the 83\% figure, which is supported by multiple
+high-similarity passages on page~29 and is consistent with the absolute
+volume reported. This case illustrates how the hybrid retriever can
+disambiguate between conflicting numeric expressions when the gold answer
+is anchored by stronger lexical and semantic alignment.
+ 
+\textbf{Green and Sustainable Finance: }Green credit is one of the most frequently disclosed ESG topics among
+Vietnamese banks. For the question \textit{``What was the percentage growth
+of green credit at VPBank in 2024 compared to 2023?''}, the system answered
+\textbf{48.5\%}, grounded in VPBank's 2024 sustainability report (page~44,
+GRI~3-3). The retrieved evidence additionally surfaces both the absolute
+outstanding balance of VND~21{,}943~billion and a 6.5-fold increase in
+the number of green-credit customers (3{,}708 retail and 220 corporate
+customers). This example demonstrates that a single retrieval question can
+yield not only the requested headline figure but also adjacent evidence
+that supports interpreting the bank's sustainable-finance trajectory in
+both volume and customer-base dimensions.
+ 
+\textbf{Social and Diversity Disclosures: }For the Social dimension, consider the question \textit{``Did female
+employees hold more than 50\% of managerial positions at ACB in 2023?''}.
+The system correctly answered \textbf{Yes}, citing ACB's 2023 sustainability
+report (page~40, GRI~405-1) and reporting the underlying statistic that
+51\% of managerial employees were female in 2023, an increase of two
+percentage points compared to 2022. The retrieved evidence further
+connected this answer to a broader diversity narrative, including the
+31.6\% representation of women across the Board of Directors, Board of
+Management, and Supervisory Board. This illustrates the framework's ability
+to recover not only the directly queried fact but also contextual
+information that supports a more holistic assessment of social performance.
+ 
+\textbf{Investor and Market Disclosures:} For investor-side disclosures, consider \textit{``What was the percentage
+increase in MSB shareholders during 2024?''}. The system answered
+\textbf{25\%}, citing MSB's 2024 sustainability report (page~9), where the
+figure appears alongside a market capitalization of VND~30{,}290~billion
+(a 16.5\% YoY increase). Importantly, the candidate evidence pool also
+contained an unrelated 25\% figure --- a 25\% reduction in Scope~1 and
+Scope~2 GHG emissions --- but the hybrid retriever and answer generator
+correctly prioritized the shareholder-related passage based on lexical and
+semantic alignment with the question. This case illustrates the
+framework's robustness in distractor-rich settings, where multiple
+unrelated facts share the same numeric value within the same report.
+ 
+\textbf{An Illustrative Failure Case: }For honesty, we also report a representative failure that complements the
+error analysis in Section~\ref{sec:experiments}. For the question
+\textit{``Did HDBank's green finance portfolio exceed VND~10~trillion in
+2023?''}, the expected answer is \textit{Yes}, since the report explicitly
+states that ``HDBank's green finance portfolio exceeded 12 trillion dong''
+as of end-2023 (HDBank, 2023, page~2). The system, however, returned
+\textit{No}, because the answer generator conflated the broader
+\textit{green finance portfolio} (over VND~12~trillion) with the narrower
+\textit{green credit disbursement} of approximately VND~8.7~trillion
+cumulatively over 2021--2023 (page~5). Both passages were retrieved
+within the top-3 evidence set, but the generator failed to disambiguate
+between two semantically related yet quantitatively distinct concepts.
+This case maps to error category E3 (multi-fact composition) in
+Section~\ref{sec:experiments} and motivates stricter terminology
+constraints or claim-level disambiguation in the answer-generation prompt.
+ 
+\textbf{Summary Observations: }Across these cases, three observations emerge. First, the framework
+reliably surfaces the specific figures that ESG analysts most commonly
+look for, including year-over-year deltas, intensity ratios, and absolute
+values, each with explicit page-level provenance. Second, the retrieved
+evidence often goes beyond the literal question, providing adjacent
+context that supports comparative assessment across reports and across
+years --- for example, ACB's water reduction set against branch expansion,
+or VPBank's green-credit growth alongside customer-base expansion. Third,
+the remaining failures occur predominantly when multiple closely related
+quantitative concepts coexist within the same disclosure section,
+reinforcing the directions for future work outlined in the error
+analysis.
+ 
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This thesis presented a GRI-aligned ESG assessment framework for Vietnamese banks 
+based on a Knowledge Graph-enhanced Retrieval-Augmented Generation (KG-RAG) 
+architecture integrated with a post-generation fact-checking layer. The system 
+addresses a clear practical gap: ESG and financial reports in Vietnamese banking 
+are long, heterogeneous, and semi-structured, making evidence-grounded assessment 
+difficult to scale. To overcome these challenges, we designed four interconnected 
+modules covering ESG metadata normalization, structure-aware report processing, 
+ESG knowledge graph construction, hybrid KG-driven retrieval with grounded answer 
+generation, and claim-level automated fact-checking.
+
+Empirical evaluation on an expert-supported benchmark of 120 ESG questions across 
+12 reports from 6 Vietnamese banks demonstrated the effectiveness of the designed 
+approach. The \texttt{KG\_Enhanced} retriever combined with \texttt{Qwen3-8B} 
+achieved an overall answer accuracy of 88.14\%, with category-level accuracies of 
+83.74\%, 92.43\%, and 88.25\% on Environmental, Social, and Governance questions, 
+respectively. The automated fact-checking module further enhanced reliability by assigning FEVER-style 
+verdicts with calibrated confidence at the claim level, supporting more 
+transparent and auditable ESG analysis.
+
+Despite these encouraging results, our error analysis revealed remaining 
+challenges in multi-fact composition, cross-entity contamination, and implicit 
+reasoning. Future work will explore adaptive evidence aggregation across 
+complementary report sections, stricter graph-aware scope filtering by company 
+and reporting year, and the integration of structured numeric reasoning to 
+further strengthen the framework's robustness in high-stakes ESG decision-making 
+contexts.
+
+% --- Bibliography ---
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+% --- Appendix ---
+\appendix
+\section*{Appendix}
+\addcontentsline{toc}{section}{Appendix}
+\label{sec:appendix}
+\setcounter{subsection}{0}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+\renewcommand{\theHsubsection}{appendix.\Alph{subsection}}
+
+% ------------------------------------------------------------------
+% Appendix material: prompts, schemas, and reproducibility configs
+% (Pseudocode stages intentionally omitted.)
+% ------------------------------------------------------------------
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    frame=single,
+    rulecolor=\color{black!20},
+    showstringspaces=falsface
+
+\subsection{PDF-to-Markdown Processing, GRI-Aware Extraction, and Chunking}
+
+\paragraph{Pipeline configuration (paths and model handle):}
+\begin{lstlisting}[language=Python,caption={Module 1 pipeline configuration fields (paths and model handle).},label={lst:m1-pipeline-config}]
+PipelineConfig:
+    input_pdf: Optional[Path]
+    output_dir: Path = "./data"
+    llm_model: str = ".../Qwen3-4B-Instruct-2507"
+    gri_taxonomy_path: Path = "data/taxonomies/gri_taxonomies_by_code.json"
+
+Derived outputs:
+    split_dir:   output_dir/"1_split"/<report_name>/
+    markdown_dir:output_dir/"2_markdown"/<report_name>/
+    merged_file: output_dir/"3_merged"/<report_name>.md
+    output_json: output_dir/"4_output"/<report_name>.json
+\end{lstlisting}
+
+\paragraph{TOC extraction prompt (JSON array output):}
+\begin{lstlisting}[language=json,caption={Module 1 TOC extraction prompt (JSON array).},label={lst:m1-toc-prompt}]
+Extract the Table of Contents from the document content.
+
+Return ONLY a JSON array with the following format:
+[
+    {"title": "Section title", "page": "page number or null", "level": 1},
+    ...
+]
+
+Rules:
+- level 1 for main sections, level 2 for subsections
+- If no page number, use null
+- Extract ALL section titles from the table of contents
+
+Document content:
+<pages_content>
+\end{lstlisting}
+
+\paragraph{GRI reference table extraction prompt (JSON array output):}
+\begin{lstlisting}[language=json,caption={Module 1 GRI reference extraction prompt (JSON array).},label={lst:m1-gri-ref-prompt}]
+Extract ALL GRI references from the document content.
+
+Return ONLY a JSON array with the following format:
+[
+    {"title": "Disclosure title", "indicator": "GRI X-X", "page": "page number or null"},
+    ...
+]
+
+Rules:
+- indicator format: "GRI X-X" (e.g., "GRI 2-2", "GRI 302-1")
+- Extract ALL GRI indicators found in the document
+
+Document content:
+<pages_content>
+\end{lstlisting}
+
+\paragraph{Page-level extraction output schema (JSON):}
+\begin{lstlisting}[language=json,caption={Module 1 page-level extraction schema (sections + provenance).},label={lst:m1-page-extraction-schema}]
+{
+    "has_gri_content": true,
+    "sections": [
+        {
+            "title": "Section title",
+            "content": "Content",
+            "gri_indicator": "GRI X-X",
+            "gri_source": "content|context|reference",
+            "is_continuation": false
+        }
+    ],
+    "summary": "Brief summary"
+}
+\end{lstlisting}
+
+\paragraph{End-to-end JSON output structure and chunking metadata:}
+\begin{lstlisting}[language=json,caption={Module 1 output JSON top-level keys and chunking metadata.},label={lst:m1-output-json-schema}]
+{
+    "table_of_contents": [
+        {"title": "...", "page": "...", "level": 1}
+    ],
+    "gri_references": [
+        {"title": "...", "indicator": "GRI X-X", "page": "..."}
+    ],
+    "page_extractions": [
+        {"page": 1, "sections": [ ... ], "summary": "..."}
+    ],
+    "chunking_metadata": {
+        "max_tokens": 512,
+        "chunk_size": 200,
+        "chunk_overlap": 50,
+        "total_original_sections": 0,
+        "total_chunked_sections": 0
+    }
+}
+\end{lstlisting}
+
+\subsection{Entity Extraction Prompts and Output Schema}
+
+\paragraph{System prompt:}
+\begin{lstlisting}[language=json,caption={Module 2 system prompt (JSON-only output constraint).},label={lst:m2-system-prompt}]
+You are an expert in ESG (Environmental, Social, Governance) reporting and GRI (Global Reporting Initiative) standards.
+Your task is to extract structured information from ESG report text and align it with relevant GRI disclosure indicators.
+
+You must return valid JSON only, without any markdown formatting or explanations.
+\end{lstlisting}
+
+\paragraph{Single-chunk extraction prompt (template):}
+\begin{lstlisting}[caption={Module 2 single-chunk extraction prompt (template; placeholders shown).},label={lst:m2-single-prompt}]
+Given the following text chunk from an ESG report, extract structured information.
+
+Report Context:
+- Company: {company_name}
+- Report Type: {report_type}
+- Report Year: {report_year}
+- ESG Category: {esg_category} ({esg_category_full})
+
+Text Chunk:
+{chunk_text}
+
+Relevant GRI Standards for {esg_category} category:
+{gri_context}
+
+Task:
+1) ESG Actions: name, description
+2) Key Statements: text, importance (high/medium/low)
+3) GRI Alignments: list GRI codes from the provided list above
+
+Output Format (JSON only):
+{
+    "actions": [{"name": "...", "description": "..."}],
+    "statements": [{"text": "...", "importance": "high"}],
+    "gri_alignments": ["GRI XXX-Y"]
+}
+
+Return only valid JSON without any markdown formatting.
+\end{lstlisting}
+
+\paragraph{Batch extraction prompt (schema constraints):}
+\begin{lstlisting}[caption={Module 2 batch extraction prompt (schema constraints; shortened).},label={lst:m2-batch-prompt}]
+CRITICAL INSTRUCTIONS:
+1. Return ONLY a valid JSON array. No introduction, no markdown.
+2. The array MUST have exactly {chunk_count} objects, one per input chunk in the same order.
+3. Each object MUST have exactly these keys: chunk_id, actions, statements, gri_alignments
+4. If a chunk has no ESG content, return empty arrays.
+
+OUTPUT SCHEMA:
+[
+    {
+        "chunk_id": <number>,
+        "actions": [{"name": "<short>", "description": "<1-2 sentences>"}],
+        "statements": [{"text": "<verbatim>", "importance": "high|medium|low"}],
+        "gri_alignments": ["GRI XXX-Y"]
+    }
+]
+\end{lstlisting}
+
+\subsection{Graph JSON Schema and Neo4j Constraints}
+
+\paragraph{Graph JSON structure:}
+\begin{lstlisting}[language=json,caption={Module 2 graph JSON top-level structure (schema).},label={lst:m2-graph-json-schema}]
+{
+    "metadata": {
+        "company": "<string>",
+        "report_type": "<string>",
+        "report_year": <int>,
+        "node_count": <int>,
+        "relationship_count": <int>
+    },
+    "nodes": [
+        {"label": "Company|Report|ESG_Category|ESG_Action|ESG_Statement|GRI_Disclosure",
+         "properties": {"...": "..."}}
+    ],
+    "relationships": [
+        {"type": "HAS_REPORT|HAS_STATEMENT|BELONGS_TO_CATEGORY|CATEGORIZED_AS|BELONGS_TO_ACTION|ALIGNS_TO",
+         "from_label": "<label>", "from_id": "<id>",
+         "to_label": "<label>", "to_id": "<id>",
+         "properties": {"...": "..."}}
+    ]
+}
+\end{lstlisting}
+
+\paragraph{Uniqueness constraints (Neo4j):}
+Table~\ref{tab:edges} summarizes the relationship types used in the knowledge graph. The constraints below focus only on node-level uniqueness keys used to prevent duplicate entity creation.
+\begin{lstlisting}[caption={Module 2 Neo4j uniqueness constraints (conceptual list).},label={lst:m2-neo4j-constraints}]
+Company(company_id)
+Report(report_id)
+ESG_Statement(statement_id)
+ESG_Action(action_id)
+ESG_Category(category_id)
+GRI_Disclosure(disclosure_id)
+\end{lstlisting}
+
+To complement the prompt and schema definitions above, the following examples illustrate how the system handles real benchmark questions from retrieval to answer verification.
+
+\subsection{Example Questions and Fact-Checked Outputs}
+\label{sec:appendix_examples}
+
+This section provides three representative examples of the question-answering and fact-checking workflow across Environmental (E), Social (S), and Governance (G) topics. Each example includes the input question, generated answer, retrieved report evidence, and claim-level fact-checking results. The fact-checking examples include both supported and non-supported claims to illustrate how the verifier detects partially unsupported or incorrect statements.
+
+%% =================== Box 1 — E (ACB GHG emissions) ===================
+\begin{tcolorbox}[colback=white,colframe=black!65,boxrule=0.6pt,arc=0pt,left=8pt,right=8pt,top=8pt,bottom=8pt]
+
+\textbf{Question:} Did ACB reduce its total GHG emissions across all three scopes in 2023 compared to 2022?
+
+\textbf{Generated answer:} Yes, ACB reduced its total GHG emissions across all three scopes in 2023 compared to 2022. The total GHG emissions decreased by 9\%, from 34,355 tonnes of CO$_2$ in 2022 to 31,238 tonnes of CO$_2$ in 2023 (ACB, 2023, Page 34). This reduction is also supported by GRI Standard GRI 305-1, which pertains to direct GHG emissions.
+
+\begin{itemize}
+    \item \textbf{Claim:} ACB's total GHG emissions were 31,238 tonnes of CO$_2$ in 2023.
+    \begin{itemize}
+        \item \textbf{Label:} SUPPORTS
+        \item \textbf{Confidence:} 0.90
+        \item \textbf{Source:} \href{https://static2.vietstock.vn/vietstock/2025/3/26/20250325_acb_250325_annual_report_2025.pdf}{vietstock.vn (ACB Annual Report)}
+    \end{itemize}
+
+    \item \textbf{Claim:} ACB's total GHG emissions decreased by 9\% in 2023 compared to 2022.
+    \begin{itemize}
+        \item \textbf{Label:} NOT\_ENOUGH\_INFO
+        \item \textbf{Confidence:} 0.30
+        \item \textbf{Source:} \href{https://climate.ec.europa.eu/news-other-reads/news/climate-action-progress-report-2023-shows-largest-annual-drop-emissions-decades-2024-10-31_en}{climate.ec.europa.eu (EU Climate Action Progress Report 2023)}
+    \end{itemize}
+\end{itemize}
+
+\end{tcolorbox}
+
+
+% =================== Box 2 — S (MSB E&S risk loan assessment) ===================
+\begin{tcolorbox}[colback=white,colframe=black!65,boxrule=0.6pt,arc=0pt,left=8pt,right=8pt,top=8pt,bottom=8pt]
+
+\textbf{Question:} How many loans were assessed for Environmental and Social risks by MSB in 2024?
+
+\textbf{Generated answer:} 84,619. In 2024, MSB conducted Environmental and Social risk assessments for 84,619 loans out of a total of 134,487 loan proposal documents (MSB, 2024, Page 20). This assessment aligns with GRI Standard GRI 2-21, which pertains to the management of environmental and social risks.
+
+\begin{itemize}
+    \item \textbf{Claim:} In 2024, MSB conducted Environmental and Social risk assessments for 84,619 loans out of a total of 134,487 loan proposal documents.
+    \begin{itemize}
+        \item \textbf{Label:} NOT\_ENOUGH\_INFO
+        \item \textbf{Confidence:} 0.95
+        \item \textbf{Source:} \href{https://cmsv5.fiingroup.vn/medialib/FG/2025/2025-04/2025-04-22/20250422_MSB-250422-Annual-Report-2024.pdf}{fiingroup.vn (MSB Annual Report 2024)}
+    \end{itemize}
+\end{itemize}
+
+\end{tcolorbox}
+
+
+% =================== Box 3 — G (HDBank TCFD participation) ===================
+\begin{tcolorbox}[colback=white,colframe=black!65,boxrule=0.6pt,arc=0pt,left=8pt,right=8pt,top=8pt,bottom=8pt]
+
+\textbf{Question:} Did HDBank participate in LeapFrog's first TCFD report in 2023?
+
+\textbf{Generated answer:} Yes, HDBank participated in LeapFrog's first Task Force on Climate-related Financial Disclosures (TCFD) report in 2023. This involvement is significant for assessing climate change risks and opportunities within LeapFrog's investment portfolio (HDBank, 2023, Page 12; GRI: GRI 405-1, GRI 202-1, GRI 201-2).
+
+\begin{itemize}
+    \item \textbf{Claim:} HDBank participated in LeapFrog's first TCFD report in 2023.
+    \begin{itemize}
+        \item \textbf{Label:} SUPPORTS
+        \item \textbf{Confidence:} 0.80
+        \item \textbf{Source:} \href{https://cdn.hdbank.com.vn/hdbank-file/investor/src/bctn-2023/phat-trien-ben-vung-EN.html}{hdbank.com.vn (Sustainability Report 2023)}
+    \end{itemize}
+\end{itemize}
+
+\end{tcolorbox}
+
+
+% =================== Box 4 — E (BIDV green credit 2023) ===================
+\begin{tcolorbox}[colback=white,colframe=black!65,boxrule=0.6pt,arc=0pt,left=8pt,right=8pt,top=8pt,bottom=8pt]
+
+\textbf{Question:} What was the total outstanding balance of green credit at BIDV as of December 31, 2023 (in VND billion)?
+
+\textbf{Generated answer:} 74,177 VND billion. As of December 31, 2023, BIDV reported a total outstanding balance of green credit amounting to 74,177 VND billion, which accounted for 4.24\% of its total outstanding loans (BIDV, 2023, Page 37). This information is also supported by GRI Standard GRI 308-1, which pertains to the organization's green credit performance.
+
+\begin{itemize}
+    \item \textbf{Claim:} As of December 31, 2023, BIDV reported a total outstanding balance of green credit amounting to 74,177 VND billion.
+    \begin{itemize}
+        \item \textbf{Label:} SUPPORTS
+        \item \textbf{Confidence:} 0.95
+        \item \textbf{Source:} \href{https://www.studocu.vn/vn/document/hoc-vien-tai-chinh/tai-chinh-tien-te/bidv-annual-report-2023-fn-da-nen-da-nen-1/108663677}{studocu.vn (BIDV Annual Report 2023)}
+    \end{itemize}
+
+    \item \textbf{Claim:} As of December 31, 2023, BIDV's green credit accounted for 4.24\% of its total outstanding loans.
+    \begin{itemize}
+        \item \textbf{Label:} NOT\_ENOUGH\_INFO
+        \item \textbf{Confidence:} 0.70
+        \item \textbf{Source:} \href{https://bidv.com.vn/bidv_en/tin-tuc/tin-ve-bidv/bidv-danh-10000-ty-dong-tai-tro-cac-du-an-cong-trinh-xanh}{bidv.com.vn (Green Credit News, Mar 2024)}
+    \end{itemize}
+\end{itemize}
+
+\end{tcolorbox}
+
+
+% =================== Box 5 — E (VPBank green credit 2024) ===================
+\begin{tcolorbox}[colback=white,colframe=black!65,boxrule=0.6pt,arc=0pt,left=8pt,right=8pt,top=8pt,bottom=8pt]
+
+\textbf{Question:} What was the total outstanding balance of green credit at VPBank as of December 31, 2024 (in VND billion)?
+
+\textbf{Generated answer:} 21,943 billion VND. As of December 31, 2024, the total outstanding balance of green credit at VPBank was reported to be 21,943 billion VND, which represents a 48.5\% increase year-over-year. This information is sourced from VPBank's Sustainability Report 2024, page 23, and aligns with GRI standards GRI 3-3.
+
+\begin{itemize}
+    \item \textbf{Claim:} As of December 31, 2024, the total outstanding balance of green credit at VPBank was 21,943 billion VND.
+    \begin{itemize}
+        \item \textbf{Label:} SUPPORTS
+        \item \textbf{Confidence:} 1.00
+        \item \textbf{Source:} \href{https://static2.vietstock.vn/vietstock/2025/7/3/20250702___vpb___sustainability_report_2024.pdf}{vietstock.vn (VPBank Sustainability Report 2024)}
+    \end{itemize}
+
+    \item \textbf{Claim:} The green credit outstanding balance at VPBank increased by 48.5\% year-over-year in 2024.
+    \begin{itemize}
+        \item \textbf{Label:} SUPPORTS
+        \item \textbf{Confidence:} 0.95
+        \item \textbf{Source:} \href{https://amata.com/news-media-vietnam/93-articles-vietnam/1357-memorandum-of-understanding-between-amata-city-ha-long-and-vpbank}{amata.com (VPBank–Amata MoU)}
+    \end{itemize}
+\end{itemize}
+
+\end{tcolorbox}
+
+\end{document}
