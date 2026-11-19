@@ -1,0 +1,297 @@
+\documentclass[sn-mathphys,oneside]{sn-jnl}
+\usepackage[T5,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\geometry{a4paper,margin=2.5cm}
+\setcitestyle{numbers,square,sort&compress}
+\newcommand{\pending}[1]{\textbf{\textcolor{red!65!black}{[PLACEHOLDER: #1]}}}
+\newcommand{\artifact}[1]{\nolinkurl{#1}}
+\raggedbottom
+
+\begin{document}
+\begin{titlepage}
+\centering
+\begin{minipage}{.45\textwidth}
+\IfFileExists{logo.png}{\includegraphics[width=5cm]{logo.png}}{}
+\end{minipage}\hfill
+\begin{minipage}{.5\textwidth}
+\raggedleft\textbf{MINISTRY OF EDUCATION AND TRAINING}
+\end{minipage}
+
+\vspace{2cm}
+{\Huge\bfseries FPT UNIVERSITY\par}
+\vspace{1.8cm}
+{\huge Capstone Project Document\par}
+\vspace{.6cm}
+{\Large\bfseries VaxiS: An Evidence-Grounded Retrieval-Augmented Generation System for Vietnamese Vaccine Information Retrieval\par}
+\vspace{1.8cm}
+
+\begin{tabularx}{.95\textwidth}{|p{.26\textwidth}|X|}
+\hline
+\textbf{Group} & AIP491 Group 1 \\
+\hline
+\textbf{Group members} &
+Nguyễn Mạnh Hùng (HE194092), Trần Trọng Nghĩa (HE190336),
+Hồ Minh Hiếu (HE194091), Vũ Tiến Mạnh (HE171167).
+\pending{Confirm the official roster. The ODT lists four members and the TeX cover lists three.} \\
+\hline
+\textbf{Supervisor} & Trần Văn Hà \\
+\hline
+\textbf{Capstone project code} & AIP491 \\
+\hline
+\end{tabularx}
+\vfill
+Hanoi, \pending{confirm official submission month and year}
+\end{titlepage}
+
+\begin{center}\Large\bfseries Abstract\end{center}
+
+Vietnamese vaccine information is published in documents that vary in structure and are often written for specialist readers. VaxiS is a Vietnamese-language retrieval-augmented generation system designed to help users locate relevant passages and trace an answer to its documentary evidence. The repository contains a structure-aware Markdown indexing pipeline, lexical and dense retrieval paths, and a hybrid retrieval pipeline that combines dense and learned sparse rankings before optional reranking. A shared generator uses the retrieved chunks as context and tracks citations to chunk identifiers. The experimental design follows six configurations in order: Naive, Advanced, Hybrid (baseline), Table-aware, Graph RAG, and Agent RAG. The working benchmark contains 300 Vietnamese questions spanning single-hop, multi-hop, and table-reasoning tasks. For the final three configurations, implementation and evaluation documentation are pending. \pending{Insert the verified comparison findings, with the benchmark revision, scored population, and headline retrieval and answer-quality values.}
+
+\noindent\textbf{Keywords.} Vaccine information, Vietnamese question answering, retrieval-augmented generation, hybrid retrieval, evidence attribution.
+
+\newpage
+\begin{center}\Large\bfseries Acknowledgments\end{center}
+We thank our supervisor, Trần Văn Hà, for supervising this capstone project.
+\pending{Confirm any additional acknowledgments and permission to name contributors or reviewers.}
+
+\newpage
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+
+\section{Introduction}
+
+\subsection{Motivation}
+VaxiS addresses a practical information access problem. A user may know a vaccine by its product name and have a specific question, while the relevant source is a long instruction leaflet or regulatory document. Locating the applicable passage requires identifying the product, recognizing the relevant section and interpreting any qualifications recorded in nearby text or table notes. The project focuses on questions about indications, contraindications, reactions after vaccination, schedules, warnings, and special populations as described in its source materials.
+
+Retrieval-augmented generation (RAG) brings evidence from an external collection into the generation process~\cite{lewis2020rag}. In this setting, the evidence should be accessible to the reader so the answer can be checked against the source. Producing a fluent response, citing a retrieved passage, and supporting each factual claim are distinct requirements. Research on generation with citations similarly evaluates attribution as a quality dimension alongside answer correctness~\cite{gao2023citations}.
+
+The intended audience includes members of the public, parents, and people preparing for vaccination. The project also identifies frontline health workers and health sciences students as potential users for document lookup. The scope is general access to published information. Diagnosis, individual treatment decisions, and processing personal medical records fall outside the project scope.
+
+\subsection{Objectives}
+The main research question is how to retrieve relevant evidence from Vietnamese vaccine documents and use it to generate a comprehensible answer with traceable citations, including when the available evidence is incomplete.
+
+\begin{enumerate}
+\item Prepare a searchable corpus from available vaccine source documents, retaining the document identifiers and section metadata needed to trace evidence.
+\item Compare lexical, dense, and hybrid retrieval, then assess the proposed Table-aware, Graph RAG, and Agent RAG extensions.
+\item Generate Vietnamese responses that cite the supplied evidence and communicate when the evidence is insufficient.
+\item Assess retrieval quality, answer quality, citation support, and abstention using documented datasets and reproducible run configurations.
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{Automated Access to Vaccine Information}
+Li et al.\ developed VaxBot-HPV around a curated knowledge base and a fine-tuned GPT model for HPV vaccine questions. Their evaluation included answer relevancy and faithfulness, two criteria that inform the assessment of VaxiS~\cite{li2025vaxbothpv}.
+
+The Vaccine Information Resource Assistant (VIRA), developed by Johns Hopkins and IBM Research, uses natural language understanding to match questions to expert-vetted responses about COVID-19 vaccination. Its English and Spanish interfaces illustrate the value of organizing answers around user concerns and making reviewed content accessible in the user's language~\cite{jhuvira}.
+
+K-Bot provides culturally tailored HPV vaccine information in Korean and English. Its authors designed dialogs around evidence-based content adapted to their intended audience. This work motivates attention to phrasing and accessibility in a Vietnamese-language interface~\cite{kim2025kbot}. VaxiS focuses on source-grounded question answering over the Vietnamese documents available to the project, with provenance carried through retrieval and generation.
+
+\subsection{Evidence-Grounded Question Answering over Vaccine Documents}
+BM25 uses corpus statistics and document length to score lexical matches~\cite{robertson2009bm25}. Dense retrieval instead ranks passages through similarity in an embedding space. BGE-M3 provides both dense representations and learned sparse lexical weights in a multilingual encoder~\cite{chen2024m3}. Reciprocal rank fusion combines the positions assigned by multiple retrieval streams on a common scale~\cite{cormack2009rrf}.
+
+Evidence can also cross representational boundaries. HybridQA studies questions that require combining tables with associated passages~\cite{chen2020hybridqa}. Graph RAG research illustrates how entities and relationships extracted from documents can organize evidence for a query~\cite{edge2024graphrag}. ReAct illustrates how a language model can interleave decisions with actions that gather information~\cite{yao2023react}. These works motivate candidate extensions to the VaxiS pipeline. The specific designs and empirical effects of those extensions require project implementation records and completed runs.
+
+\section{Methodology}
+
+\subsection{Overview of the Vaccine Question-Answering System}
+The documented pipeline has an offline indexing stage and an online question-answering stage. Offline processing turns cleaned Markdown into identifiable chunks, adds document and section metadata, and persists the chunks in Parquet. The vector indexing path prepares dense and sparse representations in Qdrant. During question answering, the selected retriever ranks chunks. The generator receives the question and selected evidence, produces a Vietnamese response, and tracks the chunk identifiers cited by the response. The evaluation tooling also supports scoring ranked results stored from an earlier run.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{.9\linewidth}{\centering
+Cleaned Markdown $\rightarrow$ Section-aware chunks with metadata $\rightarrow$ Parquet and Qdrant\\[.6em]
+Vietnamese question $\rightarrow$ Selected retriever $\rightarrow$ Evidence chunks\\[.6em]
+Evidence and question $\rightarrow$ Generator $\rightarrow$ Response and source identifiers}}
+\caption{Documented VaxiS indexing and question-answering flow. The evidence store used depends on the retrieval configuration.}
+\label{fig:system}
+\end{figure}
+
+The repository includes a conversational entry point with query planning and memory, as well as single-query evaluation entry points. The benchmark protocol should record the entry point used. The presence of conversational planning in the application is insufficient to establish the Agent RAG experiment.
+
+\subsection{Vaccine Metadata Module}
+The corpus organization and vaccine name mapping associate cleaned source records with product identifiers and names. The implemented chunk schema supplies document identity, section headings, text, a topic category, a content type and a table flag. These fields support traceability and subsequent analysis, for example by identifying table-bearing chunks or grouping evidence by product. The project plan also identifies document type, issuer, publication date and regulatory status as useful provenance fields.
+\pending{Supply the frozen corpus metadata dictionary, field coverage, source URL and original-page mapping policy, and the rule for selecting among conflicting or superseded documents.}
+
+\subsection{Vaccine Document Processing Module}
+The ODT identifies collection, OCR, cleaning and metadata normalization as project activities. The repository indexing code starts from cleaned Markdown. Its parser splits the content into sections, and its chunker groups short sections and divides long sections under a length budget. The code accounts for Markdown and HTML table markup and handles oversized tables separately from prose. This logic belongs to the shared indexing pipeline. The distinct Table-aware ablation still requires a versioned definition of its representation and retrieval behavior.
+
+The design must preserve provenance when chunk boundaries are changed. A question can depend on a qualifier in an adjacent paragraph or a footnote that changes the interpretation of a row. A useful audit records the original source location and whether the selected evidence preserves those dependencies.
+\pending{Provide the upstream OCR and conversion tooling, quality-control procedure, excluded document categories, frozen corpus counts and the exact chunking configuration used for each run.}
+
+\subsection{Vaccine Knowledge Graph Module}
+Graph RAG is the fifth configuration in the study. Its purpose is to test whether graph-structured evidence helps retrieve information distributed across passages. A reproducible specification requires the graph schema, the extraction and entity resolution rules, and the links from graph facts to source evidence.
+\pending{Provide the Graph RAG implementation path and commit, node and edge schema, entity normalization and extraction procedure, storage backend, graph coverage and counts, and provenance strategy. Attach a verified graph example.}
+\pending{Provide the graph-specific evaluation slice, comparison configuration, run artifacts, metrics and observed failure cases.}
+
+\subsection{Retrieval-Augmented Generation Module}
+Naive uses the repository's BM25 retrieval path over the chunk corpus. The evaluation CLI selects it with \artifact{--baseline}. In the report, Hybrid is the baseline against which subsequent extensions are compared. Advanced embeds the original query with BGE-M3 and searches the dense Qdrant index before passing the top-ranked chunks to the shared generator.
+
+Hybrid queries the BGE-M3 dense and learned sparse indexes. The implementation aggregates candidate ranks using weighted reciprocal rank fusion,
+\[
+ S(d)=\sum_{i:\,d\in L_i}\frac{w_i}{c+\mathrm{rank}_i(d)},
+\]
+where \(L_i\) is a candidate ranking, \(w_i\) its weight and \(c\) a smoothing constant. Candidate chunks can then be scored by a BGE cross-encoder reranker. The run record must identify the candidate depths, fusion settings, reranker checkpoint and final evidence depth.
+
+Table-aware is the fourth configuration and is intended to measure retrieval and grounding on questions that depend on tabular structure.
+\pending{Provide the Table-aware implementation path and commit, table and cell representation, preservation of headers and footnotes, retrieval and reranking changes, and source attribution behavior. State exactly how it differs from the shared chunker and Hybrid.}
+\pending{Provide the Table-aware run configuration, table-dependent subset definition, per-query outputs, retrieval and answer metrics, and an audited row or footnote error example.}
+
+For Graph RAG, the retrieval component must specify how a question is associated with graph entities, how candidate paths are selected, and how their supporting passages enter the generator.
+\pending{Provide the actual Graph RAG retrieval algorithm, graph search parameters, evidence ordering, and fallback behavior.}
+
+Agent RAG is the sixth configuration and is intended to evaluate tool-mediated evidence gathering across retrieval steps.
+\pending{Provide the Agent RAG implementation path and commit, model, available tools, routing and stopping logic, evidence aggregation and citation rules, call budget, fallback behavior, and an example trace.}
+\pending{Provide the Agent RAG evaluation protocol, query coverage, comparison settings, metrics, tool-call and latency summaries, and failure analysis.}
+
+\subsection{Answer Grounding and Verification}
+The generator asks the model to answer from supplied evidence, cite chunk identifiers and communicate when the context is insufficient. The implementation extracts citation identifiers and checks their membership in the supplied chunks. It records valid and invalid identifiers and flags detected refusals. Citation membership establishes traceability to context. Assessing whether a passage supports a particular claim requires semantic review.
+
+The separate review application gives reviewers access to questions, reference answers, and source passages. Its workflow supports changes to the answer and evidence selection, with code paths for consensus and adjudication. The review application provides a way to audit the benchmark and its provenance.
+\pending{Provide the final expert review protocol, reviewer qualifications and counts, adjudication outcomes, citation support rubric, and whether any separate automated claim-verification module contributed to the reported runs.}
+
+\section{Dataset}
+The source corpus is organized around Vietnamese vaccine materials. The ODT describes product leaflets, circulation authorization decisions, and regulatory guidance as target source categories. Cleaned Markdown, a vaccine name mapping, the chunk Parquet artifact and a Qdrant snapshot are available in the repository. Corpus composition requires a source inventory tied to the evaluation snapshot.
+\pending{Provide the frozen inventory with source authorities, document and product counts by type, capture dates, inclusion and exclusion criteria, duplicate handling, version identifiers, corpus size and chunk counts.}
+
+The repository contains a 460-record query-driven dataset and a separate 300-question working benchmark. The query-driven format retains the originating query identifier, question type, answerability, reference answer and evidence labels. For the 300-question format, the repository's generation script constructs context pools for single-hop, multi-hop and table-reasoning questions. The multi-hop pool covers evidence pairs from the same document or from different vaccines. The generation process uses sampled context groups and target distributions for complexity, answerability and writing style. These distributions describe how the benchmark was constructed and do not estimate the frequency of questions in real usage.
+
+The 300-question file stores a question, expected output, context, and metadata containing evidence identifiers and question attributes. Table~\ref{tab:dataset} gives the label counts observed in \artifact{evaluation/eval_dataset_300_final_fixed.json}. Each dimension describes the same set of 300 records.
+
+\begin{table}[htbp]
+\centering
+\caption{Label distribution in the 300-question working benchmark.}
+\label{tab:dataset}
+\begin{tabular}{llr}
+\toprule
+Dimension & Label & Count\\
+\midrule
+Answerability & Answerable & 210\\
+ & Partially answerable & 90\\
+Complexity & Single-hop & 150\\
+ & Multi-hop & 90\\
+ & Table reasoning & 60\\
+Question style & Patient style & 180\\
+ & Clinical style & 120\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The corrected 300-question file changes ordered source-chunk lists for 279 records relative to the earlier file. Its goldens match those embedded in the saved generation outputs. This establishes which labels accompany the saved outputs. Expert validation of label completeness and answer support must be documented separately. The 300-question file contains answerable and partially answerable labels, so evaluation of fully unanswerable questions requires a declared additional sample.
+\pending{Provide the final adjudicated dataset export, version checksum, sampling and split procedure, overlap checks between artifacts, and the size and selection rule for any fully unanswerable subset.}
+
+\section{Experiments and Results}
+
+\subsection{Experimental Design}
+The study compares the six configurations in Table~\ref{tab:sequence}. Each comparison should use a frozen corpus and judgment set, the same scored questions and matched evidence budgets. Record differences intrinsic to the methods, such as using a graph traversal or multiple retrieval calls. Hold the generator, prompts and judge settings fixed for comparisons intended to isolate the effect of retrieval. Hybrid serves as the reference for extensions. Because Hybrid can change both retrieval streams and reranking, the sequence is a system-level comparison. Component effects require matched controls, such as Hybrid with reranking disabled.
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation-study sequence and documented evidence paths.}
+\label{tab:sequence}
+\begin{tabularx}{\linewidth}{rlX}
+\toprule
+Order & Configuration & Evidence path\\
+\midrule
+1 & Naive & BM25 over corpus chunks.\\
+2 & Advanced & One BGE-M3 dense query against Qdrant.\\
+3 & Hybrid (baseline) & Dense and learned sparse retrieval, rank fusion and optional reranking.\\
+4 & Table-aware & \pending{Record final table representation and evidence path.}\\
+5 & Graph RAG & \pending{Record final graph construction and retrieval path.}\\
+6 & Agent RAG & \pending{Record final orchestration and tool-use path.}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+For retrieval, Hit@$k$ indicates whether at least one labeled relevant chunk was retrieved by rank \(k\). Recall@$k$ measures the proportion of labeled evidence recovered and Precision@$k$ measures the proportion of the first \(k\) positions occupied by labeled evidence. Mean reciprocal rank rewards early retrieval of the first labeled source. Normalized discounted cumulative gain rewards placing labeled sources near the top. Alternative supporting chunks can receive no credit when the gold evidence is incomplete. Report scoring coverage and the number of rankings shorter than each cutoff.
+
+The evaluation code also supports LLM-judged answer relevancy and faithfulness, and contextual relevancy, precision and recall. Citation analysis should distinguish citation validity from claim support, and failure analysis should assess whether refusals and partial answers match the evidence available. The source ODT identifies user testing as an evaluation objective.
+\pending{Provide the final run manifest with code revision, index revision, checkpoint identifiers, prompts, judge settings, hardware, retrieval and context budgets, inclusion and exclusion rules, and significance or uncertainty procedure if used. Supply the human review and user-testing protocols and completed results if available.}
+
+\subsection{Results}
+The saved generation artifact holds 300 records, each with four retrieved identifiers. The recorded generation model is \artifact{gpt-oss-120b}. This artifact provides evidence for scoring those saved rankings at cutoffs up to four. A score calculated above that depth would have missing positions and would be unsuitable as evidence for a deeper live retrieval experiment. Run metadata and comparable per-query outputs are required to attribute a result to an ablation configuration.
+
+\begin{table}[htbp]
+\centering
+\caption{Evidence required to complete the ablation results.}
+\label{tab:results}
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+Configuration & Pending results\\
+\midrule
+Naive & \pending{Insert scored query count, retrieval metrics, answer and citation scores, abstention and latency from the BM25 run.}\\
+Advanced & \pending{Insert matched dense retrieval, answer and citation scores, abstention and latency.}\\
+Hybrid (baseline) & \pending{Identify the baseline run and insert matched retrieval, answer and citation scores, abstention and latency.}\\
+Table-aware & \pending{Insert verified full-set and table-slice metrics and deltas from Hybrid, including row or cell attribution and latency.}\\
+Graph RAG & \pending{Insert verified full-set and multi-hop metrics and deltas from Hybrid, including graph provenance and latency.}\\
+Agent RAG & \pending{Insert verified matched metrics and deltas from Hybrid, with call counts, failures and latency.}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\pending{Add the final numerical results table with denominators and cutoffs and interpret only observed differences. Include per-slice results for single-hop, multi-hop, table reasoning and partial answerability, supported by saved run artifacts.}
+
+\subsection{Qualitative Assessment of Vietnamese Vaccine Answers}
+A qualitative assessment should trace the question to the ranked evidence and examine the generated response claim by claim. For product-specific questions, check whether the passage refers to the right product and formulation. For tables, check whether the evidence includes the relevant headers and any qualifying notes. For evidence distributed across sources, check whether all required passages appear and whether the answer combines them consistently. A partially answerable case should show which parts the source supports and how the response handles the remaining uncertainty.
+
+\pending{Insert reviewed examples with query IDs, variant, source titles and chunk IDs, source excerpts, actual output and assessor judgments. Include a supported answer, an evidence miss or unsupported claim, a table-dependent example and a partially answerable case. Supply reviewed Graph RAG and Agent RAG examples once the corresponding runs are available.}
+
+\section{Conclusion}
+VaxiS applies evidence-grounded retrieval and generation to Vietnamese vaccine information. The available project materials establish an indexing path from cleaned Markdown, three retrievable configurations, chunk-level citation tracking, a working benchmark, and tooling for reviewing reference answers and evidence. These artifacts support evaluation of whether relevant passages are retrieved and whether the resulting answers can be checked against those passages.
+
+The central empirical question is how the six configurations compare under consistent evaluation conditions. The documented corpus and benchmark audit, a reproducible comparative run, and verification of the final three configurations are prerequisites for a comparative conclusion.
+\pending{Summarize the verified findings, cite the completed results tables, state observed failure modes and delimit the conclusions to the evaluated corpus and questions.}
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\appendix
+\section*{Appendix}
+\addcontentsline{toc}{section}{Appendix}
+
+\subsection{Source-to-Markdown Processing, Metadata Extraction, and Chunking}
+The principal indexing files are \artifact{src/vacxis_capstone_fa26/indexing/parser.py}, \artifact{src/vacxis_capstone_fa26/indexing/chunker.py}, and \artifact{src/vacxis_capstone_fa26/indexing/indexer.py}. Review the original source alongside its cleaned Markdown and indexed output when checking the preservation of a table or footnote.
+\pending{Provide a representative source-to-Markdown example, actual OCR and cleaning settings, and the indexing command and resulting chunk metadata for the final corpus.}
+
+\subsection{Answer Generation Prompts and Output Schema}
+The generation files \artifact{src/vacxis_capstone_fa26/generation/prompts.py} and \artifact{src/vacxis_capstone_fa26/generation/generator.py} define the prompt construction and citation handling. Saved result records include the answer, valid and invalid citations, cited and retrieved IDs, a refusal flag, model, latency and usage.
+\pending{Insert the exact versioned generator prompt, context formatting, model settings and a sanitized saved response record from the final comparison.}
+
+\subsection{Graph Schema and Constraints}
+\pending{Insert the versioned Graph RAG node and edge specification, graph serialization or storage constraints, provenance fields, and a worked retrieval trace with source identifiers.}
+
+\subsection{Example Questions and Reviewed Outputs}
+\pending{Insert approved benchmark examples with expected and actual outputs, evidence IDs, and reviewer notes. Include each evaluated configuration where comparable examples are available.}
+
+\subsection{Project Management Plan}
+The ODT records a 14-week plan organized around problem definition, preparation of data, development of the AI pipeline, system development and evaluation. Table~\ref{tab:timeline} summarizes the planned milestones.
+
+\begin{table}[htbp]
+\centering
+\caption{Planned milestones documented in the project ODT.}
+\label{tab:timeline}
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+Weeks & Planned activities\\
+\midrule
+1--3 & Define the problem, scope and research questions. Set milestones and survey related systems.\\
+4--6 & Collect and clean data, prepare metadata and chunks, and implement retrieval.\\
+7--8 & Integrate generation, citations and evidence handling. Refine prompts and evaluation.\\
+9--11 & Develop the backend and chatbot interface and integrate the end-to-end system.\\
+12--14 & Run evaluation, analyze errors, assemble results and complete the report.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The plan identifies OCR or metadata errors, retrieval misses, unsupported generated claims, and the difficulty of assessing answer and citation quality as project risks. Its proposed mitigations include checking processed documents against originals, comparing retrieval strategies, constraining generation to source evidence, and stratifying evaluation by question type.
+\pending{Confirm the actual milestone dates, deliverables and deviations from the plan.}
+\end{document}
