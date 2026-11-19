@@ -104,12 +104,13 @@ Evidence can also cross representational boundaries. HybridQA studies questions 
 \section{Methodology}
 
 \subsection{Overview of the Vaccine Question-Answering System}
-The documented pipeline has an offline indexing stage and an online question-answering stage. Offline processing turns cleaned Markdown into identifiable chunks, adds document and section metadata, and persists the chunks in Parquet. The vector indexing path prepares dense and sparse representations in Qdrant. During question answering, the selected retriever ranks chunks. The generator receives the question and selected evidence, produces a Vietnamese response, and tracks the chunk identifiers cited by the response. The evaluation tooling also supports scoring ranked results stored from an earlier run.
+The documented pipeline has an offline indexing stage and an online question-answering stage. Offline processing collects PDFs from the Drug Administration of Vietnam public service portal and converts them to Markdown using Google's Gemini. Indexing turns cleaned Markdown into identifiable chunks, adds document and section metadata, and persists the chunks in Parquet. The vector indexing path prepares dense and sparse representations in Qdrant. During question answering, the selected retriever ranks chunks. The generator receives the question and selected evidence, produces a Vietnamese response, and tracks the chunk identifiers cited by the response. The evaluation tooling also supports scoring ranked results stored from an earlier run.
 
 \begin{figure}[htbp]
 \centering
 \fbox{\parbox{.9\linewidth}{\centering
-Cleaned Markdown $\rightarrow$ Section-aware chunks with metadata $\rightarrow$ Parquet and Qdrant\\[.6em]
+Scraped PDFs $\rightarrow$ Gemini $\rightarrow$ Cleaned Markdown\\[.6em]
+Section-aware chunks with metadata $\rightarrow$ Parquet and Qdrant\\[.6em]
 Vietnamese question $\rightarrow$ Selected retriever $\rightarrow$ Evidence chunks\\[.6em]
 Evidence and question $\rightarrow$ Generator $\rightarrow$ Response and source identifiers}}
 \caption{Documented VaxiS indexing and question-answering flow. The evidence store used depends on the retrieval configuration.}
@@ -123,10 +124,12 @@ The corpus organization and vaccine name mapping associate cleaned source record
 \pending{Supply the frozen corpus metadata dictionary, field coverage, source URL and original-page mapping policy, and the rule for selecting among conflicting or superseded documents.}
 
 \subsection{Vaccine Document Processing Module}
-The ODT identifies collection, OCR, cleaning and metadata normalization as project activities. The repository indexing code starts from cleaned Markdown. Its parser splits the content into sections, and its chunker groups short sections and divides long sections under a length budget. The code accounts for Markdown and HTML table markup and handles oversized tables separately from prose. This logic belongs to the shared indexing pipeline. The distinct Table-aware ablation still requires a versioned definition of its representation and retrieval behavior.
+The project collected PDF documents from the Drug Administration of Vietnam public service portal at \url{https://dichvucong.dav.gov.vn/}. The collection code reads a saved registration listing and retrieves registration history and ingredient information. The document extraction script reads fields for usage instructions, labels, combined labels and instructions, and quality-standard documents, then constructs download links through the portal's file-view endpoint. The download script saves files in folders named by registration number and records download progress and errors.
+
+Google's Gemini was used to convert the collected PDF documents into Markdown before cleaning and indexing. The repository indexing code starts from cleaned Markdown. Its parser splits the content into sections, and its chunker groups short sections and divides long sections under a length budget. The code accounts for Markdown and HTML table markup and handles oversized tables separately from prose. This logic belongs to the shared indexing pipeline. The distinct Table-aware ablation still requires a versioned definition of its representation and retrieval behavior.
 
 The design must preserve provenance when chunk boundaries are changed. A question can depend on a qualifier in an adjacent paragraph or a footnote that changes the interpretation of a row. A useful audit records the original source location and whether the selected evidence preserves those dependencies.
-\pending{Provide the upstream OCR and conversion tooling, quality-control procedure, excluded document categories, frozen corpus counts and the exact chunking configuration used for each run.}
+\pending{Provide the Gemini model and version, conversion interface or script, prompt, conversion date and settings, cleaning and quality-control procedure, excluded document categories, frozen corpus counts and the exact chunking configuration used for each run.}
 
 \subsection{Vaccine Knowledge Graph Module}
 Graph RAG is the fifth configuration in the study. Its purpose is to test whether graph-structured evidence helps retrieve information distributed across passages. A reproducible specification requires the graph schema, the extraction and entity resolution rules, and the links from graph facts to source evidence.
@@ -160,7 +163,7 @@ The separate review application gives reviewers access to questions, reference a
 \pending{Provide the final expert review protocol, reviewer qualifications and counts, adjudication outcomes, citation support rubric, and whether any separate automated claim-verification module contributed to the reported runs.}
 
 \section{Dataset}
-The source corpus is organized around Vietnamese vaccine materials. The ODT describes product leaflets, circulation authorization decisions, and regulatory guidance as target source categories. Cleaned Markdown, a vaccine name mapping, the chunk Parquet artifact and a Qdrant snapshot are available in the repository. Corpus composition requires a source inventory tied to the evaluation snapshot.
+The source corpus is organized around Vietnamese vaccine materials collected from the Drug Administration of Vietnam public service portal and converted from PDF to Markdown using Google's Gemini. The ODT describes product leaflets, circulation authorization decisions, and regulatory guidance as target source categories. Cleaned Markdown, a vaccine name mapping, the chunk Parquet artifact and a Qdrant snapshot are available in the repository. Corpus composition requires a source inventory tied to the evaluation snapshot.
 \pending{Provide the frozen inventory with source authorities, document and product counts by type, capture dates, inclusion and exclusion criteria, duplicate handling, version identifiers, corpus size and chunk counts.}
 
 The repository contains a 460-record query-driven dataset and a separate 300-question working benchmark. The query-driven format retains the originating query identifier, question type, answerability, reference answer and evidence labels. For the 300-question format, the repository's generation script constructs context pools for single-hop, multi-hop and table-reasoning questions. The multi-hop pool covers evidence pairs from the same document or from different vaccines. The generation process uses sampled context groups and target distributions for complexity, answerability and writing style. These distributions describe how the benchmark was constructed and do not estimate the frequency of questions in real usage.
@@ -259,8 +262,10 @@ The central empirical question is how the six configurations compare under consi
 \addcontentsline{toc}{section}{Appendix}
 
 \subsection{Source-to-Markdown Processing, Metadata Extraction, and Chunking}
+Collection is documented in \artifact{scrape_dataset/scrape_data.py}, \artifact{scrape_dataset/extract_documents.py}, and \artifact{scrape_dataset/download_documents.py}. The PDF-to-Markdown conversion used Google's Gemini. \pending{Provide the conversion script or interface record, exact Gemini model, prompt and settings so the conversion can be reproduced.}
+
 The principal indexing files are \artifact{src/vacxis_capstone_fa26/indexing/parser.py}, \artifact{src/vacxis_capstone_fa26/indexing/chunker.py}, and \artifact{src/vacxis_capstone_fa26/indexing/indexer.py}. Review the original source alongside its cleaned Markdown and indexed output when checking the preservation of a table or footnote.
-\pending{Provide a representative source-to-Markdown example, actual OCR and cleaning settings, and the indexing command and resulting chunk metadata for the final corpus.}
+\pending{Provide a representative source-to-Markdown example, Gemini conversion and cleaning settings, and the indexing command and resulting chunk metadata for the final corpus.}
 
 \subsection{Answer Generation Prompts and Output Schema}
 The generation files \artifact{src/vacxis_capstone_fa26/generation/prompts.py} and \artifact{src/vacxis_capstone_fa26/generation/generator.py} define the prompt construction and citation handling. Saved result records include the answer, valid and invalid citations, cited and retrieved IDs, a refusal flag, model, latency and usage.

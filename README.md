@@ -9,6 +9,12 @@ VaxiS hỗ trợ tra cứu tài liệu vắc xin bằng câu hỏi tiếng Việ
 
 Pipeline kiểm tra mã trích dẫn có nằm trong các đoạn đã cung cấp cho mô hình. Việc xác nhận đoạn nguồn có thực sự hỗ trợ nội dung câu trả lời là bước đánh giá riêng.
 
+## Thu thập và chuyển đổi tài liệu
+
+Tài liệu PDF được thu thập từ cổng dịch vụ công của Cục Quản lý Dược tại [dichvucong.dav.gov.vn](https://dichvucong.dav.gov.vn/). Mã trong `scrape_dataset/scrape_data.py` đọc danh sách đăng ký đã lưu và lấy lịch sử cùng thông tin nguyên liệu. `extract_documents.py` trích xuất đường dẫn tài liệu từ danh sách, gồm hướng dẫn sử dụng, nhãn, nhãn kết hợp hướng dẫn sử dụng và tài liệu tiêu chuẩn chất lượng. `download_documents.py` tải tài liệu vào thư mục theo số đăng ký và lưu tiến độ cùng lỗi tải.
+
+Nhóm dùng **Google Gemini** để chuyển PDF thành Markdown trước bước làm sạch và lập chỉ mục. [PLACEHOLDER: bổ sung model và phiên bản Gemini, giao diện hoặc script chuyển đổi, prompt, thời điểm, cấu hình và quy trình kiểm tra chất lượng.]
+
 ## Chạy cục bộ
 
 Dùng Python 3.12 trở lên và uv. Chạy từ thư mục gốc.
