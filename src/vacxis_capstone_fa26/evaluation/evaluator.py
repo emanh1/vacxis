@@ -16,6 +16,7 @@ injected answer callback.
 from __future__ import annotations
 
 import json
+import math
 import logging
 from collections.abc import Sequence
 from pathlib import Path
@@ -58,6 +59,16 @@ CORRECTNESS_CRITERIA = (
 )
 
 REFUSAL_CORRECTNESS = "refusal_correctness"
+_NON_DOCUMENT_CHUNK_IDS = frozenset({"lightrag_kg_context"})
+
+
+def _filter_document_chunk_ids(chunk_ids: Sequence[str]) -> list[str]:
+    """Exclude synthetic knowledge-graph context IDs from chunk-level IR scoring."""
+    return [
+        str(cid).strip()
+        for cid in chunk_ids
+        if str(cid).strip() and str(cid).strip() not in _NON_DOCUMENT_CHUNK_IDS
+    ]
 
 
 def _resolve_query_id(item: dict[str, Any]) -> str | None:
@@ -112,11 +123,13 @@ class _CaseInfo:
         is_refusal: bool,
         retrieval_context: list[str],
         retrieved_chunk_ids: list[str] | None = None,
+        retrieved_chunk_aliases: dict[str, list[str]] | None = None,
     ) -> None:
         self.actual_output = actual_output
         self.is_refusal = is_refusal
         self.retrieval_context = retrieval_context
         self.retrieved_chunk_ids = retrieved_chunk_ids or []
+        self.retrieved_chunk_aliases = retrieved_chunk_aliases or {}
 
 
 class VacxisRAGEvaluator:
@@ -187,13 +200,19 @@ class VacxisRAGEvaluator:
 
     def _case_info(self, fields: dict[str, Any], chunk_texts: dict[str, str]) -> _CaseInfo:
         """Derive answer, refusal flag, and hydrated context for one result."""
+        answer_payload: dict[str, Any] = {
+            "retrieved_chunk_ids": fields.get("retrieved_chunk_ids", []),
+        }
+        if "retrieved_contexts" in fields:
+            answer_payload["retrieved_contexts"] = fields["retrieved_contexts"]
         return _CaseInfo(
             actual_output=fields["actual_output"],
             is_refusal=fields["is_refusal"],
             retrieval_context=datasets.retrieval_context_from_answer(
-                {"retrieved_chunk_ids": fields["retrieved_chunk_ids"]}, chunk_texts
+                answer_payload, chunk_texts
             ),
             retrieved_chunk_ids=fields.get("retrieved_chunk_ids", []),
+            retrieved_chunk_aliases=fields.get("retrieved_chunk_aliases"),
         )
 
     def _build_test_case(
@@ -230,6 +249,8 @@ class VacxisRAGEvaluator:
         max_concurrent: int = 1,
         write_cache: bool = True,
         use_cache: bool = True,
+        checkpoint_path: str | Path | None = None,
+        resume: bool = False,
     ) -> EvaluationSummary:
         """Evaluate precomputed results against the golden dataset with DeepEval.
 
@@ -249,13 +270,62 @@ class VacxisRAGEvaluator:
         test_cases = [
             self._build_test_case(record, info) for record, info in zip(goldens, case_infos)
         ]
-        eval_result = self._run_deepeval(
-            test_cases,
-            max_concurrent=max_concurrent,
-            write_cache=write_cache,
-            use_cache=use_cache,
-        )
-        return self.build_summary(goldens, eval_result, case_infos)
+        if checkpoint_path is None:
+            eval_result = self._run_deepeval(
+                test_cases, max_concurrent=max_concurrent,
+                write_cache=write_cache, use_cache=use_cache,
+            )
+            return self.build_summary(goldens, eval_result, case_infos)
+
+        from vacxis_capstone_fa26.resilience import atomic_json, fingerprint
+        signature = fingerprint({
+            "dataset": list(dataset_items), "results": list(generation_results),
+            "contexts": [info.retrieval_context for info in case_infos],
+            "judge": self.judge.get_model_name(), "threshold": self.threshold,
+            "geval": self.enable_geval, "ir": self.enable_ir_metrics, "k": self.ir_k_values,
+        })
+        path = Path(checkpoint_path)
+        rows = []
+        if resume and path.exists():
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            if saved.get("fingerprint") != signature:
+                raise ValueError("Evaluation checkpoint inputs or settings changed; use a new checkpoint.")
+            rows = saved["report"]["per_query_results"]
+            ids = [row["query_id"] for row in rows]
+            expected = [record.query_id for record in goldens]
+            if ids != expected[:len(ids)] or len(ids) > len(expected):
+                raise ValueError("Evaluation checkpoint query order is invalid.")
+        names = self._metric_names()
+        def report():
+            queries = [QueryEvalResult(**row) for row in rows]
+            all_names = list(dict.fromkeys(names + [name for row in rows for name in row["metric_scores"]]))
+            aggregates = _aggregate_stats(queries, all_names)
+            return EvaluationSummary(
+                num_queries=len(rows), metric_names=all_names,
+                metric_aggregates=aggregates,
+                overall_metrics={name: value.mean for name, value in aggregates.items()},
+                per_query_results=rows.copy(),
+                by_answerability=_group_breakdown(queries, "answerability", all_names),
+                by_complexity=_group_breakdown(queries, "complexity", all_names),
+                by_query_style=_group_breakdown(queries, "query_style", all_names),
+                by_difficulty=_group_breakdown(queries, "difficulty", all_names),
+                metadata={"complete": len(rows) == len(goldens), "total_queries": len(goldens)},
+            )
+        atomic_json(path, {"fingerprint": signature, "report": report().to_dict()})
+        for index in range(len(rows), len(goldens)):
+            result = self._run_deepeval([test_cases[index]], max_concurrent=1,
+                                      write_cache=write_cache, use_cache=use_cache)
+            summary = self.build_summary([goldens[index]], result, [case_infos[index]])
+            row = summary.per_query_results[0]
+            expected_metrics = {metric.__name__ for metric in self.build_metrics()}
+            if not expected_metrics.issubset(row["metric_results"]) or any(
+                value.get("error") or value.get("score") is None or not math.isfinite(value["score"])
+                for value in row["metric_results"].values()
+            ):
+                raise ValueError("Incomplete metric results cannot be checkpointed as complete.")
+            rows.append(row)
+            atomic_json(path, {"fingerprint": signature, "report": report().to_dict()})
+        return report()
 
     def evaluate_live(
         self,
@@ -324,9 +394,10 @@ class VacxisRAGEvaluator:
             details: dict[str, dict[str, Any]] = {}
             if record.relevant_chunk_ids:
                 ir_scores = compute_query_ir_metrics(
-                    info.retrieved_chunk_ids,
+                    _filter_document_chunk_ids(info.retrieved_chunk_ids),
                     record.relevant_chunk_ids,
                     k_values=k_vals,
+                    chunk_aliases=info.retrieved_chunk_aliases or None,
                 )
                 scores.update(ir_scores)
                 for ir_name, ir_score in ir_scores.items():
@@ -336,6 +407,18 @@ class VacxisRAGEvaluator:
                         "reason": f"Deterministic IR metric {ir_name}",
                         "error": None,
                     }
+            query_meta: dict[str, Any] = {
+                "answerability": record.answerability,
+                "complexity": record.complexity,
+                "query_style": record.query_style,
+                "difficulty": record.difficulty,
+                "query_type": record.query_type,
+                "retrieved_chunk_ids": info.retrieved_chunk_ids,
+                "relevant_chunk_ids": record.relevant_chunk_ids,
+                "ir_scored": bool(record.relevant_chunk_ids),
+            }
+            if info.retrieved_chunk_aliases:
+                query_meta["retrieved_chunk_aliases"] = info.retrieved_chunk_aliases
             per_query.append(
                 QueryEvalResult(
                     query_id=record.query_id,
@@ -347,16 +430,7 @@ class VacxisRAGEvaluator:
                     answerability=record.answerability,
                     metric_scores=scores,
                     metric_results=details,
-                    metadata={
-                        "answerability": record.answerability,
-                        "complexity": record.complexity,
-                        "query_style": record.query_style,
-                        "difficulty": record.difficulty,
-                        "query_type": record.query_type,
-                        "retrieved_chunk_ids": info.retrieved_chunk_ids,
-                        "relevant_chunk_ids": record.relevant_chunk_ids,
-                        "ir_scored": bool(record.relevant_chunk_ids),
-                    },
+                    metadata=query_meta,
                 )
             )
 
@@ -372,7 +446,7 @@ class VacxisRAGEvaluator:
         )
         scored_count = sum(bool(record.relevant_chunk_ids) for record in goldens)
         ranking_lengths = [
-            len({cid.strip() for cid in info.retrieved_chunk_ids if cid.strip()})
+            len(set(_filter_document_chunk_ids(info.retrieved_chunk_ids)))
             for info in case_infos
         ]
         short_counts = {
@@ -384,11 +458,17 @@ class VacxisRAGEvaluator:
             warnings.append(f"{len(goldens) - scored_count} queries have no relevance labels and are excluded from IR averages.")
         if any(short_counts.values()):
             warnings.append("Some ranked lists are shorter than the metric cutoff; missing ranks count as nonrelevant. Check retrieval depth before comparing runs.")
+        used_aliases = any(bool(info.retrieved_chunk_aliases) for info in case_infos)
+        relevance_note = (
+            "Binary relevance against labeled chunk IDs with rank-preserving merged_chunk_ids alias matching; unlabeled alternatives count as nonrelevant."
+            if used_aliases
+            else "Binary relevance against labeled chunk IDs; unlabeled alternatives count as nonrelevant."
+        )
         summary.metadata.update({
             "scored_queries": scored_count,
             "unscored_queries": len(goldens) - scored_count,
             "short_rankings_by_cutoff": short_counts,
-            "relevance": "Binary relevance against labeled chunk IDs; unlabeled alternatives count as nonrelevant.",
+            "relevance": relevance_note,
             "warnings": warnings,
         })
         summary.by_answerability = _group_breakdown(per_query, "answerability", ir_metric_names)
@@ -496,9 +576,10 @@ class VacxisRAGEvaluator:
             if self.enable_ir_metrics and record.relevant_chunk_ids:
                 has_ir_metrics = True
                 ir_scores = compute_query_ir_metrics(
-                    info.retrieved_chunk_ids,
+                    _filter_document_chunk_ids(info.retrieved_chunk_ids),
                     record.relevant_chunk_ids,
                     k_values=self.ir_k_values,
+                    chunk_aliases=info.retrieved_chunk_aliases or None,
                 )
                 scores.update(ir_scores)
                 for ir_name, ir_score in ir_scores.items():

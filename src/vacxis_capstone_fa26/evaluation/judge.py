@@ -17,6 +17,8 @@ from pydantic import BaseModel, ValidationError
 
 from deepeval.models import DeepEvalBaseLLM
 import time
+import asyncio
+from vacxis_capstone_fa26.resilience import RetryPolicy
 
 JUDGE_API_KEY_ENV = "OPENROUTER_API_KEY"
 JUDGE_BASE_URL_ENV = "VACXIS_LLM_BASE_URL"
@@ -62,7 +64,11 @@ class OpenRouterJudgeLLM(DeepEvalBaseLLM):
         base_url: str | None = None,
         temperature: float = 0.0,
         schema_retries: int = 3,
+        retry_policy: RetryPolicy | None = None,
+        timeout: float = 360,
     ) -> None:
+        self.retry_policy = retry_policy or RetryPolicy()
+        self.timeout = timeout
         self.model_name = resolve_judge_model(model)
         self.api_key = (api_key or os.getenv(JUDGE_API_KEY_ENV, "")).strip()
         self.base_url = (
@@ -82,8 +88,8 @@ class OpenRouterJudgeLLM(DeepEvalBaseLLM):
             self._sync_client = OpenAI(
                 api_key=self.api_key or "OPENROUTER_API_KEY_MISSING",
                 base_url=self.base_url,
-                max_retries=5,
-                timeout=360,
+                max_retries=0,
+                timeout=self.timeout,
             )
         return self._sync_client
 
@@ -92,8 +98,8 @@ class OpenRouterJudgeLLM(DeepEvalBaseLLM):
             self._async_client = AsyncOpenAI(
                 api_key=self.api_key or "OPENROUTER_API_KEY_MISSING",
                 base_url=self.base_url,
-                max_retries=5,
-                timeout=360,
+                max_retries=0,
+                timeout=self.timeout,
             )
         return self._async_client
 
@@ -173,17 +179,17 @@ class OpenRouterJudgeLLM(DeepEvalBaseLLM):
         client = self.load_model()
 
         if schema is None:
-            response = client.chat.completions.create(
+            response = self.retry_policy.run(lambda: client.chat.completions.create(
                 **self._build_request_kwargs(prompt)
-            )
+            ))
             return response.choices[0].message.content or ""
 
         current_prompt = prompt
 
         for attempt in range(self.schema_retries + 1):
-            response = client.chat.completions.create(
+            response = self.retry_policy.run(lambda: client.chat.completions.create(
                 **self._build_request_kwargs(current_prompt)
-            )
+            ))
             content = response.choices[0].message.content or ""
 
             try:
@@ -200,8 +206,9 @@ class OpenRouterJudgeLLM(DeepEvalBaseLLM):
                     schema=schema,
                     error=exc,
                 )
-                time.sleep(3)
-                print("Sleeping for 3 sec before retry judge")
+                time.sleep(self.retry_policy.delay(attempt))
+
+        raise ValueError("Judge schema correction retries exhausted.")
 
     async def a_generate(
         self,
@@ -211,17 +218,17 @@ class OpenRouterJudgeLLM(DeepEvalBaseLLM):
         client = self._load_async_model()
 
         if schema is None:
-            response = await client.chat.completions.create(
+            response = await self.retry_policy.arun(lambda: client.chat.completions.create(
                 **self._build_request_kwargs(prompt)
-            )
+            ))
             return response.choices[0].message.content or ""
 
         current_prompt = prompt
 
         for attempt in range(self.schema_retries + 1):
-            response = await client.chat.completions.create(
+            response = await self.retry_policy.arun(lambda: client.chat.completions.create(
                 **self._build_request_kwargs(current_prompt)
-            )
+            ))
             content = response.choices[0].message.content or ""
 
             try:
@@ -238,5 +245,6 @@ class OpenRouterJudgeLLM(DeepEvalBaseLLM):
                     schema=schema,
                     error=exc,
                 )
-                time.sleep(3)
-                print("Sleeping for 3 sec before retry judge")
+                await asyncio.sleep(self.retry_policy.delay(attempt))
+
+        raise ValueError("Judge schema correction retries exhausted.")

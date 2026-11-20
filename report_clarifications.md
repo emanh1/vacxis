@@ -142,3 +142,7 @@ The team's earlier answers remain recorded above. New evidence on main now suppl
 - The default five-result depth is now recorded for these IR runs. The older four-result generation artifact remains separate.
 - Question 23 needs a revision-specific answer because current main has response validation enabled.
 - See results/report_discrepancies.md for scoring caveats, run differences and remaining evidence needs. Questions 21–24, 26–31 and 34–36 remain unresolved to the extent not answered by these saved retrieval artifacts.
+
+## Branch reconciliation on November 20, 2026
+
+The report branch integrates main revision 7798195 as its implementation and results base. This resolves the previous branch-level code drift. The implementation audit in the draft refers to that revision. It does not establish which historical revision produced each saved run. Confirmed team answers and deferred questions above remain applicable.

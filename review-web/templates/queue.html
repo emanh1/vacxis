@@ -47,7 +47,7 @@
   {% for row in rows %}
     <li><a href="/review/{{ row.question_id }}">
       <span><span class="code">{{ row.question_id }}{% if row.role %} · {{ batch_labels[row.role] }}{% endif %}</span><span class="question-name">{{ row.query }}</span></span>
-      <span class="state state-{{ row.status }}">{% if row.role == 'auditor' and not row.audit_ready and row.status == 'pending' %}Chờ người chấm chính{% else %}{{ statuses[row.status] }}{% endif %}</span>
+      <span class="state state-{{ row.status }}">{% if row.role == 'auditor' and not row.audit_ready and row.status in ('pending', 'draft', 'rejected') %}Chờ người chấm chính{% else %}{{ statuses[row.status] }}{% endif %}</span>
     </a></li>
   {% else %}<li class="empty">Không có câu phù hợp.</li>{% endfor %}
 </ul>

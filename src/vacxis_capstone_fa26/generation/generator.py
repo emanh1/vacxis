@@ -82,6 +82,7 @@ class MedicalGenerator:
         response = completion(
             model=self.config.model, messages=messages,
             temperature=self.config.temperature, timeout=self.config.timeout,
+            retry_policy=self.config.retry_policy,
             **kwargs,
         )
         answer_text = response.choices[0].message.content.strip()

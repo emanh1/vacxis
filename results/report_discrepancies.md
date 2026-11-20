@@ -1,6 +1,6 @@
 # Results audit and report discrepancies
 
-Reviewed November 20, 2026 against the saved files and source on main at commit 7798195. The report work and referenced result files were subsequently transferred to report-write. Implementation observations below refer to that inspected main revision; the report branch has its own older runtime code. This audit reads existing results and executes only the dependency-light scoring functions. It does not perform retrieval, load embedding models, call an LLM or establish fresh live-run reproducibility.
+Reviewed November 20, 2026 against the saved files and source on main at commit 7798195. The report work and referenced result files were subsequently transferred to report-write. Implementation observations below refer to that inspected main revision. The report branch has now merged that main revision, so its runtime source matches the implementation used for this audit. This audit reads existing results and executes only the dependency-light scoring functions. It does not perform retrieval, load embedding models, call an LLM or establish fresh live-run reproducibility.
 
 ## Supported baseline comparison
 
@@ -44,7 +44,7 @@ Hybrid exceeds Naive by 20.67 percentage points and Advanced by 15.33 percentage
 
 14. **An earlier draft limitation is now stale.** The draft previously described response validation as disabled. Current main implements checks for empty/non-text completions, provider refusals and unexpected finish reasons. The updated draft reflects the current implementation without inferring which validation revision applied to historical runs.
 
-15. **Document locations differ between branches.** The active workspace was main and lacked the report documents from report-write. The draft, clarification record and its local template/bibliography dependencies were recovered from report-write before editing. No branch switch, merge, commit or push was performed for this update. The local .local dependencies are ignored on main and need explicit inclusion when packaging an Overleaf project or preparing a later commit.
+15. **Document locations differ between branches.** The active workspace was main and lacked the report documents from report-write. The draft, clarification record and its local template/bibliography dependencies were recovered from report-write before editing. The documents were subsequently moved onto report-write. To resolve implementation drift, main revision 7798195 has now been merged into report-write, retaining the report files and their tracked .local dependencies. Source implementation, tests and result artifacts are checked against that main revision. The historical run-provenance questions remain open.
 
 ## Checks completed
 

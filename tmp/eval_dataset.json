@@ -1,0 +1,263 @@
+{
+  "metadata": {
+    "created_at": "2026-11-16T12:53:50.891841+00:00",
+    "model": "gpt-oss-120b",
+    "limit": 10,
+    "total_generated": 10,
+    "seed": 42,
+    "distribution": {
+      "answerability": {
+        "ANSWERABLE": 8,
+        "PARTIALLY_ANSWERABLE": 1,
+        "UNANSWERABLE": 1
+      },
+      "complexity": {
+        "SINGLE_HOP": 6,
+        "MULTI_HOP": 2,
+        "TABLE_REASONING": 2
+      },
+      "query_style": {
+        "PATIENT_STYLE": 6,
+        "CLINICAL_STYLE": 4
+      }
+    }
+  },
+  "goldens": [
+    {
+      "input": "Prevenar 13 có lịch bốn liều, liều cuối (nhắc lại) nên tiêm 11‑15 tháng tuổi, đúng?",
+      "expected_output": "Đúng. Liều thứ tư (liều nhắc lại) của Prevenar 13 được khuyến cáo tiêm trong khoảng từ 11‑15 tháng tuổi.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Prevenar 13 | liều lượng và cách dùng | 4.2 Liều dùng và cách dùng]\n[CHỦ ĐỀ: Prevenar 13] > [MỤC: 4.2 Liều dùng và cách dùng]\nLiệu trình tiêm chủng với Prevenar 13 nên được dựa trên các khuyến cáo chính thức.\nLiều dùng\nTrẻ sơ sinh và trẻ em từ 6 tuần đến 5 tuổi (trước sinh nhật 6 tuổi)\nTrẻ sơ sinh đã được tiêm liều Prevenar 13 đầu tiên được khuyến cáo hoàn tất liệu trình tiêm chủng với\nPrevenar 13.\nTrẻ sơ sinh từ 6 tuần đến 6 tháng tuổi\nLiệu trình ba liều cơ bản\nLiệu trình tiêm chủng khuyến cáo bao gồm bốn liều, mỗi liều 0,5 ml. Liệu trình cơ bản cho trẻ sơ sinh\nbao gồm ba liều, liều thứ nhất thường được tiêm lúc 2 tháng tuổi với khoảng cách tối thiểu 1 tháng giữa\ncác liều. Liều thứ nhất có thể được cho dùng sớm nhất vào lúc sáu tuần tuổi. Liều thứ tư (liều nhắc lại)\nđược khuyến cáo cho dùng trong khoảng từ 11 đến 15 tháng tuổi.\nLiệu trình hai liều cơ bản\nHoặc, khi Prevenar 13 được cho dùng trong chương trình tiêm chủng thường quy cho trẻ sơ sinh, có\nthể áp dụng một liệu trình bao gồm ba liều, mỗi liều 0,5 ml. Liều thứ nhất có thể được cho dùng từ lúc\n2 tháng tuổi, liều thứ hai cho dùng 2 tháng sau đó. Liều thứ ba (liều nhắc lại) được khuyến cáo cho\ndùng trong khoảng từ 11 đến 15 tháng tuổi (xem mục 5.1).\nTrẻ sơ sinh thiếu tháng (thai kỳ <37 tuần)\nỞ trẻ sơ sinh thiếu tháng, liệu trình tiêm chủng khuyến cáo bao gồm bốn liều, mỗi liều 0,5 ml. Liệu\ntrình cơ bản cho trẻ sơ sinh bao gồm ba liều, liều thứ nhất thường được cho dùng lúc 2 tháng tuổi với\nkhoảng cách tối thiểu 1 tháng giữa các liều. Liều thứ nhất có thể được cho dùng sớm nhất lúc sáu tuần \ntuổi. Liều thứ tư (liều nhắc lại) được khuyến cáo cho dùng trong khoảng từ 11 đến 15 tháng tuổi (xem\nmục 4.4 và 5.1).\nTrẻ sơ sinh và trẻ em trên 7 tháng tuổi chưa tiêm vắc xin\n7-11 tháng tuổi\n2 liều, mỗi liều 0,5 ml, với khoảng cách tối thiểu 1 tháng giữa các liều. Liều thứ 3 được khuyến cáo\ncho dùng ở tuổi thứ 2.\nTrẻ em từ 12-23 tháng tuổi\n2 liều, mỗi liều 0,5 ml, với khoảng cách tối thiểu 2 tháng giữa các liều (xem mục 5.1).\nTrẻ em và thiếu niên từ 2 đến 17 tuổi\nMột liều đơn 0,5 ml.\nLịch trình tiêm chủng Prevenar 13 cho trẻ sơ sinh và trẻ em trước đó đã được tiêm chủng với vắc xin\ncộng hợp 7 dòng phế cầu khuẩn (tên thương mại của vắc xin cộng hợp 7 dòng phế cầu khuẩn: Prevenar\n- từ nay được gọi là Prevenar (7 týp) trong toàn bộ tờ hướng dẫn sử dụng) (Streptococcus pneumoniae\ntýp 4, 6B, 9V, 14, 18C, 19F, và 23F)\nPrevenar 13 chứa cùng 7 týp huyết thanh có trong Prevenar (7 týp), sử dụng cùng protein vận chuyển\nCRM197.\nTrẻ sơ sinh và trẻ em đã bắt đầu tiêm chủng với Prevenar (7 týp) có thể chuyển sang dùng Prevenar\n13 bất cứ lúc nào trong lịch trình.\nTrẻ nhỏ (12-59 tháng tuổi) đã được tiêm chủng đầy đủ bằng Prevenar (7 týp)\nTrẻ nhỏ được xem là đã được tiêm chủng đầy đủ bằng Prevenar (7 týp) nên được tiêm thêm một liều"
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0001",
+        "answerability": "ANSWERABLE",
+        "complexity": "SINGLE_HOP",
+        "multi_hop_type": null,
+        "query_style": "PATIENT_STYLE",
+        "source_chunk_ids": [
+          "proquad_001310197825_c_0000"
+        ],
+        "doc_ids": [
+          "proquad_001310197825"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine ProQuad"
+        ]
+      }
+    },
+    {
+      "input": "ProQuad được chỉ định tiêm bắp hay tiêm dưới da?",
+      "expected_output": "ProQuad có thể tiêm bắp hoặc tiêm dưới da, tùy theo chỉ định của bác sĩ.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine ProQuad | thành phần | HƯỚNG DẪN SỬ DỤNG | THÀNH PHẦN CÔNG THỨC THUỐC]\n[CHỦ ĐỀ: ProQuad] > [MỤC: HƯỚNG DẪN SỬ DỤNG | THÀNH PHẦN CÔNG THỨC THUỐC]\nProQuad®\n[Vắc-xin vi-rút sởi, quai bị, rubella và thủy đậu (Oka/Merck) sống], công thức ổn định ở nhiệt độ tủ lạnh, Bột đông khô và dung môi pha tiêm\n\nThuốc này chỉ dùng theo đơn thuốc.\nĐể xa tầm tay trẻ em.\nĐọc kỹ tờ hướng dẫn sử dụng trước khi dùng.\nTiêm bắp hoặc tiêm dưới da.\n\nThành phần hoạt chất\nSau khi pha, một liều (0,5 mL) chứa:\nVi-rút sởi¹ chủng Enders' Edmonston (sống, giảm độc lực): không ít hơn 3,00 log TCID₅₀*\nVi-rút quai bị¹ chủng Jeryl Lynn (Mức B) (sống, giảm độc lực): không ít hơn 4,30 log TCID₅₀*\nVi-rút Rubella² chủng Wistar RA 27/3 (sống, giảm độc lực): không ít hơn 3,00 log TCID₅₀*\nVi-rút thủy đậu³ chủng Oka/Merck (sống, giảm độc lực): không ít hơn 3,99 log PFU**\n\n* liều lây nhiễm cho 50% mô nuôi cấy (tissue culture infectious dose, TCID₅₀)\n(1) Được sản xuất trong tế bào phôi gà.\n(2) Được sản xuất trong nguyên bào sợi phổi lưỡng bội (WI-38) của người.\n(3) Được sản xuất trong tế bào lưỡng bội (MRC-5) của người.\n** đơn vị hình thành màng (plaque-forming unit, PFU)\n\nVắc-xin có thể chứa lượng vết của albumin người tái tổ hợp (rHA).\nVắc-xin này chứa lượng vết của neomycin. Xem phần “Chống chỉ định”.\n\nThành phần tá dược\nSucrose, gelatin (hydrolyzed porcine), sodium chloride, sorbitol, monosodium L-glutamate Monohydrate, sodium phosphate (includes monobasic and dibasic form), sodium bicarbonate, potassium phosphate (includes monobasic and dibasic form), potassium chloride, medium 199 with Hanks' Salts, Minimum Essential Medium Eagle, neomycin, phenol red, urea."
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0002",
+        "answerability": "ANSWERABLE",
+        "complexity": "SINGLE_HOP",
+        "multi_hop_type": null,
+        "query_style": "PATIENT_STYLE",
+        "source_chunk_ids": [
+          "prevenar_13_540310111524_c_0003"
+        ],
+        "doc_ids": [
+          "prevenar_13_540310111524"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Prevenar 13"
+        ]
+      }
+    },
+    {
+      "input": "Liều 2 Gardasil 9 có nên hoãn do bệnh nhân 15t sốt cấp và ngất?",
+      "expected_output": "Có. Khi bệnh nhân 15 t tuổi đang bị sốt cấp nặng, nên hoãn liều thứ 2 của Gardasil 9 cho đến khi sốt giảm và tình trạng sức khỏe ổn định. Sốt nhẹ hoặc nhiễm trùng đường hô hấp trên nhẹ không phải là chống chỉ định, nhưng sốt nặng là lý do để hoãn tiêm. Ngoài ra, cần giám sát bệnh nhân ít nhất 15 phút sau tiêm để phòng ngừa ngất và các phản ứng thần kinh có thể xảy ra. Khi bệnh nhân đã bình phục, mới tiếp tục tiêm liều tiếp theo.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Gardasil 9 | cảnh báo và thận trọng | CẢNH BÁO VÀ THẬN TRỌNG ĐẶC BIỆT KHI SỬ DỤNG]\n[CHỦ ĐỀ: Gardasil 9] > [MỤC: CẢNH BÁO VÀ THẬN TRỌNG ĐẶC BIỆT KHI SỬ DỤNG]\nQuyết định tiêm chủng cho một cá nhân nên tính đến nguy cơ phơi nhiễm HPV trước đây và lợi ích tiềm tàng từ việc tiêm chủng.\n\n\n\n\nCũng như với tất cả các vắc xin dạng tiêm khác, cần phải luôn có sẵn các phương tiện điều trị và giám sát y khoa thích hợp trong trường hợp có phản ứng phản vệ hiếm gặp sau khi tiêm vắc xin.\nNgất, đôi khi liên quan đến té ngã, có thể xảy ra sau, hoặc ngay cả trước bất kỳ sự tiêm chủng nào, đặc biệt ở thiếu niên như là phản ứng do yếu tố tâm lý đối với việc tiêm kim. Điều này có thể đi kèm với một số dấu hiệu thần kinh như rối loạn thị giác thoáng qua, dị cảm và cử động co cứng-co giật chi trong khi hồi phục. Do đó, cần theo dõi người được tiêm chủng trong khoảng 15 phút sau khi tiêm chủng. Điều quan trọng là phải có các quy trình để tránh tổn thương do ngất.\nNên hoãn lại việc tiêm chủng ở những người đang bị sốt nặng cấp tính. Tuy nhiên, sự hiện diện của nhiễm trùng nhẹ, như nhiễm trùng đường hô hấp trên nhẹ hoặc sốt mức độ nhẹ, không phải là chống chỉ định cho tiêm chủng.\nCũng như với bất kỳ loại vắc xin nào, tiêm chủng bằng vắc xin Gardasil 9 không thể bảo vệ cho tất cả những người được tiêm vắc xin.\nVắc xin này chỉ bảo vệ chống lại các bệnh gây ra bởi các týp HPV có trong vắc xin (xem phần Các đặc tính dược lực học). Do đó, cần phải tiếp tục sử dụng các biện pháp phòng ngừa thích hợp đối với các bệnh lây truyền qua đường tình dục.\nVắc xin này chỉ dùng để dự phòng và không có tác dụng đối với nhiễm HPV hoạt động hoặc bệnh lâm sàng đã được xác định. Vắc xin này không được chứng minh là có tác dụng điều trị. Do đó, vắc xin này không chỉ định để điều trị ung thư cổ tử cung, âm hộ, âm đạo và hậu môn, tổn thương loạn sản cổ tử cung, âm hộ, âm đạo và hậu môn hoặc mụn cóc sinh dục mức độ cao. Nó cũng không nhằm ngăn ngừa sự tiến triển của các tổn thương khác liên quan đến HPV đã được xác định.\nGardasil 9 không ngăn ngừa các tổn thương do týp HPV có trong vắc xin ở những người bị nhiễm týp HPV đó tại thời điểm tiêm chủng (xem phần Các đặc tính dược lực học).\nTiêm chủng không phải là một biện pháp thay thế cho sàng lọc cổ tử cung thường quy. Vì không có vắc xin nào có hiệu quả 100% và Gardasil 9 sẽ không đem lại sự bảo vệ chống lại mọi týp HPV, hoặc chống lại nhiễm HPV hiện có tại thời điểm tiêm chủng, việc sàng lọc cổ tử cung thường quy rất quan trọng và nên tuân theo các khuyến cáo của từng nước."
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0003",
+        "answerability": "ANSWERABLE",
+        "complexity": "SINGLE_HOP",
+        "multi_hop_type": null,
+        "query_style": "CLINICAL_STYLE",
+        "source_chunk_ids": [
+          "gardasil_9_001310178700_c_0005"
+        ],
+        "doc_ids": [
+          "gardasil_9_001310178700"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Gardasil 9"
+        ]
+      }
+    },
+    {
+      "input": "Đối với bệnh nhân 45 tuổi, mắc bệnh tiểu đường và đang dùng warfarin, liệu liều thứ hai của vaccine JEEV có cần điều chỉnh không, và đáp ứng seroconversion của vaccine JEEV có tương đương với vaccine Ixiaro không?",
+      "expected_output": "Liều thứ hai của vaccine JEEV không cần điều chỉnh; theo chỉ định nghiên cứu, cả hai liều đều được tiêm 6 mcg/0.5 mL cách nhau 28 ngày, bất kể bệnh nhân có tiểu đường hay đang dùng warfarin. Đáp ứng seroconversion của JEEV tương đương với Ixiaro®, với tỷ lệ chuyển đổi huyết thanh 99,07 % so với 98,15 % của Ixiaro®, chứng tỏ JEEV không thua kém.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine JEEV | dược lực học | 15. Đặc tính dược lực học:]\n[CHỦ ĐỀ: JEEV] > [MỤC: 15. Đặc tính dược lực học:]\n(JEEV là vắc xin được chuyển giao công nghệ từ Ixiaro). Mục tiêu của nghiên cứu là để chứng minh JEEV không thua kém so với Ixiaro. Cả 2 vắc xin đã được tiêm bắp cho đối tượng với liệu trình 2 liều ($6\\text{ mcg}/0.5\\text{ mL}$) cách nhau 28 ngày.\n\nCác tiêu chí chính là đánh giá tỷ lệ chuyển đổi huyết thanh dựa vào số lượng và tỷ lệ phần trăm của các đối tượng có kháng thể trung hòa virus VNNB ($\\text{PRNT}_{50} \\ge 1:10$) tại ngày 56. Tỷ lệ chuyển đổi huyết thanh là tương tự giữa các nhóm (99,07% với JEEV và 98,15% với Ixiaro®) và JEEV đã được chứng minh là không thua kém khi so sánh với vắc xin đã được cấp phép. Các kết quả nghiên cứu cho thấy GMT tăng từ mức cơ bản lên đến 197,29 vào ngày 56."
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0004",
+        "answerability": "ANSWERABLE",
+        "complexity": "SINGLE_HOP",
+        "multi_hop_type": null,
+        "query_style": "CLINICAL_STYLE",
+        "source_chunk_ids": [
+          "jeev_890310108424_c_0009"
+        ],
+        "doc_ids": [
+          "jeev_890310108424"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine JEEV"
+        ]
+      }
+    },
+    {
+      "input": "Vaccine Vaxneuvance có gây ngưng thở ở trẻ sơ sinh dưới 28 tuần không, và có nên dùng cho phụ nữ mang thai không?",
+      "expected_output": "Vaxneuvance có thể gây nguy cơ ngưng thở ở trẻ sơ sinh sinh dưới 28 tuần; do đó cần theo dõi hô hấp 48‑72 giờ sau tiêm, nhưng vì lợi ích phòng bệnh cao nên không nên từ chối hoặc trì hoãn tiêm. Đối với phụ nữ mang thai, dữ liệu còn hạn chế; các nghiên cứu trên động vật không cho thấy tác hại cho thai kỳ, nhưng việc tiêm chỉ nên cân nhắc khi lợi ích cho mẹ và thai nhi vượt qua mọi nguy cơ có thể.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Vaxneuvance | cảnh báo và thận trọng | Ngưng thở ở trẻ sơ sinh thiếu tháng]\n[CHỦ ĐỀ: Vaxneuvance] > [MỤC: Ngưng thở ở trẻ sơ sinh thiếu tháng]\nNguy cơ có thể xảy ra ngưng thở và cần theo dõi hô hấp trong 48-72 giờ khi thực hiện lịch tiêm cơ bản cho trẻ sơ sinh rất non tháng (sinh dưới 28 tuần tuổi thai) và đặc biệt đối với những trẻ có tiền sử hệ hô hấp chưa trưởng thành. Vì lợi ích của việc chủng ngừa là cao ở nhóm trẻ sơ sinh này, nói chung không nên từ chối hoặc trì hoãn việc tiêm chủng.",
+        "[Hướng dẫn sử dụng Vaccine Vaxneuvance | thai kỳ và cho con bú | Phụ nữ có thai]\n[CHỦ ĐỀ: Vaxneuvance] > [MỤC: Phụ nữ có thai]\nKinh nghiệm còn hạn chế về việc sử dụng VAXNEUVANCE ở phụ nữ có thai. Các nghiên cứu trên động vật không cho thấy các tác dụng có hại trực tiếp hoặc gián tiếp đối với thai kỳ, sự phát triển của phôi thai, sự sinh đẻ hoặc sự phát triển sau khi sinh (xem phần Dữ liệu phi lâm sàng). Việc sử dụng VAXNEUVANCE trong khi mang thai chỉ nên được xem xét khi lợi ích có thể có cao hơn bất kỳ nguy cơ nào có thể xảy ra đối với mẹ và thai nhi."
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0005",
+        "answerability": "ANSWERABLE",
+        "complexity": "MULTI_HOP",
+        "multi_hop_type": "same_doc",
+        "query_style": "PATIENT_STYLE",
+        "source_chunk_ids": [
+          "vaxneuvance_539310049125_c_0009",
+          "vaxneuvance_539310049125_c_0012"
+        ],
+        "doc_ids": [
+          "vaxneuvance_539310049125"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Vaxneuvance"
+        ]
+      }
+    },
+    {
+      "input": "Đối với bệnh nhân 68 tuổi, có tiểu đường, đang dùng metformin và aspirin, so sánh Vaxigrip Tetra và VAXIGRIP 0.25 ml về chỉ định, liều dùng, chống chỉ định và tác dụng phụ?",
+      "expected_output": "**So sánh Vaxigrip Tetra và VAXIGRIP 0.25 ml (đối với bệnh nhân 68 tuổi, tiểu đường, dùng metformin + aspirin)**  \n\n| Tiêu chí | Vaxigrip Tetra | VAXIGRIP 0.25 ml |\n|----------|----------------|-----------------|\n| **Chỉ định** | Người lớn ≥ 18 tuổi, bao gồm người cao tuổi > 60 tuổi (được tiêm 1 liều/ năm). | Trẻ từ 6 tháng đến < 36 tháng tuổi (tiêm 1‑2 liều tùy lịch tiêm trước). |\n| **Liều dùng** | 0,5 ml (liều tiêu chuẩn cho người lớn). | 0,25 ml (liều dành cho trẻ nhỏ). |\n| **Chống chỉ định** | - Dị ứng nặng với thành phần vaccine hoặc trứng (nếu có). <br>- Bệnh lý nặng, sốc phản vệ sau mũi tiêm trước. <br>(Không có cản trở đặc biệt vì tiểu đường, metformin, aspirin). | - Dị ứng nặng với thành phần vaccine hoặc trứng. <br>- Trẻ có bệnh lý nặng, sốc phản vệ sau mũi tiêm trước. <br>(Không dùng cho người lớn, vì không được chỉ định). |\n| **Tác dụng phụ thường gặp** | Người lớn: <br>- Đau tại vị trí tiêm (≈ 56 %). <br>- Đau đầu (27,8 %). <br>- Đau cơ (23 %). <br>- Khó chịu (19,2 %). | Trẻ 6‑36 tháng: <br>- Sốt (≈ 20 %). <br>- Ban đỏ chỗ tiêm (≈ 17 %). <br>- Giảm thèm ăn, quấy khóc, nôn ói (đối với < 24 tháng). |\n| **Điểm giống nhau** | - Cả hai đều là vaccine cúm bốn dòng (inactivated). <br>- An toàn tổng thể tốt, phản ứng thường nhẹ, tự khỏi trong 1‑3 ngày. <br>- Các phản ứng nặng hiếm gặp. |\n| **Điểm khác nhau** | - Được chỉ định cho người cao tuổi, liều gấp đôi (0,5 ml). <br>- Phản ứng phụ chủ yếu là đau đầu, đau cơ, đau chỗ tiêm. | - Chỉ dành cho trẻ nhỏ, liều 0,25 ml. <br>- Phản ứng phụ chủ yếu là sốt, ban đỏ, giảm ăn, quấy khóc. |\n\n**Kết luận:** Đối với bệnh nhân 68 tuổi có tiểu đường, thuốc metformin + aspirin, vaccine phù hợp là **Vaxigrip Tetra** (0,5 ml, 1 liều mỗi mùa). VAXIGRIP 0.25 ml không được chỉ định cho người lớn và liều dùng, cũng như các tác dụng phụ thường gặp, khác biệt rõ rệt so với Vaxigrip Tetra.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Vaxigrip Tetra | tác dụng không mong muốn | TÁC DỤNG KHÔNG MONG MUỐN:]\n[CHỦ ĐỀ: Vaxigrip Tetra] > [MỤC: TÁC DỤNG KHÔNG MONG MUỐN:]\nThông báo ngay cho bác sĩ hoặc dược sỹ những phản ứng có hại gặp phải khi sử dụng vắc-xin.\n\na. Tóm tắt về độ an toàn\nTính an toàn của vắc-xin Vaxigrip Tetra đã được đánh giá trong năm thử nghiệm lâm sàng, trong đó có 3.040 người trưởng thành từ 18 đến 60 tuổi; 1.392 người cao tuổi trên 60 tuổi; 429 trẻ em từ 9 đến 17 tuổi được tiêm một liều vắc-xin Vaxigrip Tetra; 884 trẻ em từ 3 đến 8 tuổi được tiêm một hoặc hai liều vắc-xin Vaxigrip Tetra tùy vào lịch sử tiêm chủng trước đó và 1.614 trẻ từ 6 tháng đến 36 tháng tuổi được tiêm 2 liều vắc-xin Vaxigrip Tetra.\nCác phản ứng có hại thường được báo cáo nhất trong vòng 3 ngày đầu sau khi tiêm Vaxigrip, tự khỏi trong 1 đến 3 ngày kể từ khi khởi phát triệu chứng. Phần lớn các phản ứng trong dự kiến ở mức độ nhẹ.\nCác phản ứng có hại thường được báo cáo nhất sau tiêm chủng trên quần thể các đối tượng, bao gồm nhóm trẻ từ 6 đến 36 tháng tuổi là đau tại vị trí tiêm (52,8% ở trẻ em từ 3 đến 17 tuổi và 56,5% ở người lớn; 26,8% ở trẻ từ 6 đến 36 tháng tuổi và 25,8% ở người cao tuổi). Trong một bộ phận quần thể ở trẻ dưới 24 tháng tuổi, cáu kỉnh (32,3%) là phản ứng có hại thường được ghi nhận.\nKhó chịu ở trẻ em từ 24 đến 36 tháng tuổi chiếm 26,8% cũng được ghi nhận trong các phản ứng có hại.\nCác phản ứng có hại khác thường gặp nhất sau khi chủng ngừa là:\n- Người lớn: đau đầu (27,8%), đau cơ (23%) và khó chịu (19,2%),\n\n\n\n- Người cao tuổi: đau đầu (15,6%) và đau cơ (13,9%),\n- Trẻ em từ 9 đến 17 tuổi: đau cơ (29,1%), đau đầu (24,7%), khó chịu (20,3%) và sưng tại chỗ tiêm (10,7%),\n- Trẻ em từ 3 đến 8 tuổi: khó chịu (30,7%), đau cơ (28,5%), đau đầu (25,7%), sưng tại chỗ tiêm (20,5%), ban đỏ chỗ tiêm (20,4%), cứng chỗ tiêm (16,4%), run rẩy/ rét run (11,2%).\n- Trẻ em từ 6 tháng đến 36 tháng tuổi: sốt (20,4%) và ban đỏ chỗ tiêm (17,2%).\n- Trẻ em dưới 24 tháng tuổi: giảm sự thèm ăn/ chán ăn (28,9%), quấy khóc bất thường (27,1%), nôn ói (16,1%) và buồn ngủ/ ngủ gà (13,9%).\n- Trẻ em từ 24 đến 36 tháng tuổi: đau đầu (11,9%) và đau cơ (11,6%).\nNhìn chung, các phản ứng có hại thường ít xảy ra ở người cao tuổi hơn so với người lớn và trẻ em.\n\nb. Bảng danh sách các tác dụng không mong muốn\nCác dữ liệu sau đây tóm tắt tần số các tác dụng không mong muốn được ghi nhận sau chủng ngừa với Vaxigrip Tetra trong các thử nghiệm lâm sàng.\nCác tác dụng không mong muốn được phân nhóm theo tần suất theo các quy ước sau:\nRất thường gặp (> 1/10);\nThường gặp (> 1/100 đến < 1/10);\nKhông thường gặp (> 1/1.000 đến < 1/100);\nHiếm gặp (> 1/10.000 đến < 1/1.000);\nRất hiếm gặp (< 1/10.000).\n\nNgười lớn và người cao tuổi\nĐộ an toàn trình bày sau đây được dựa trên từ dữ liệu sau:\nDữ liệu lâm sàng trên 3.040 người lớn từ 18 đến 60 tuổi và 1.392 người cao tuổi trên 60 tuổi.",
+        "[Hướng dẫn sử dụng Vaccine VAXIGRIP (0,25ml) | tác dụng không mong muốn | b. Bảng danh sách các tác dụng không mong muốn]\n[CHỦ ĐỀ: VAXIGRIP (0,25ml)] > [MỤC: b. Bảng danh sách các tác dụng không mong muốn]\nCác dữ liệu sau đây tóm tắt tần số các tác dụng không mong muốn được ghi nhận trên các trẻ từ 6 tháng tuổi đến dưới 36 tháng tuổi trong vòng 3 hay 7 ngày sau khi chủng ngừa với một hay hai liều 0,25 ml VAXIGRIP Liều trẻ em trong hai thử nghiệm lâm sàng và trong quá trình lưu hành sản phẩm trên toàn cầu:  \n\nCác tác dụng không mong muốn được xếp theo tần số theo các qui ước:\n- Rất thường gặp ($\\ge 1/10$)\n- Thường gặp ($\\ge 1/100$ đến $< 1/10$)\n- Không thường gặp ($\\ge 1/1.000$ đến $< 1/100$)\n- Hiếm gặp ($\\ge 1/10.000$ đến $< 1/1.000$)\n- Rất hiếm gặp ($< 1/10.000$)\n- Không rõ: không thể đánh giá từ các dữ liệu hiện có"
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0006",
+        "answerability": "ANSWERABLE",
+        "complexity": "MULTI_HOP",
+        "multi_hop_type": "cross_vaccine",
+        "query_style": "CLINICAL_STYLE",
+        "source_chunk_ids": [
+          "vaxigrip_tetra_300310305924_c_0006",
+          "vaxigrip_0_25ml_qlvx_0652_13_c_0009"
+        ],
+        "doc_ids": [
+          "vaxigrip_tetra_300310305924",
+          "vaxigrip_0_25ml_qlvx_0652_13"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Vaxigrip Tetra",
+          "Hướng dẫn sử dụng Vaccine VAXIGRIP (0,25ml)"
+        ]
+      }
+    },
+    {
+      "input": "Trong bảng dữ liệu lâm sàng, vaccine DTP có kháng nguyên nào cho trẻ 2‑5 tuổi sau liều thứ hai có tỷ lệ serum‑positive thấp nhất?",
+      "expected_output": "Trong bảng chỉ có dữ liệu về vaccine Bexsero, không có thông tin nào liên quan đến vaccine DTP; do đó không thể xác định kháng nguyên của DTP có tỷ lệ serum‑positive thấp nhất cho trẻ 2‑5 tuổi.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Bexsero | quá liều | Bảng 4. Đáp ứng kháng thể kháng khuẩn trong huyết thanh tại thời điểm 1 tháng sau khi tiêm liều Bexsero thứ hai cho trẻ em từ 2-10 tuổi theo liệu trình tiêm 0, 2 tháng]\n[CHỦ ĐỀ: Bexsero] > [MỤC: Bảng 4. Đáp ứng kháng thể kháng khuẩn trong huyết thanh tại thời điểm 1 tháng sau khi tiêm liều Bexsero thứ hai cho trẻ em từ 2-10 tuổi theo liệu trình tiêm 0, 2 tháng]\n<table border=\"1\" cellspacing=\"0\" cellpadding=\"5\">\n  <thead>\n    <tr>\n      <th>Kháng nguyên</th>\n      <th></th>\n      <th>Từ 2 đến 5 tuổi</th>\n      <th>Từ 6 đến 10 tuổi</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td rowspan=\"2\"><b>fHbp</b></td>\n      <td>% huyết thanh dương tính *<br>(95% CI)</td>\n      <td>N=99<br>100% (96-100)</td>\n      <td>N=287<br>99% (96-100)</td>\n    </tr>\n    <tr>\n      <td>GMT của hSBA**<br>(95% CI)</td>\n      <td>140<br>(112-175)</td>\n      <td>112<br>(96-130)</td>\n    </tr>\n    <tr>\n      <td rowspan=\"2\"><b>NadA</b></td>\n      <td>% huyết thanh dương tính<br>(95% CI)</td>\n      <td>N=99<br>99% (95-100)</td>\n      <td>N=291<br>100% (98-100)</td>\n    </tr>\n    <tr>\n      <td>GMT của hSBA<br>(95% CI)</td>\n      <td>584<br>(466-733)</td>\n      <td>457<br>(392-531)</td>\n    </tr>\n    <tr>\n      <td rowspan=\"2\"><b>PorA P1.4</b></td>\n      <td>% huyết thanh dương tính<br>(95% CI)</td>\n      <td>N=100<br>98% (93-100)</td>\n      <td>N=289<br>99% (98-100)</td>\n    </tr>\n    <tr>\n      <td>GMT của hSBA<br>(95% CI)</td>\n      <td>42<br>(33-55)</td>\n      <td>40<br>(34-48)</td>\n    </tr>\n    <tr>\n      <td rowspan=\"2\"><b>NHBA</b></td>\n      <td>% huyết thanh dương tính<br>(95% CI)</td>\n      <td>N=95<br>91% (83-96)</td>\n      <td>N=275<br>95% (92-97)</td>\n    </tr>\n    <tr>\n      <td>GMT của hSBA<br>(95% CI)</td>\n      <td>23<br>(18-30)</td>\n      <td>35<br>(29-41)</td>\n    </tr>\n  </tbody>\n</table>\n\n<p>*% huyết thanh dương tính = tỷ lệ phần trăm đối tượng có hSBA ≥ 1:4 (đối với chủng tham chiếu cho các kháng nguyên fHbp, NadA, PorA P1.4) và hSBA ≥ 1:5 (đối với chủng tham chiếu cho kháng nguyên NHBA).</p>\n\n<p>** GMT = hiệu giá kháng thể trung bình nhân.</p>"
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0007",
+        "answerability": "ANSWERABLE",
+        "complexity": "TABLE_REASONING",
+        "multi_hop_type": null,
+        "query_style": "PATIENT_STYLE",
+        "source_chunk_ids": [
+          "bexsero_800310090123_c_0024"
+        ],
+        "doc_ids": [
+          "bexsero_800310090123"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Bexsero"
+        ]
+      }
+    },
+    {
+      "input": "Liệu liều 0,5 ml vaccine Twinrix được tiêm sau thời gian trễ 6 tháng, đồng thời bệnh nhân đang dùng deferoxamine, có thể duy trì hiệu quả 720 U Hep A và 20 µg HBsAg không?",
+      "expected_output": "Theo thông tin trong tài liệu, mỗi liều 1 ml Twinrix chứa 720 U Hep A và 20 µg HBsAg; liều 0,5 ml chỉ cung cấp một nửa lượng này. Tài liệu không đề cập tới việc tiêm trễ 6 tháng hay ảnh hưởng của deferoxamine (một chất chelating nhôm) lên hiệu quả vaccine. Do đó, không thể khẳng định rằng liều 0,5 ml sau 6 tháng và trong khi dùng deferoxamine vẫn duy trì được 720 U Hep A và 20 µg HBsAg; cần tham khảo chỉ định lâm sàng và hướng dẫn chuyên môn cụ thể.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Twinrix | thành phần | 1. Thành phần định tính và định lượng]\n[CHỦ ĐỀ: Twinrix] > [MỤC: 1. Thành phần định tính và định lượng]\n<p>Mỗi liều (1,0 ml) có chứa:</p>\n<table>\n  <tbody>\n    <tr>\n      <td>Virus Viêm gan A (bất hoạt)<sup>1,2</sup></td>\n      <td>720 đơn vị ELISA</td>\n    </tr>\n    <tr>\n      <td>Kháng nguyên bề mặt virus Viêm gan B<sup>3,4</sup></td>\n      <td>20 microgram</td>\n    </tr>\n    <tr>\n      <td colspan=\"2\"><sup>1</sup> Được sản xuất trên tế bào lưỡng bội của người (MRC-5)</td>\n    </tr>\n    <tr>\n      <td><sup>2</sup> Được hấp phụ trên nhôm hydroxide, hydrat hóa</td>\n      <td>0,05 milligram Al<sup>3+</sup></td>\n    </tr>\n    <tr>\n      <td colspan=\"2\"><sup>3</sup> Được sản xuất trên tế bào nấm men (<i>Saccharomyces cerevisiae</i>) bằng công nghệ tái tổ hợp DNA</td>\n    </tr>\n    <tr>\n      <td><sup>4</sup>Được hấp phụ trên nhôm phosphat</td>\n      <td>0,4 milligram Al<sup>3+</sup></td>\n    </tr>\n  </tbody>\n</table>\n\nTwinrix là chất lỏng, màu trắng hơi đục, đựng trong bơm tiêm thủy tinh đóng sẵn."
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0008",
+        "answerability": "ANSWERABLE",
+        "complexity": "TABLE_REASONING",
+        "multi_hop_type": null,
+        "query_style": "CLINICAL_STYLE",
+        "source_chunk_ids": [
+          "twinrix_400310177900_c_0001"
+        ],
+        "doc_ids": [
+          "twinrix_400310177900"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Twinrix"
+        ]
+      }
+    },
+    {
+      "input": "Heberbiovac HB có gây phản ứng dị ứng nghiêm trọng không, và nó có được khuyến cáo cho người bị tiểu đường không?",
+      "expected_output": "Trả lời chính xác phần có dữ liệu trong context: tài liệu chỉ nêu rằng không ghi nhận trường hợp quá liều nào đối với Heberbiovac HB và cung cấp thông tin về điều kiện bảo quản, hạn dùng, quy cách đóng gói và nhà sản xuất.  \n\nTừ chối phần thông tin không có trong tài liệu: tài liệu không đề cập đến việc Heberbiovac HB có gây phản ứng dị ứng nghiêm trọng hay có/không khuyến cáo sử dụng cho người bị tiểu đường, vì vậy không thể trả lời các câu hỏi này dựa trên nội dung đã cho.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Heberbiovac HB | thành phần | Thành phần]\n[CHỦ ĐỀ: Heberbiovac HB] > [MỤC: Thành phần]\nkhác nhau và dùng xylanh riêng. Không trộn các vắc xin\nvới nhau trong cùng một lọ, trừ phi vắc xin được sản xuất ở dạng kết hợp (ví dụ DTP-HB).\nQuá liều:\nKhông ghi nhận trường hợp quá liều nào đối với sản phẩm này\nĐiều kiện bảo quản.\n\nBảo quản ở nhiệt độ $2^{\\circ}C$ đến $8^{\\circ}C$. KHÔNG LÀM ĐÔNG ĐÁ\nHạn dùng: 3 năm kể từ ngày sản xuất\nLOẠI BỎ VẮC XIN NẾU BỊ ĐÔNG ĐÁ.\nQuy cách đóng gói\n- Hộp đựng 1 lọ $20~\\mu g/1$ mL.\n- Hộp đựng 25 lọ $20~\\mu g/1$ mL.\nSản xuất bởi: Center for Genetic Engineering and Biotechnology (CIGB)\nAve. 31, $e/158$ y 190 P.O. Box 6162, Playa, La Habana, Cuba"
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0009",
+        "answerability": "PARTIALLY_ANSWERABLE",
+        "complexity": "SINGLE_HOP",
+        "multi_hop_type": null,
+        "query_style": "PATIENT_STYLE",
+        "source_chunk_ids": [
+          "heberbiovac_hb_850310304424_c_0005"
+        ],
+        "doc_ids": [
+          "heberbiovac_hb_850310304424"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Heberbiovac HB"
+        ]
+      }
+    },
+    {
+      "input": "Menquadfi có đáp ứng kháng thể không thua kém MenACWY‑DT 30 ngày sau tiêm để phòng COVID‑19?",
+      "expected_output": "Từ chối trả lời hoặc đính chính tiền đề sai một cách rõ ràng vì tài liệu được cung cấp không có thông tin hỗ trợ, tuyệt đối không suy diễn.",
+      "context": [
+        "[Hướng dẫn sử dụng Vaccine Menquadfi | bảng số liệu | Bảng 8: So sánh đáp ứng kháng thể diệt khuẩn giữa MenQuadfi và MenACWY-DT 30 ngày sau tiêm trên các đối tượng chưa tiêm vắc-xin não mô cầu trước đó từ 18 đến 55 tuổi (nghiên cứu MET43 *)]\n[CHỦ ĐỀ: Menquadfi] > [MỤC: Bảng 8: So sánh đáp ứng kháng thể diệt khuẩn giữa MenQuadfi và MenACWY-DT 30 ngày sau tiêm trên các đối tượng chưa tiêm vắc-xin não mô cầu trước đó từ 18 đến 55 tuổi (nghiên cứu MET43 *)]\n* *Mã số định danh thử nghiệm lâm sàng NCT02842853*\n\n*N: số đối tượng theo phân tích từ đề cương nghiên cứu có kết quả huyết thanh học hợp lệ.*\n\n*95% CI của mỗi tỷ lệ được tính toán theo phương pháp nhị thức tuyệt đối.*\n\n*Đáp ứng tiêu chí không thua kém*"
+      ],
+      "additional_metadata": {
+        "query_id": "eval_0010",
+        "answerability": "UNANSWERABLE",
+        "complexity": "SINGLE_HOP",
+        "multi_hop_type": null,
+        "query_style": "PATIENT_STYLE",
+        "source_chunk_ids": [
+          "menquadfi_001310047625_c_0055"
+        ],
+        "doc_ids": [
+          "menquadfi_001310047625"
+        ],
+        "doc_titles": [
+          "Hướng dẫn sử dụng Vaccine Menquadfi"
+        ]
+      }
+    }
+  ]
+}

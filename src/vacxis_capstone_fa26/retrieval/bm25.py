@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from heapq import nlargest
 from math import log1p
 import re
+from typing import Any
 from unicodedata import normalize
 
 
@@ -35,12 +37,38 @@ class BM25Retriever:
             for term, rows in postings.items()
         }
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[dict[str, str]]:
+    def retrieve(
+        self,
+        query: str,
+        top_k: int | None = 5,
+        *,
+        skip_rerank: bool | None = None,
+    ) -> list[dict[str, str]]:
         """Return up to top_k matching chunks in descending BM25 score order."""
+        limit = 5 if top_k is None else top_k
         scores: dict[str, float] = defaultdict(float)
         for term in dict.fromkeys(_tokens(query)):
             if term in self._idf:
                 for cid, weight in self._postings[term]:
                     scores[cid] += self._idf[term] * weight
-        ranked_ids = nlargest(top_k, scores, key=scores.__getitem__)
+        ranked_ids = nlargest(limit, scores, key=scores.__getitem__)
         return [{"chunk_id": cid, "text": self._texts[cid]} for cid in ranked_ids]
+
+    def batch_retrieve(
+        self,
+        queries: Sequence[str],
+        top_k: int | None = 5,
+        *,
+        skip_rerank: bool | None = None,
+    ) -> list[list[dict[str, str]]]:
+        """Return BM25 rankings for each query in a sequence."""
+        return [self.retrieve(query, top_k=top_k, skip_rerank=skip_rerank) for query in queries]
+
+    def close(self) -> None:
+        """No-op resource cleanup for context manager compatibility."""
+
+    def __enter__(self) -> BM25Retriever:
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        self.close()

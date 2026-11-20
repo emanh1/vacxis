@@ -31,8 +31,8 @@ class VacxisRAGPipeline:
     ) -> None:
         if retriever is None:
             # Lazy import so generation does not require torch unless retriever is initialized
-            from vacxis_capstone_fa26.retrieval.retriever import VacxisRetriever
-            self.retriever = VacxisRetriever(config=retrieval_config)
+            from vacxis_capstone_fa26.retrieval.factory import build_retriever
+            self.retriever = build_retriever(retrieval_config)
         else:
             self.retriever = retriever
 

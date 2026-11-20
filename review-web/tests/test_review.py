@@ -881,7 +881,7 @@ class ScientificReviewWorkflow(unittest.TestCase):
 
         # Auditor cannot approve before primary submits
         auditor_wait = experts[auditor_slot].get(f"/review/{qid}")
-        self.assertIn("chưa", auditor_wait.text.casefold())
+        self.assertIn("Chờ người chấm chính", auditor_wait.text)
         premature = experts[auditor_slot].post(f"/review/{qid}", data={
             "csrf": csrf(auditor_wait), "revision": field(auditor_wait, "revision"),
             "action": "audit_approve", "audit_note": "",

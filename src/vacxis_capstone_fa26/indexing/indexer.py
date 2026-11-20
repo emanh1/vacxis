@@ -9,6 +9,12 @@ from __future__ import annotations
 import argparse
 from contextlib import ExitStack
 from uuid import NAMESPACE_URL, uuid5
+from vacxis_capstone_fa26.indexing.table_pipeline import (
+    DEFAULT_TABLE_CACHE_PATH,
+    VALID_TABLE_STRATEGIES,
+    TableStrategy,
+    prepare_records_for_indexing,
+)
 from vacxis_capstone_fa26.retrieval.schemas import RetrievalConfig
 import logging
 from pathlib import Path
@@ -148,6 +154,9 @@ def ingest_to_qdrant(
     embedding_max_length: int = EMBEDDING_MAX_LENGTH,
     upsert_batch_size: int = QDRANT_UPSERT_BATCH,
     *,
+    table_strategy: TableStrategy = "raw",
+    table_cache_path: str | Path = DEFAULT_TABLE_CACHE_PATH,
+    table_summary_model: str | None = None,
     client: QdrantClient | None = None,
     embed_model: Any | None = None,
 ) -> int:
@@ -164,6 +173,9 @@ def ingest_to_qdrant(
         mega_batch_size: Chunk size for encode and upsert cycles.
         embedding_max_length: Maximum sequence length for BGE-M3.
         upsert_batch_size: Sub-batch size for Qdrant upsert points.
+        table_strategy: Table preprocessing strategy (raw, merge, summarize, summarize_dual).
+        table_cache_path: Path to JSON cache of table prose summaries.
+        table_summary_model: Optional model key for summary cache lookup.
 
     Returns:
         Total number of points upserted.
@@ -178,10 +190,29 @@ def ingest_to_qdrant(
     ids = [row.get("chunk_id") for row in records]
     if any(not isinstance(cid, str) or not cid.strip() for cid in ids) or len(set(ids)) != len(ids):
         raise ValueError("Chunks must have unique, nonblank chunk IDs.")
-    total_rows = len(records)
-    if total_rows == 0:
+    if len(records) == 0:
         logger.warning("No records found in %s. Ingestion aborted.", parquet_path)
         return 0
+
+    records, table_stats = prepare_records_for_indexing(
+        records,
+        strategy=table_strategy,
+        cache_path=table_cache_path,
+        summary_model=table_summary_model,
+    )
+    total_rows = len(records)
+    if table_strategy != "raw":
+        logger.info(
+            "Table-aware preprocessing (%s): %d -> %d records | tables=%d | "
+            "cache_hits=%d | cache_misses=%d | llm_calls=%d",
+            table_strategy,
+            table_stats["total_in"],
+            table_stats["total_out"],
+            table_stats["tables_total"],
+            table_stats["cache_hits"],
+            table_stats["cache_misses"],
+            table_stats["llm_calls"],
+        )
 
     # 2. Connect to Qdrant
     logger.info("Connecting to Qdrant at %s:%d ...", qdrant_host, qdrant_port)
@@ -226,10 +257,10 @@ def ingest_to_qdrant(
             batch_records = records[start:end]
             current_batch_size = len(batch_records)
 
-            # 5a. Prepare texts to encode
+            # 5a. Prepare texts to encode (embed_text takes precedence for dual table strategy)
             texts: list[str] = []
             for rec in batch_records:
-                text = str(rec.get("text", "")).strip()
+                text = str(rec.get("embed_text") or rec.get("text", "")).strip()
                 texts.append(text)
 
             # 5b. Generate Dense + Sparse embeddings
@@ -362,6 +393,24 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Recreate collection if it already exists.",
     )
+    parser.add_argument(
+        "--table-strategy",
+        choices=VALID_TABLE_STRATEGIES,
+        default="raw",
+        help="Table preprocessing strategy before embedding and upsert.",
+    )
+    parser.add_argument(
+        "--table-cache",
+        type=Path,
+        default=DEFAULT_TABLE_CACHE_PATH,
+        help="Path to JSON cache of table prose summaries.",
+    )
+    parser.add_argument(
+        "--table-summary-model",
+        type=str,
+        default=None,
+        help="Model key for table summary cache lookup (defaults to LIGHTRAG_LLM).",
+    )
     return parser.parse_args()
 
 
@@ -370,11 +419,12 @@ def main() -> None:
     args = parse_args()
     start_time = time.time()
 
-    logger.info("Parquet    : %s", args.parquet_path)
-    logger.info("Model      : %s", args.model_path)
-    logger.info("Collection : %s", args.collection_name)
-    logger.info("Host:Port  : %s:%d", args.qdrant_host, args.qdrant_port)
-    logger.info("Recreate   : %s", args.recreate)
+    logger.info("Parquet        : %s", args.parquet_path)
+    logger.info("Model          : %s", args.model_path)
+    logger.info("Collection     : %s", args.collection_name)
+    logger.info("Host:Port      : %s:%d", args.qdrant_host, args.qdrant_port)
+    logger.info("Recreate       : %s", args.recreate)
+    logger.info("Table strategy : %s", args.table_strategy)
 
     points_count = ingest_to_qdrant(
         parquet_path=args.parquet_path,
@@ -386,6 +436,9 @@ def main() -> None:
         embedding_batch_size=args.batch_size,
         mega_batch_size=args.mega_batch_size,
         embedding_max_length=args.max_length,
+        table_strategy=args.table_strategy,
+        table_cache_path=args.table_cache,
+        table_summary_model=args.table_summary_model,
     )
 
     elapsed = time.time() - start_time

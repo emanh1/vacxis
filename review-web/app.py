@@ -24,8 +24,9 @@ from content import (
 )
 from dataset_format import as_golden, is_golden
 from documents import packaged_documents
+from calibration import calibration_state, comparison, consensus_fields, resolve_consensus
 from store import (
-    BASE_DIR, CONSENT_VERSION, SCOPES, ReviewConflict, ReviewError, accept_invite, adjudicate_item,
+    BASE_DIR, CONSENT_VERSION, EXPORT_CONSENT_VERSION, SCOPES, ReviewConflict, ReviewError, accept_invite, adjudicate_item,
     connect, database_location, digest, expert_slot_for, invite, invited_reviewer, issue_link,
     release_unstarted, reopen, reserve_operation, reset_scientific_review, save_expert_review, save_review,
     scientific_dashboard_data, setup_scientific_review, submit_audit_decision, timestamp, update_profile,
@@ -166,20 +167,31 @@ def get_item(db, person, identifier, *, lock=False):
 
 def next_item(db, person, excluded=""):
     if expert_slot_for(db, person["id"]):
-        return db.one(
+        available = db.one(
             "SELECT er.question_id FROM expert_reviews er JOIN questions q ON er.question_id = q.id "
+            "LEFT JOIN question_allocations qa ON qa.question_id = er.question_id "
             "LEFT JOIN expert_reviews pr ON pr.scope = er.scope AND pr.question_id = er.question_id AND pr.role = 'primary' "
             "WHERE er.scope = ? AND er.reviewer_id = ? AND er.question_id <> ? AND ("
             "  (er.role = 'primary' AND er.status = 'needs_revision')"
             "  OR (er.role IN ('calibration', 'overlap', 'primary') AND er.status IN ('draft', 'pending'))"
             "  OR (er.role = 'auditor' AND er.status IN ('draft', 'pending') AND pr.status = 'submitted')"
             ") ORDER BY "
-            "  CASE WHEN er.role = 'primary' AND er.status = 'needs_revision' THEN 0 "
-            "       WHEN er.role = 'calibration' THEN 1 "
-            "       WHEN er.role = 'overlap' THEN 2 "
-            "       WHEN er.role = 'primary' THEN 3 ELSE 4 END, "
+            "  CASE WHEN er.role = 'calibration' THEN 0 WHEN er.role = 'overlap' THEN 1 "
+            "       WHEN er.role = 'primary' AND er.status IN ('pending', 'draft') AND qa.requires_audit = 1 THEN 2 "
+            "       WHEN er.role = 'primary' AND er.status = 'needs_revision' THEN 3 "
+            "       WHEN er.role = 'auditor' THEN 4 ELSE 5 END, "
             "  CASE WHEN er.status = 'draft' THEN 0 ELSE 1 END, q.position LIMIT 1",
             (person["scope"], person["id"], excluded),
+        )
+        if available:
+            return available
+        # Waiting audits are a fallback, including the audit just returned for revision.
+        return db.one(
+            "SELECT er.question_id FROM expert_reviews er JOIN questions q ON q.id = er.question_id "
+            "JOIN expert_reviews pr ON pr.scope = er.scope AND pr.question_id = er.question_id AND pr.role = 'primary' "
+            "WHERE er.scope = ? AND er.reviewer_id = ? AND er.role = 'auditor' "
+            "AND er.status IN ('pending', 'draft', 'rejected') AND pr.status IN ('pending', 'draft', 'needs_revision') "
+            "ORDER BY q.position LIMIT 1", (person["scope"], person["id"]),
         )
     return db.one(
         "SELECT r.question_id FROM review_items r JOIN questions q ON r.question_id = q.id "
@@ -210,6 +222,7 @@ def create_app(location=None):
     invitation_key = secret.encode()
     consent_signer = URLSafeSerializer(secret, salt="vacxis-consent-v1")
     assignment_signer = URLSafeSerializer(secret, salt="vacxis-scientific-reset-v1")
+    calibration_signer = URLSafeSerializer(secret, salt="vacxis-calibration-v1")
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(SessionMiddleware, secret_key=secret,
                        https_only=origin.scheme == "https", max_age=14 * 24 * 60 * 60, session_cookie="vacxis_review")
@@ -502,6 +515,7 @@ def create_app(location=None):
                 "locked": locked,
                 "is_auditor": is_auditor,
                 "primary_ready": expert_ctx["primary"]["status"] == "submitted" if is_auditor else True,
+                "waiting": is_auditor and erow["status"] in ("pending", "draft", "rejected") and expert_ctx["primary"]["status"] != "submitted",
                 "primary_notes": expert_ctx["primary"]["notes"] if is_auditor else "",
                 "primary_reviewer": (
                     reviewer_label(expert_ctx["primary"])
@@ -545,6 +559,33 @@ def create_app(location=None):
                 return redirect(REVIEW_START)
         return question_page(request, person, item, expert_ctx)
 
+    def document_page(request, db, item):
+        original = json.loads(item["original"])
+        golden = as_golden(original)
+        doc_ids = golden["additional_metadata"]["doc_ids"] if golden else original.get("RELEVANT_DOCS", [])
+        documents = []
+        for doc_id in dict.fromkeys(doc_ids):
+            rows = db.all("SELECT * FROM document_chunks WHERE doc_id = ? ORDER BY position, chunk_id", (doc_id,))
+            if not rows:
+                rows = packaged_documents().get(doc_id, [])
+            if not rows:
+                documents.append({"id": doc_id, "title": doc_id, "categories": [], "missing": True})
+                continue
+            groups = {}
+            previous_header = None
+            for row in rows:
+                category = row["category"] or "Thông tin khác"
+                header = "" if (category, row["header"]) == previous_header else row["header"]
+                groups.setdefault(category, []).append(dict(
+                    render_chunk({"CHUNK_ID": row["chunk_id"], "TEXT": row["text"]}), header=header,
+                ))
+                previous_header = (category, row["header"])
+            documents.append({
+                "id": doc_id, "title": rows[0]["doc_title"],
+                "categories": [{"name": name.capitalize(), "chunks": chunks} for name, chunks in groups.items()],
+            })
+        return templates.TemplateResponse(request=request, name="documents.html", context={"documents": documents})
+
     @app.get("/review/{identifier}/documents")
     def documents(request: Request, identifier: str):
         with connect(location) as db:
@@ -552,31 +593,108 @@ def create_app(location=None):
             item, _ = get_item(db, person, identifier)
             if needs_profile(person):
                 raise HTTPException(403, "Vui lòng hoàn tất bước bắt đầu duyệt.")
-            original = json.loads(item["original"])
-            golden = as_golden(original)
-            doc_ids = golden["additional_metadata"]["doc_ids"] if golden else original.get("RELEVANT_DOCS", [])
-            documents = []
-            for doc_id in dict.fromkeys(doc_ids):
-                rows = db.all("SELECT * FROM document_chunks WHERE doc_id = ? ORDER BY position, chunk_id", (doc_id,))
-                if not rows:
-                    rows = packaged_documents().get(doc_id, [])
-                if not rows:
-                    documents.append({"id": doc_id, "title": doc_id, "categories": [], "missing": True})
-                    continue
-                groups = {}
-                previous_header = None
-                for row in rows:
-                    category = row["category"] or "Thông tin khác"
-                    header = "" if (category, row["header"]) == previous_header else row["header"]
-                    groups.setdefault(category, []).append(dict(
-                        render_chunk({"CHUNK_ID": row["chunk_id"], "TEXT": row["text"]}), header=header,
-                    ))
-                    previous_header = (category, row["header"])
-                documents.append({
-                    "id": doc_id, "title": rows[0]["doc_title"],
-                    "categories": [{"name": name.capitalize(), "chunks": chunks} for name, chunks in groups.items()],
-                })
-        return templates.TemplateResponse(request=request, name="documents.html", context={"documents": documents})
+            return document_page(request, db, item)
+
+    @app.get("/review/{identifier}/audit-next")
+    def audit_next(request: Request, identifier: str):
+        with connect(location) as db:
+            person = require_reviewer(db, request)
+            _, expert = get_item(db, person, identifier)
+            if needs_profile(person) or not expert or expert["erow"]["role"] != "auditor":
+                raise HTTPException(403, "Trang này dành cho người kiểm định câu hỏi.")
+            following = next_item(db, person)
+            return {"next": f"/review/{following['question_id']}" if following and (
+                following["question_id"] != identifier or expert["primary"]["status"] == "submitted"
+            ) else None}
+
+    def shared_state(db, token):
+        try:
+            generation = calibration_signer.loads(token) if len(token) <= 2048 else None
+        except BadData:
+            generation = None
+        if (not isinstance(generation, list) or len(generation) != 3
+                or not isinstance(generation[0], str) or generation[0] not in SCOPES):
+            raise HTTPException(404, "Liên kết đối chiếu không hợp lệ.")
+        state = calibration_state(db, generation[0])
+        if generation != state["generation"] or not state["ready"]:
+            raise HTTPException(404, "Liên kết đối chiếu chưa sẵn sàng hoặc không còn hiệu lực.")
+        return generation[0], state
+
+    def shared_item(db, scope, identifier):
+        item = db.one(
+            "SELECT r.*, q.query, q.original FROM review_items r JOIN questions q ON q.id = r.question_id "
+            "JOIN question_allocations qa ON qa.question_id = q.id "
+            "WHERE r.scope = ? AND r.question_id = ? AND qa.batch_type = 'calibration' AND r.status = 'flagged'",
+            (scope, identifier),
+        )
+        if not item:
+            raise ReviewConflict("Câu này đã được chốt hoặc không thuộc danh sách cần đối chiếu. Hãy mở lại liên kết chung.")
+        return item
+
+    def calibration_page(request, db, token, scope, state, *, identifier=None, form=None, error=None, code=200):
+        pending = state["pending"]
+        identifier = identifier or (pending[0]["question_id"] if pending else None)
+        item = shared_item(db, scope, identifier) if identifier else None
+        context = {}
+        if item:
+            experts, groups, note, signature = comparison(db, scope, item)
+            _, _, chunks = review_content(json.loads(item["original"]))
+            context = {"item": item, "groups": groups, "comparison_note": note, "expert_signature": signature,
+                       "fields": consensus_fields(experts, form), "notes": str(form.get("notes", "")) if form else "",
+                       "sources": [dict(render_chunk(c), doc_id=c["CHUNK_ID"].rsplit("_c_", 1)[0]) for c in chunks]}
+        return page(request, "calibration", token=token, scope=scope, collection=state, error=error, code=code,
+                    joining=True, signed_in=False, **context)
+
+    @app.get("/calibration/{token}")
+    def calibration_collection(request: Request, token: str, question: str = ""):
+        with connect(location) as db:
+            scope, state = shared_state(db, token)
+            if question and question not in {r["question_id"] for r in state["pending"]}:
+                return redirect(f"/calibration/{token}")
+            return calibration_page(request, db, token, scope, state, identifier=question or None)
+
+    @app.get("/calibration/{token}/documents/{identifier}")
+    def calibration_documents(request: Request, token: str, identifier: str):
+        with connect(location) as db:
+            scope, _ = shared_state(db, token)
+            try:
+                item = shared_item(db, scope, identifier)
+            except ReviewConflict as exc:
+                raise HTTPException(404, str(exc)) from None
+            return document_page(request, db, item)
+
+    @app.post("/calibration/{token}")
+    def calibration_submit(request: Request, token: str, form: PostForm):
+        identifier = str(form.get("question_id", ""))
+        try:
+            with connect(location, write=True) as db:
+                # Use the generation lock shared with scientific reset before the item lock.
+                db.locked("SELECT id FROM dataset WHERE id = 1")
+                scope, state = shared_state(db, token)
+                db.locked("SELECT question_id FROM review_items WHERE scope = ? AND question_id = ?", (scope, identifier))
+                item = shared_item(db, scope, identifier)
+                experts, _, _, signature = comparison(db, scope, item)
+                revision = integer(form.get("revision"), "Phiên bản câu hỏi không hợp lệ.")
+                if item["revision"] != revision or not equal(form.get("expert_signature"), signature):
+                    raise ReviewConflict("Nội dung đã thay đổi ở phiên khác. Hãy tải lại và kiểm tra trước khi chốt.")
+                resolved = resolve_consensus(consensus_fields(experts, form), form)
+                action = resolved.get("result_action")
+                if action not in ("confirm", "reject"):
+                    raise ReviewError("Hãy chọn kết quả thống nhất.")
+                answer, label, evidence, notes = _parse_submission(resolved, item["original"], require_content=action == "confirm")
+                data = parse_review_data(resolved, item["original"], answer, label, evidence, action)
+                data["consensus_choices"] = {f["key"]: f["choice"] if not f["agreed"] else "agreed" for f in consensus_fields(experts, form)}
+                adjudicate_item(db, scope, identifier, revision, answer, label, json.dumps(evidence), notes,
+                                review_data=data, actor_id="calibration_representative")
+        except ReviewConflict as exc:
+            with connect(location) as db:
+                scope, state = shared_state(db, token)
+                return calibration_page(request, db, token, scope, state, error=str(exc), code=409)
+        except ReviewError as exc:
+            with connect(location) as db:
+                scope, state = shared_state(db, token)
+                return calibration_page(request, db, token, scope, state, identifier=identifier, form=form, error=str(exc), code=422)
+        return redirect(f"/calibration/{token}")
 
     @app.post("/review/{identifier}")
     def review_save(request: Request, identifier: str, form: PostForm):
@@ -712,6 +830,7 @@ def create_app(location=None):
             )
             referrals = db.all("SELECT * FROM referrals WHERE handled_at IS NULL ORDER BY created_at") if scope == "live" else []
             scientific = scientific_dashboard_data(db, scope)
+            calibration = calibration_state(db, scope)
         code, token = invitation or (None, None)
         filtered = [
             row for row in rows
@@ -720,6 +839,8 @@ def create_app(location=None):
         ]
         return page(request, "admin", scope=scope, total=len(rows), people=people, referrals=referrals,
                     scientific=scientific, scientific_invites=scientific_invites,
+                    calibration=calibration,
+                    calibration_url=f"{public_url}/calibration/{calibration_signer.dumps(calibration['generation'])}" if calibration["ready"] else None,
                     available=sum(not row["reviewer_id"] for row in rows),
                     done=sum(row["status"] == "verified" for row in rows), status=status, batch=batch,
                     rows=filtered,
@@ -957,7 +1078,7 @@ def create_app(location=None):
                 "FROM review_items r JOIN questions q ON q.id = r.question_id "
                 "LEFT JOIN reviewers u ON u.id = r.reviewer_id AND u.scope = 'live' "
                 "AND u.consent = 'accepted' AND u.consent_version >= ? "
-                "WHERE r.scope = ? AND r.status = 'verified' ORDER BY q.position", (CONSENT_VERSION, scope),
+                "WHERE r.scope = ? AND r.status = 'verified' ORDER BY q.position", (EXPORT_CONSENT_VERSION, scope),
             )
             scientific = bool(db.one("SELECT 1 FROM expert_slots WHERE scope = ? LIMIT 1", (scope,)))
             if scientific:
@@ -976,7 +1097,7 @@ def create_app(location=None):
                     label = (
                         reviewer_label(er)
                         if (er["scope"] == "live" and er["consent"] == "accepted"
-                            and (er["consent_version"] or 0) >= CONSENT_VERSION and er["full_name"])
+                            and (er["consent_version"] or 0) >= EXPORT_CONSENT_VERSION and er["full_name"])
                         else er["reviewer_id"]
                     )
                     by_qid.setdefault(er["question_id"], []).append(label)

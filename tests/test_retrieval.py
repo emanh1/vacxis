@@ -364,6 +364,75 @@ def test_retriever_lazy_load_default():
     assert retriever._reranker is None
 
 
+def test_retriever_merge_table_chunks_before_rerank():
+    """Verify VacxisRetriever merges split table candidates before reranking when enabled."""
+    dense_mock = MagicMock()
+    dense_mock.tolist.return_value = [0.1] * 1024
+    mock_embed = MagicMock()
+    mock_embed.encode.side_effect = lambda texts, **kw: {
+        "dense_vecs": [dense_mock for _ in texts],
+        "lexical_weights": [{"1": 0.5} for _ in texts],
+    }
+
+    t1 = RetrievedChunk(
+        chunk_id="vax_c_0001",
+        doc_id="vax",
+        doc_title="Vax",
+        category="liều dùng",
+        parent_header="",
+        header="Liều dùng",
+        content_type="table",
+        text="[CHỦ ĐỀ: Vax] > [MỤC: Liều dùng]\n<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>",
+        score=0.8,
+        rrf_score=0.8,
+        metadata={"has_table": True},
+    )
+    t2 = RetrievedChunk(
+        chunk_id="vax_c_0002",
+        doc_id="vax",
+        doc_title="Vax",
+        category="liều dùng",
+        parent_header="",
+        header="Liều dùng",
+        content_type="table",
+        text="[CHỦ ĐỀ: Vax] > [MỤC: Liều dùng]\n<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr><tr><td>2</td></tr></tbody></table>",
+        score=0.7,
+        rrf_score=0.7,
+        metadata={"has_table": True},
+    )
+    mock_searcher = MagicMock()
+    mock_searcher.search.return_value = [t1, t2]
+    mock_searcher.batch_search.return_value = [[t1, t2]]
+
+    mock_reranker = MagicMock()
+    mock_reranker.rerank.side_effect = lambda query, candidates, top_k: candidates[:top_k]
+    mock_reranker.batch_rerank.side_effect = (
+        lambda queries, candidates_list, top_k: [c[:top_k] for c in candidates_list]
+    )
+
+    retriever = VacxisRetriever(
+        config=RetrievalConfig(top_k=5, merge_table_chunks=True),
+        embed_model=mock_embed,
+        reranker=mock_reranker,
+        hybrid_searcher=mock_searcher,
+    )
+
+    res = retriever.retrieve("liều dùng")
+    assert len(res) == 1
+    assert res[0].chunk_id == "vax_c_0001"
+    assert "<tr><td>2</td></tr>" in res[0].text
+    assert res[0].metadata["merged_chunk_ids"] == ["vax_c_0001", "vax_c_0002"]
+    # Original candidate metadata must remain unmutated
+    assert "merged_chunk_ids" not in t1.metadata
+    assert len(mock_reranker.rerank.call_args.kwargs["candidates"]) == 1
+
+    batch_res = retriever.batch_retrieve(["liều dùng"])
+    assert len(batch_res) == 1
+    assert len(batch_res[0]) == 1
+    assert batch_res[0][0].metadata["merged_chunk_ids"] == ["vax_c_0001", "vax_c_0002"]
+    assert len(mock_reranker.batch_rerank.call_args.kwargs["candidates_list"][0]) == 1
+
+
 @pytest.mark.integration
 def test_full_pipeline_integration():
     """End-to-end integration test with live Qdrant and local models."""

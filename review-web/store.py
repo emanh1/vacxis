@@ -17,7 +17,8 @@ from sampling import allocate_scientific_batches, compute_fleiss_kappa, summariz
 
 BASE_DIR = Path(__file__).resolve().parent
 SCOPES = {"live": "Duyệt thật", "test": "Thử nghiệm nội bộ"}
-CONSENT_VERSION = 2
+CONSENT_VERSION = 3
+EXPORT_CONSENT_VERSION = 2
 QUESTION_ID = re.compile(r"[A-Za-z0-9_-]{1,100}")
 
 
@@ -690,14 +691,14 @@ def submit_audit_decision(db, item, erow, auditor_id, revision, decision, audit_
         )
 
 
-def adjudicate_item(db, scope, question_id, revision, answer, answerability, evidence_ids, notes, *, review_data=None):
+def adjudicate_item(db, scope, question_id, revision, answer, answerability, evidence_ids, notes, *, review_data=None, actor_id="admin"):
     """Finalize a calibration or overlap item after 3-expert disagreement while preserving expert_reviews."""
     now = timestamp()
     item = db.locked("SELECT * FROM review_items WHERE scope = ? AND question_id = ?", (scope, question_id))
     if not item or item["revision"] != revision:
         raise ReviewConflict("Trạng thái câu hỏi đã thay đổi. Hãy tải lại trang.")
     _advance_item(
-        db, item, "verified", "admin", now,
+        db, item, "verified", actor_id, now,
         answer=answer, answerability=answerability, evidence_ids=evidence_ids, notes=notes, verified_at=now,
         review_data=review_data,
     )

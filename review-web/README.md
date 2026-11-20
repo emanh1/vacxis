@@ -48,6 +48,36 @@ Từ `review-web`, dùng `uv run --env-file .env store.py --migrate` để cập
 
 [PLACEHOLDER: xác nhận môi trường triển khai đang hoạt động, phiên bản ứng dụng và đầu mối liên hệ trên trang quyền riêng tư.]
 
+## Nâng cấp thảo luận Calibration và hàng đợi Audit
+
+Bản nâng cấp này dùng các bảng đang có, không thay đổi phân công hay cấp lại lời mời. Khi redeploy cùng project, giữ nguyên `DATABASE_URL`, `REVIEW_SECRET_KEY` và tên miền đang gửi cho bác sĩ. Tiến độ lưu trên Neon và phiên đăng nhập tiếp tục được sử dụng. Lời mời cũ vẫn tuân theo hạn dùng 7 ngày và quy tắc dùng một lần; nếu đã dùng, bác sĩ tiếp tục bằng phiên đăng nhập hiện có.
+
+Không nạp lại dataset, khởi tạo lại 3 gói chuyên gia hay thu hồi phân công để cập nhật phiên bản này. Nếu database đã chạy phiên bản bốn bước đánh giá có `review_data`, không cần migration mới. Với database cũ hơn, dùng lệnh `store.py --migrate` ở phần trên; lệnh chỉ bổ sung cấu trúc còn thiếu. Có thể tải JSON kết quả hiện tại trước khi cập nhật để lưu một bản đối chiếu; JSON này không thay thế bản sao lưu toàn bộ database.
+
+Sau khi cả ba chuyên gia đã nộp đủ 15 câu Calibration, trang quản lý hiện **Thống nhất Calibration** và một liên kết chung cho toàn bộ các câu **Cần đối chiếu**. Gửi liên kết cho nhóm chuyên gia; một người đại diện ghi kết luận sau thảo luận, không cần đăng nhập qua lời mời cá nhân. Liên kết cho phép xem ý kiến và chốt kết quả nên chỉ chia sẻ trong nhóm tham gia. Liên kết gắn với bộ dữ liệu, lượt duyệt thật/thử nghiệm và ba hồ sơ chuyên gia hiện tại.
+
+Trong liên kết chung:
+
+Nội dung xin phép mới (phiên bản 3) nêu rõ việc chia sẻ tên và vai trò với chuyên gia kiểm định và người có liên kết Calibration. Hồ sơ đã đồng ý phiên bản 2 vẫn giữ quyền xuất tên trong JSON; trên trang thảo luận dùng tên Expert cho đến khi người duyệt tự cập nhật tại **Bảo vệ thông tin cá nhân**. Không yêu cầu khai lại để tiếp tục chấm. Nơi công tác không xuất hiện trên trang thảo luận.
+
+- **Đối chiếu các bản đánh giá** hiện đầy đủ nội dung và lí do sửa. Các bản giống nhau được gộp theo thứ tự Expert 1, 2, 3. Người không chia sẻ tên được hiển thị bằng số Expert.
+- **Đoạn trích căn cứ** nằm ngay dưới mục đối chiếu, mặc định thu gọn. Nút **Toàn bộ tài liệu** mở khung rộng và hỗ trợ tìm kiếm, chuyển kết quả trước/tiếp như màn hình duyệt thường.
+- Chọn **Đồng ý với ý kiến của** để lấy nội dung và lí do của chuyên gia; chọn **Ý kiến thống nhất khác** để tự chỉnh sửa phần đang có khác biệt. Phần cả ba đã đồng ý được giữ sẵn. **Ghi chú thống nhất** dành cho kết luận chung bổ sung.
+- **Hoàn tất và Sang câu tiếp theo** lưu kết quả, chuyển đến câu chưa chốt tiếp theo trong cùng liên kết. Mở lại liên kết tiếp tục phần còn lại. Hai người chốt đồng thời cùng một câu sẽ được yêu cầu tải lại thay vì ghi đè kết quả của nhau. Các bản chấm độc lập được giữ nguyên.
+
+Hàng đợi Audit được tính lại sau mỗi lần nộp, theo thứ tự:
+
+1. Câu Calibration/Overlap chưa nộp, theo thứ tự các giai đoạn hiện có.
+2. Câu chấm chính chưa nộp cần gửi người khác kiểm định.
+3. Câu chấm chính bị kiểm định trả lại để sửa.
+4. Câu Audit đã có bản nộp của người chấm chính.
+5. Câu chấm chính thường chưa nộp.
+6. Nếu không còn câu nào làm được, mở câu Audit đang **Chờ người chấm chính**.
+
+Các câu Audit chưa sẵn sàng được bỏ qua cùng lúc, kể cả nhiều câu liên tiếp. Câu trước đó vừa sẵn sàng vẫn được chọn lại theo mức ưu tiên, không phụ thuộc vị trí câu vừa làm. Màn hình chờ tự kiểm tra mỗi 15 giây khi đang hiển thị và không mở khung toàn bộ tài liệu; nếu mất mạng, có thể tải lại trang khi kết nối phục hồi. Bản chưa nộp hoặc bị trả lại không thể được xác nhận đạt chuẩn bằng cách gửi yêu cầu trực tiếp.
+
+Sau khi đưa code lên Vercel, kiểm tra lượt **Thử nghiệm nội bộ**: mở lại lời mời/phiên đang dùng, kiểm tra tiến độ và xem **Thống nhất Calibration** trên trang quản lý. Không dùng nút khởi tạo phân công để kiểm tra một lượt đang có người chấm.
+
 ## Kiểm thử cục bộ
 
 Từ thư mục `review-web`:

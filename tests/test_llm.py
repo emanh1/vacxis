@@ -6,6 +6,7 @@ import httpx
 from openai import OpenAI
 import pytest
 
+from vacxis_capstone_fa26.resilience import RetryPolicy
 from vacxis_capstone_fa26 import llm
 from vacxis_capstone_fa26.generation.generator import MedicalGenerator
 from vacxis_capstone_fa26.generation.schemas import GenerationConfig
@@ -104,7 +105,7 @@ def test_errors_are_safe_and_close_client(router, status, body, caplog):
     result, requests, clients = router
     result.update(status=status, body=body)
     with pytest.raises(llm.LLMError) as exc:
-        llm.completion(model="fixture", messages=[])
+        llm.completion(model="fixture", messages=[], retry_policy=RetryPolicy(0))
     assert "fixture-secret" not in str(exc.value) + caplog.text
     assert "private" not in str(exc.value) + caplog.text
     assert len(requests) == 1
@@ -118,7 +119,7 @@ def test_timeout_is_safe_and_closes_client(monkeypatch):
     ))
     monkeypatch.setattr(llm, "OpenAI", lambda **kwargs: OpenAI(**kwargs, http_client=client))
     with pytest.raises(llm.LLMError, match="request failed"):
-        llm.completion(model="fixture", messages=[], timeout=0.1)
+        llm.completion(model="fixture", messages=[], timeout=0.1, retry_policy=RetryPolicy(0))
     assert client.is_closed
 
 
@@ -153,3 +154,33 @@ def test_live_openrouter():
         {"role": "user", "content": "Reply with the word OK."},
     ], max_tokens=16)
     assert response.choices[0].message.content.strip()
+
+
+def test_validation_diagnostics_and_opt_in_preview(router, monkeypatch):
+    result, _, _ = router
+    content = 'partial fixture-secret answer'
+    result['body'] = chat_response(content, 'length')
+    monkeypatch.delenv('VACXIS_LLM_ERROR_PREVIEW_CHARS', raising=False)
+    with pytest.raises(llm.LLMError) as exc:
+        llm.completion(model='fixture', messages=[])
+    assert 'unexpected finish reason' in str(exc.value)
+    assert '"finish_reason": "length"' in str(exc.value)
+    assert '"content_chars"' in str(exc.value)
+    assert 'partial' not in str(exc.value)
+    monkeypatch.setenv('VACXIS_LLM_ERROR_PREVIEW_CHARS', '500')
+    with pytest.raises(llm.LLMError) as exc:
+        llm.completion(model='fixture', messages=[])
+    assert 'partial [REDACTED] answer' in str(exc.value)
+    assert 'fixture-secret' not in str(exc.value)
+
+
+def test_reasoning_only_diagnostics(router, monkeypatch):
+    result, _, _ = router
+    result['body'] = chat_response(None)
+    result['body']['choices'][0]['message']['reasoning'] = 'thinking'
+    monkeypatch.setenv('VACXIS_LLM_ERROR_PREVIEW_CHARS', 'invalid')
+    with pytest.raises(llm.LLMError) as exc:
+        llm.completion(model='fixture', messages=[])
+    assert 'content is not text' in str(exc.value)
+    assert '"reasoning_chars": 8' in str(exc.value)
+    assert 'thinking' not in str(exc.value)

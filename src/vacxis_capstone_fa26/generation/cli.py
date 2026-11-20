@@ -1,6 +1,10 @@
 """CLI utility for running the VacxiS generation and end-to-end RAG pipeline."""
 from __future__ import annotations
 
+from contextlib import contextmanager
+from dataclasses import asdict
+from vacxis_capstone_fa26.resilience import add_retry_arguments, retry_from_args, atomic_json, fingerprint
+
 import argparse
 from dataclasses import dataclass
 import json
@@ -116,6 +120,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Resume generation by skipping queries already saved in the output file",
     )
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--baseline", action="store_true", help="Naive BM25 retrieval")
+    modes.add_argument("--advanced-rag", action="store_true", help="Dense-only retrieval")
+    parser.add_argument("--chunks", type=Path, default=Path("chunks_storage/chunks.parquet"))
+    parser.add_argument("--timeout", type=float, default=480)
+    add_retry_arguments(parser)
     from vacxis_capstone_fa26.cli import add_retrieval_arguments
     add_retrieval_arguments(parser)
     return parser.parse_args()
@@ -212,6 +222,39 @@ def load_resume_results(
 
     return existing, completed_ids
 
+@contextmanager
+def build_retriever(args):
+    """Build and yield the configured retriever for generation CLI."""
+    from vacxis_capstone_fa26.cli import retrieval_config
+
+    try:
+        if getattr(args, "baseline", False):
+            from vacxis_capstone_fa26.evaluation.datasets import load_chunk_texts
+            from vacxis_capstone_fa26.retrieval.bm25 import BM25Retriever
+
+            class Adapter(BM25Retriever):
+                def retrieve(self, query, top_k=5, **kwargs):
+                    return super().retrieve(query, top_k)
+
+            yield Adapter(load_chunk_texts(args.chunks))
+            return
+
+        if getattr(args, "advanced_rag", False):
+            from vacxis_capstone_fa26.retrieval.dense import DenseRetriever
+
+            with DenseRetriever(retrieval_config(args)) as retriever:
+                yield retriever
+            return
+
+        from vacxis_capstone_fa26.retrieval.factory import build_retriever as build_factory_retriever
+
+        with build_factory_retriever(retrieval_config(args)) as retriever:
+            yield retriever
+    except ImportError as exc:
+        logger.error("Retrieval module requires PyTorch/CUDA dependencies (%s).", exc)
+        sys.exit(1)
+
+
 def main() -> None:
     """Run generation CLI entrypoint."""
     from vacxis_capstone_fa26.cli import retrieval_config
@@ -219,7 +262,7 @@ def main() -> None:
 
     gen_config = GenerationConfig(
         temperature=args.temperature,
-        dry_run=args.dry_run,
+        dry_run=args.dry_run, timeout=args.timeout, retry_policy=retry_from_args(args),
     )
     if args.model is not None:
         gen_config.model = args.model
@@ -253,6 +296,15 @@ def main() -> None:
 
         out_path = args.out_file or Path("generation_results.json")
 
+        manifest = out_path.with_suffix(out_path.suffix + ".manifest.json")
+        settings = vars(args).copy()
+        for key in ("resume", "out_file", "retries", "retry_initial", "retry_max", "timeout", "llm_call_delay"):
+            settings.pop(key, None)
+        signature = fingerprint({"items": [item.original for item in items], "settings": settings,
+                                 "generation": {k: v for k, v in asdict(gen_config).items() if k not in ("retry_policy", "timeout")}})
+        if args.resume and out_path.exists():
+            if not manifest.exists() or json.loads(manifest.read_text()).get("fingerprint") != signature:
+                raise ValueError("Generation checkpoint settings changed or manifest missing; use a new output file.")
         if args.resume:
             try:
                 results, completed_ids = load_resume_results(out_path, items)
@@ -268,6 +320,10 @@ def main() -> None:
                     "Starting fresh. Existing output file will be overwritten: %s",
                     out_path,
                 )
+
+        if not args.resume:
+            save_results([], out_path)
+        atomic_json(manifest, {"fingerprint": signature})
 
         if args.use_ground_truth_chunks:
             logger.info("Using provided ground-truth contexts.")
@@ -301,20 +357,7 @@ def main() -> None:
                 save_results(results, out_path)
 
         else:
-            try:
-                from vacxis_capstone_fa26.retrieval.retriever import (
-                    VacxisRetriever,
-                )
-            except ImportError as exc:
-                logger.error(
-                    "Retrieval module requires PyTorch/CUDA dependencies (%s).",
-                    exc,
-                )
-                sys.exit(1)
-
-            ret_config = retrieval_config(args)
-
-            with VacxisRetriever(config=ret_config) as retriever:
+            with build_retriever(args) as retriever:
                 pipeline = VacxisRAGPipeline(
                     retriever=retriever,
                     generator=generator,
@@ -356,21 +399,15 @@ def main() -> None:
             out_path,
         )
 
+        return
+
     # Mode 2: Single interactive query
     if not args.query or not args.query.strip():
         logger.error("Please provide either --query or --input-file.")
         sys.exit(1)
 
     query = args.query
-    try:
-        from vacxis_capstone_fa26.retrieval.retriever import VacxisRetriever
-    except ImportError as exc:
-        logger.error("Retrieval module requires PyTorch/CUDA dependencies (%s).", exc)
-        sys.exit(1)
-
-    ret_config = retrieval_config(args)
-
-    with VacxisRetriever(config=ret_config) as retriever:
+    with build_retriever(args) as retriever:
         pipeline = VacxisRAGPipeline(retriever=retriever, generator=generator)
         answer_obj = pipeline.answer(query=query.strip(), top_k=args.top_k, skip_rerank=args.skip_rerank)
 

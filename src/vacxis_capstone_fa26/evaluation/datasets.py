@@ -183,12 +183,18 @@ def retrieval_context_from_answer(
     answer: dict[str, Any],
     chunk_texts: dict[str, str],
 ) -> list[str]:
-    """Expand a precomputed result's retrieved chunk ids into context strings.
+    """Expand a precomputed result's retrieved chunks into context strings.
 
-    DeepEval's retrieval metrics judge the *retrieved context*, so a list of
-    chunk ids alone is too sparse. This maps ids back to chunk text using the
-    loaded chunk store; ids without a known text are skipped.
+    Prefers explicit ``retrieved_contexts`` stored on the answer (preserving
+    table-aware summaries or graph contexts passed to the generator) and falls
+    back to hydrating ``retrieved_chunk_ids`` from ``chunk_texts``.
     """
+    raw_contexts = answer.get("retrieved_contexts")
+    if isinstance(raw_contexts, list):
+        contexts = [t.strip() for t in raw_contexts if isinstance(t, str) and t.strip()]
+        if contexts:
+            return contexts
+
     chunk_ids = answer.get("retrieved_chunk_ids") or []
     context: list[str] = []
     for chunk_id in chunk_ids:
@@ -205,8 +211,26 @@ def answer_fields(answer: dict[str, Any]) -> dict[str, Any]:
     (``answer``, ``citations``, ``is_refusal``) or an already-unwrapped dict.
     """
     payload = answer.get("GENERATED_ANSWER", answer) if isinstance(answer, dict) else {}
-    return {
+    fields: dict[str, Any] = {
         "actual_output": str(payload.get("answer", "")),
         "is_refusal": bool(payload.get("is_refusal", False)),
         "retrieved_chunk_ids": [str(c) for c in (payload.get("retrieved_chunk_ids") or [])],
     }
+    raw_contexts = payload.get("retrieved_contexts")
+    if isinstance(raw_contexts, list):
+        fields["retrieved_contexts"] = [
+            t.strip() for t in raw_contexts if isinstance(t, str) and t.strip()
+        ]
+    raw_aliases = payload.get("retrieved_chunk_aliases")
+    if isinstance(raw_aliases, dict):
+        normalized_aliases: dict[str, list[str]] = {}
+        for key, vals in raw_aliases.items():
+            key_str = str(key).strip()
+            if not key_str or not isinstance(vals, (list, tuple)):
+                continue
+            cleaned_vals = [str(v).strip() for v in vals if str(v).strip()]
+            if cleaned_vals:
+                normalized_aliases[key_str] = cleaned_vals
+        if normalized_aliases:
+            fields["retrieved_chunk_aliases"] = normalized_aliases
+    return fields

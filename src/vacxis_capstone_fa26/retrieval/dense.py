@@ -1,6 +1,7 @@
 """Single-query dense retrieval: embed the question and return vector-search top-k."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from .schemas import RetrievalConfig
@@ -69,6 +70,16 @@ class DenseRetriever:
             })
         self.last_trace["retrieved_chunk_ids"] = [row["chunk_id"] for row in chunks]
         return chunks
+
+    def batch_retrieve(
+        self,
+        queries: Sequence[str],
+        top_k: int | None = None,
+        *,
+        skip_rerank: bool | None = None,
+    ) -> list[list[dict[str, Any]]]:
+        """Execute dense retrieval for each query in a sequence."""
+        return [self.retrieve(query, top_k=top_k, skip_rerank=skip_rerank) for query in queries]
 
     def close(self) -> None:
         """Release only a client created by this retriever."""

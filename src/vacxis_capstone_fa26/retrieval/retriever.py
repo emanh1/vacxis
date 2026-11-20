@@ -1,14 +1,17 @@
 """End-to-end Retrieval Pipeline for VacxiS Capstone."""
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Callable
+from dataclasses import replace
 import logging
-from typing import Sequence, TYPE_CHECKING
+from typing import Any, Sequence, TYPE_CHECKING
 
 import torch
 if TYPE_CHECKING:
     from FlagEmbedding import BGEM3FlagModel
 
+from vacxis_capstone_fa26.indexing.table_summarizer import merge_table_fragments
 from vacxis_capstone_fa26.retrieval.hybrid_searcher import HybridSearcher
 from vacxis_capstone_fa26.retrieval.reranker import BGEReranker
 from vacxis_capstone_fa26.retrieval.schemas import RetrievalConfig, RetrievedChunk
@@ -100,6 +103,7 @@ class VacxisRetriever:
         skip_rerank: bool | None = None,
         query_max_length: int = 512,
         *,
+        merge_table_chunks: bool | None = None,
         on_rerank: Callable[[], None] | None = None,
     ) -> list[RetrievedChunk]:
         """Execute hybrid search, RRF fusion, and reranking for a single query.
@@ -112,6 +116,7 @@ class VacxisRetriever:
             rrf_top_k: RRF candidate count.
             skip_rerank: If True, bypass cross-encoder reranking.
             query_max_length: Token length truncation for query encoding.
+            merge_table_chunks: If True, merge split table chunks sharing (doc_id, header) before reranking.
 
         Returns:
             List of top-k RetrievedChunk items.
@@ -125,6 +130,11 @@ class VacxisRetriever:
         k_sparse = top_k_sparse if top_k_sparse is not None else self.config.top_k_sparse
         k_rrf = rrf_top_k if rrf_top_k is not None else self.config.rrf_top_k
         should_skip_rerank = skip_rerank if skip_rerank is not None else self.config.skip_rerank
+        should_merge_tables = (
+            merge_table_chunks
+            if merge_table_chunks is not None
+            else self.config.merge_table_chunks
+        )
 
         effective_rrf_top_k = max(k_rrf, k)
         if k_rrf < k:
@@ -159,6 +169,9 @@ class VacxisRetriever:
         if not candidates:
             return []
 
+        if should_merge_tables:
+            candidates = merge_retrieved_table_chunks(candidates)
+
         # 3. Rerank
         if not should_skip_rerank:
             if on_rerank is not None:
@@ -183,6 +196,7 @@ class VacxisRetriever:
         batch_size: int = 16,
         query_max_length: int = 512,
         *,
+        merge_table_chunks: bool | None = None,
         on_rerank: Callable[[], None] | None = None,
     ) -> list[list[RetrievedChunk]]:
         """Execute hybrid search, RRF, and reranking across multiple queries.
@@ -196,6 +210,7 @@ class VacxisRetriever:
             skip_rerank: If True, bypass cross-encoder reranking.
             batch_size: Batch size for BGE-M3 query encoding.
             query_max_length: Token length truncation for query encoding.
+            merge_table_chunks: If True, merge split table chunks sharing (doc_id, header) before reranking.
 
         Returns:
             List of top-k RetrievedChunk lists corresponding to input queries.
@@ -224,6 +239,11 @@ class VacxisRetriever:
         k_sparse = top_k_sparse if top_k_sparse is not None else self.config.top_k_sparse
         k_rrf = rrf_top_k if rrf_top_k is not None else self.config.rrf_top_k
         should_skip_rerank = skip_rerank if skip_rerank is not None else self.config.skip_rerank
+        should_merge_tables = (
+            merge_table_chunks
+            if merge_table_chunks is not None
+            else self.config.merge_table_chunks
+        )
 
         effective_rrf_top_k = max(k_rrf, k)
         if k_rrf < k:
@@ -245,6 +265,9 @@ class VacxisRetriever:
 
         if len(all_candidates) != len(query_list):
             raise ValueError("Expected one candidate group per query.")
+
+        if should_merge_tables:
+            all_candidates = [merge_retrieved_table_chunks(cands) for cands in all_candidates]
 
         # 2. Batched cross-encoder reranking across all candidate pairs
         if not should_skip_rerank:
@@ -268,3 +291,48 @@ class VacxisRetriever:
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
+
+
+def merge_retrieved_table_chunks(chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
+    """Merge retrieved table sub-chunks sharing (doc_id, header) and deduplicate overlap."""
+    if len(chunks) <= 1:
+        return chunks
+
+    table_groups: dict[tuple[str, str], list[RetrievedChunk]] = defaultdict(list)
+    for chunk in chunks:
+        if (chunk.metadata or {}).get("has_table"):
+            table_groups[(chunk.doc_id, chunk.header)].append(chunk)
+
+    emitted_keys: set[tuple[str, str]] = set()
+    merged: list[RetrievedChunk] = []
+    for chunk in chunks:
+        if not (chunk.metadata or {}).get("has_table"):
+            merged.append(chunk)
+            continue
+
+        key = (chunk.doc_id, chunk.header)
+        if key in emitted_keys:
+            continue
+        emitted_keys.add(key)
+
+        group = sorted(table_groups[key], key=lambda c: c.chunk_id)
+        if len(group) == 1:
+            merged.append(chunk)
+            continue
+
+        merged_text = merge_table_fragments([g.text for g in group])
+        merged_meta = dict(chunk.metadata or {})
+        merged_ids: list[str] = []
+        for g in group:
+            existing = (g.metadata or {}).get("merged_chunk_ids")
+            if isinstance(existing, list) and existing:
+                for cid in existing:
+                    cid_str = str(cid)
+                    if cid_str not in merged_ids:
+                        merged_ids.append(cid_str)
+            elif g.chunk_id not in merged_ids:
+                merged_ids.append(g.chunk_id)
+        merged_meta["merged_chunk_ids"] = merged_ids
+        merged.append(replace(chunk, text=merged_text, metadata=merged_meta))
+
+    return merged

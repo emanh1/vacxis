@@ -1,0 +1,14 @@
+<aside class="documents-panel" data-documents-panel hidden aria-label="Toàn bộ tài liệu" data-url="{{ documents_url }}">
+  <div class="documents-heading"><h2 id="documents-title">Toàn bộ tài liệu</h2><div class="actions">
+    <button type="button" data-documents-expand>Thu hẹp</button><button type="button" data-documents-close>Đóng</button>
+  </div></div>
+  <div class="documents-search field">
+    <label for="document-search">Tìm trong toàn bộ tài liệu</label>
+    <div class="input-with-action"><input id="document-search" type="search" placeholder="Ví dụ: bảo quản" data-document-search autocomplete="off">
+      <button type="button" data-find-previous aria-label="Kết quả trước">Trước</button>
+      <button type="button" data-find-next aria-label="Kết quả tiếp theo">Tiếp</button>
+    </div>
+    <p class="muted" role="status" data-search-status></p>
+  </div>
+  <div class="documents-body" data-documents-body><p role="status">Đang tải tài liệu…</p></div>
+</aside>

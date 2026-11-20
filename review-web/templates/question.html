@@ -30,11 +30,11 @@
   <p><a href="/review">‹ Danh sách câu hỏi</a></p>
   <div class="heading-row">
     <span class="code">{{ item.question_id }}{% if audit_ctx.role %} · {{ batch_labels[audit_ctx.role] }}{% endif %}</span>
-    <span class="state state-{{ item.status }}">{% if result_status == 'REJECTED' %}Tài liệu vô nghĩa{% elif result_status == 'EDITED' %}Đã chỉnh sửa{% elif result_status == 'APPROVED' %}Đã chấp nhận{% else %}{{ statuses[item.status] }}{% endif %}</span>
+    <span class="state state-{{ item.status }}">{% if audit_ctx.waiting %}Chờ người chấm chính{% elif result_status == 'REJECTED' %}Tài liệu vô nghĩa{% elif result_status == 'EDITED' %}Đã chỉnh sửa{% elif result_status == 'APPROVED' %}Đã chấp nhận{% else %}{{ statuses[item.status] }}{% endif %}</span>
   </div>
   {% if audit_ctx.is_auditor %}
     <p class="muted">Người chấm chính · <strong>{{ audit_ctx.primary_reviewer }}</strong></p>
-    {% if not audit_ctx.primary_ready %}<p class="notice">Người chấm chính đang hoàn thiện câu này. Nút kiểm định sẽ mở sau khi nộp bản hoàn chỉnh.</p>{% endif %}
+    {% if audit_ctx.waiting %}<p class="notice" data-audit-wait-url="/review/{{ item.question_id }}/audit-next">Người chấm chính đang hoàn thiện câu này. Nút kiểm định sẽ mở sau khi nộp bản hoàn chỉnh.</p>{% endif %}
   {% elif audit_ctx.review_note %}<p class="notice" role="alert"><strong>Kiểm định chéo yêu cầu sửa lại</strong> · {{ audit_ctx.review_note }}</p>{% endif %}
   {% if not audit_ctx.is_auditor and item.status in ('verified', 'submitted', 'approved') %}<p class="muted">Người xác nhận · {{ reviewer_label(person) }}</p>{% endif %}
   <form method="post" action="/review/{{ item.question_id }}" class="stack" data-review-form>
@@ -87,9 +87,9 @@
       <label for="audit-note">Nhận xét kiểm định (bắt buộc nếu báo lỗi trả lại)</label>
       <textarea id="audit-note" name="audit_note" rows="3" maxlength="3000"{% if audit_ctx.locked %} disabled{% endif %}>{{ values.audit_note }}</textarea>
     </section>
-    {% if not audit_ctx.locked %}<div class="actions">
-      <button class="primary" type="submit" name="action" value="audit_approve">Xác nhận đạt chuẩn (Pass)</button>
-      <button type="submit" name="action" value="audit_reject">Có lỗi — Trả lại người chấm chính</button>
+    {% if not audit_ctx.locked or audit_ctx.waiting %}<div class="actions">
+      <button class="primary" type="submit" name="action" value="audit_approve"{% if audit_ctx.waiting %} disabled{% endif %}>Xác nhận đạt chuẩn (Pass)</button>
+      <button type="submit" name="action" value="audit_reject"{% if audit_ctx.waiting %} disabled{% endif %}>Có lỗi — Trả lại người chấm chính</button>
     </div>{% endif %}
     {% else %}
     <fieldset class="panel stack review-fields" aria-labelledby="review-summary-title"{% if audit_ctx.locked %} disabled{% endif %}>
@@ -112,19 +112,6 @@
     {% if audit_ctx.locked %}<p><a class="button" href="/review">Về danh sách câu hỏi</a></p>{% endif %}
   </form>
 </div>
-<aside class="documents-panel" data-documents-panel hidden aria-label="Toàn bộ tài liệu" data-url="/review/{{ item.question_id }}/documents">
-  <div class="documents-heading"><h2 id="documents-title">Toàn bộ tài liệu</h2><div class="actions">
-    <button type="button" data-documents-expand>Thu hẹp</button><button type="button" data-documents-close>Đóng</button>
-  </div></div>
-  <div class="documents-search field">
-    <label for="document-search">Tìm trong toàn bộ tài liệu</label>
-    <div class="input-with-action"><input id="document-search" type="search" placeholder="Ví dụ: bảo quản" data-document-search autocomplete="off">
-      <button type="button" data-find-previous aria-label="Kết quả trước">Trước</button>
-      <button type="button" data-find-next aria-label="Kết quả tiếp theo">Tiếp</button>
-    </div>
-    <p class="muted" role="status" data-search-status></p>
-  </div>
-  <div class="documents-body" data-documents-body><p role="status">Đang tải tài liệu…</p></div>
-</aside>
+{% set documents_url = '/review/' ~ item.question_id ~ '/documents' %}{% include '_documents_panel.html' %}
 </div>
 {% endblock %}

@@ -11,10 +11,16 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .evaluation.datasets import load_chunk_texts
 from .evaluation.evaluator import VacxisRAGEvaluator, validate_query_ids
 from .generation.generator import MedicalGenerator
 from .generation.pipeline import VacxisRAGPipeline
 from .generation.schemas import GenerationConfig
+from .indexing.table_pipeline import (
+    DEFAULT_TABLE_CACHE_PATH,
+    VALID_TABLE_STRATEGIES,
+    TableStrategy,
+)
 from .llm import validate_config
 from .retrieval.schemas import RetrievalConfig
 
@@ -33,14 +39,30 @@ class WorkflowConfig:
     retrieval: RetrievalConfig = field(default_factory=RetrievalConfig)
     generation: GenerationConfig = field(default_factory=GenerationConfig)
     recreate: bool = False
+    table_strategy: TableStrategy = "raw"
+    table_cache_path: Path = DEFAULT_TABLE_CACHE_PATH
+    table_summary_model: str | None = None
 
     def __post_init__(self) -> None:
         self.project_root = Path(self.project_root).resolve()
-        for name in ("chunks_path", "dataset_path", "results_path", "report_json", "report_md", "mapping_path"):
+        for name in (
+            "chunks_path",
+            "dataset_path",
+            "results_path",
+            "report_json",
+            "report_md",
+            "mapping_path",
+            "table_cache_path",
+        ):
             value = getattr(self, name)
             if value is not None:
                 value = Path(value)
                 setattr(self, name, value if value.is_absolute() else self.project_root / value)
+        if self.table_strategy not in VALID_TABLE_STRATEGIES:
+            raise ValueError(
+                f"Unsupported table strategy: {self.table_strategy!r}. "
+                f"Expected one of {VALID_TABLE_STRATEGIES}."
+            )
         if self.retrieval.top_k < 1:
             raise ValueError("top_k must be positive.")
         paths = [self.chunks_path, self.dataset_path, self.results_path, self.report_json, self.report_md]
@@ -66,7 +88,11 @@ def prepare(config: WorkflowConfig, **ingestion_dependencies: Any) -> int:
         parquet_path=path, model_path=config.retrieval.embed_model_path,
         collection_name=config.retrieval.collection_name,
         qdrant_host=config.retrieval.qdrant_host, qdrant_port=config.retrieval.qdrant_port,
-        recreate=config.recreate, **ingestion_dependencies,
+        recreate=config.recreate,
+        table_strategy=config.table_strategy,
+        table_cache_path=config.table_cache_path,
+        table_summary_model=config.table_summary_model,
+        **ingestion_dependencies,
     )
     if not count:
         raise ValueError("No chunks were indexed; downstream stages cannot run.")
@@ -108,7 +134,11 @@ def benchmark(config: WorkflowConfig) -> Any:
     results = [dict(item, GENERATED_ANSWER=answer.to_dict())
                for item, answer in zip(items, answers, strict=True)]
     evaluator = VacxisRAGEvaluator()
-    summary = evaluator.evaluate_results(items, results)
+    summary = evaluator.evaluate_results(
+        items,
+        results,
+        chunk_texts=load_chunk_texts(config.chunks_path),
+    )
     write_json(config.results_path, results)
     evaluator.save_json(summary, config.report_json)
     evaluator.save_markdown(summary, config.report_md)

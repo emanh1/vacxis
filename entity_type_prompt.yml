@@ -1,0 +1,47 @@
+### When ENTITY_EXTRACTION_USE_JSON=false, entity_extraction_examples section must include in this file
+### When ENTITY_EXTRACTION_USE_JSON=true, entity_extraction_json_examples section must include in this file
+
+entity_types_guidance: |
+  Phân loại từng thực thể bằng một trong các loại sau. Nếu không có loại nào phù hợp, sử dụng `Other`.
+
+  - Vaccine: Tên thương mại, tên biệt dược hoặc tên gọi cụ thể của chế phẩm vắc xin (ví dụ: Varilrix, Bexsero, Shingrix, Adacel, Imojev, Hexaxim).
+  - Ingredient: Hoạt chất kháng nguyên (chủng virus/vi khuẩn sống giảm độc lực, protein tái tổ hợp, giải độc tố toxoid, polysaccharide vỏ, túi màng ngoài OMV), tá dược, chất bổ trợ miễn dịch (ví dụ: hydroxide nhôm, AS01B), chất bảo quản, chất đệm và dư lượng trong quy trình sản xuất (ví dụ: neomycin, kanamycin, ovalbumin, sucrose, polysorbate 80).
+  - Pathogen: Mầm bệnh, vi sinh vật gây bệnh, virus, vi khuẩn hoặc các chủng/nhóm huyết thanh cụ thể mà vắc xin phòng ngừa hoặc được sử dụng làm nguồn điều chế vắc xin (ví dụ: virus Varicella-Zoster, vi khuẩn Neisseria meningitidis nhóm B, trực khuẩn ho gà Bordetella pertussis, trực khuẩn uốn ván Clostridium tetani, virus viêm não Nhật Bản).
+  - Indication: Bệnh lý, nhiễm trùng, hội chứng hoặc biến chứng y khoa được chỉ định tiêm phòng, tạo miễn dịch chủ động hoặc điều trị dự phòng sau phơi nhiễm (ví dụ: bệnh thủy đậu, bệnh zona thần kinh, đau dây thần kinh sau zona - PHN, bệnh não mô cầu xâm lấn, bạch hầu, uốn ván, ho gà).
+  - Contraindication: Tình trạng y tế, cơ địa dị ứng, tiền sử quá mẫn hoặc các trường hợp bệnh lý nghiêm cấm tuyệt đối hoặc tạm hoãn tiêm vắc xin (ví dụ: quá mẫn với bất kỳ thành phần nào của vắc xin, sốt cao cấp tính nặng, suy giảm miễn dịch tế bào nghiêm trọng, phụ nữ có thai đối với vắc xin sống giảm độc lực).
+  - Adverse_Reaction: Tác dụng không mong muốn, phản ứng phụ, biến cố bất lợi sau tiêm chủng (cả phản ứng tại chỗ tiêm và phản ứng toàn thân) (ví dụ: sốt, đau/sưng/đỏ tại chỗ tiêm, phát ban, mệt mỏi, đau đầu, ngất xỉu do phản xạ vận mạch, sốc phản vệ, hội chứng Guillain-Barré).
+  - Clinical_Outcome: Hiệu lực bảo vệ, kết quả thử nghiệm lâm sàng, đáp ứng sinh miễn dịch, nồng độ kháng thể bảo vệ, tỷ lệ chuyển đổi huyết thanh, tính bền vững miễn dịch hoặc mức độ giảm biến chứng nặng/tử vong.
+  - Target_Population: Độ tuổi khuyến cáo, nhóm đối tượng dân số, đối tượng nguy cơ cao, phụ nữ mang thai hoặc cho con bú, nhóm có bệnh lý nền được chỉ định hoặc cần lưu ý khi tiêm chủng (ví dụ: trẻ từ 9 tháng đến 12 tuổi, người lớn từ 50 tuổi trở lên, người suy giảm miễn dịch, nhân viên y tế, trẻ sinh cực non ≤ 28 tuần thai).
+  - Dosage_And_Route: Liều lượng tiêm (thể tích liều như 0,5 ml), đường dùng (tiêm bắp sâu, tiêm dưới da), vị trí giải phẫu tiêm (vùng cơ delta, mặt trước bên đùi), phác đồ tiêm chủng cơ bản, khoảng cách giữa các liều và lịch tiêm mũi nhắc lại.
+  - Precaution: Cảnh báo và thận trọng đặc biệt khi sử dụng, các bước thăm khám tiền sử trước tiêm, yêu cầu theo dõi y tế sau tiêm và các tình huống cần giám sát lâm sàng (ví dụ: theo dõi y tế tối thiểu 30 phút sau tiêm để phòng phản vệ, thận trọng ở bệnh nhân giảm tiểu cầu hoặc rối loạn đông máu, theo dõi chức năng hô hấp ở trẻ sinh non).
+  - Drug_Interaction: Các loại thuốc điều trị, liệu pháp ức chế miễn dịch, chế phẩm máu hoặc globulin miễn dịch truyền thụ động, hoặc các vắc xin khác được tiêm đồng thời có khả năng tương tác hoặc ảnh hưởng đến hiệu quả/tính an toàn của vắc xin (ví dụ: thuốc ức chế miễn dịch, corticosteroid liều cao, globulin miễn dịch kháng thủy đậu, vắc xin phối hợp tiêm tại các vị trí tiêm riêng biệt).
+  - Storage_Condition: Điều kiện bảo quản, khoảng nhiệt độ dây chuyền lạnh (2°C đến 8°C), yêu cầu tránh ánh sáng, không để đông băng, hạn sử dụng và thời hạn bảo quản/sử dụng sau khi hoàn nguyên.
+entity_extraction_examples:
+  - |
+    entity{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>
+    relation{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_keywords>{tuple_delimiter}<relationship_description>
+    {completion_delimiter}
+entity_extraction_json_examples:
+  - |
+    {
+      "entities": [
+        {
+          "name": "<entity_name>",
+          "type": "<entity_type>",
+          "description": "<entity_description>"
+        },
+        {
+          "name": "<related_entity_name>",
+          "type": "<related_entity_type>",
+          "description": "<related_entity_description>"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "<entity_name>",
+          "target": "<related_entity_name>",
+          "keywords": "<relationship_keywords>",
+          "description": "<relationship_description>"
+        }
+      ]
+    }

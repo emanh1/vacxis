@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Thống nhất Calibration{% endblock %}
+{% block admin_shortcut %}{% endblock %}
+{% block content %}
+{% if scope == 'test' %}<p class="test-notice">Thử nghiệm nội bộ</p>{% endif %}
+{% if not item %}
+<section class="panel stack reading-width"><h1>Đã hoàn tất toàn bộ các câu cần đối chiếu</h1><p>Kết quả thống nhất đã được lưu. Nhóm đồ án có thể tải dữ liệu tại trang quản lý.</p></section>
+{% else %}
+<div class="review-workspace" data-review-workspace>
+<div class="reading-width stack review-reading">
+  <div class="heading-row"><span class="code">{{ item.question_id }} · Cả ba đã hoàn thành {{ collection.total }} / {{ collection.total }} câu Calibration</span><span class="state state-flagged">Cần đối chiếu</span></div>
+  <h1>Thống nhất kết quả sau thảo luận</h1>
+  <details class="disclosure"><summary>Danh sách cần đối chiếu ({{ collection.pending|length }})</summary><nav class="section-body stack" aria-label="Các câu cần đối chiếu">{% for row in collection.pending %}<a href="/calibration/{{ token }}?question={{ row.question_id }}"{% if row.question_id == item.question_id %} aria-current="page"{% endif %}>{{ row.question_id }} · {{ row.query }}</a>{% endfor %}</nav></details>
+  <details class="disclosure calibration-comparison">
+    <summary>Đối chiếu các bản đánh giá{% if comparison_note %}<span class="comparison-note">{{ comparison_note }}</span>{% endif %}</summary>
+    <div class="section-body compare-grid">
+      {% for group in groups %}{% set opinion = group.value %}
+      <article class="metric-card stack"><h2>Ý kiến {{ loop.index }}: {{ group.name }}</h2>
+        <div><h3>Câu hỏi sau duyệt</h3><p class="original">{{ opinion.query }}</p></div>
+        {% if opinion.question_reason %}<p class="original"><strong>Lí do sửa câu hỏi:</strong> {{ opinion.question_reason }}</p>{% endif %}
+        <p><strong>Kết quả:</strong> {{ opinion.status }}</p><p><strong>Nhãn:</strong> {{ labels[opinion.answerability] }}</p>
+        <div><h3>Câu trả lời sau duyệt</h3><p class="original">{{ opinion.answer }}</p></div>
+        {% if opinion.answer_reason %}<p class="original"><strong>Lí do sửa câu trả lời:</strong> {{ opinion.answer_reason }}</p>{% endif %}
+        <p class="code"><strong>Căn cứ:</strong> {{ opinion.evidence_ids|join(', ') or 'Không chọn đoạn trích' }}</p>
+        {% if opinion.notes %}<p class="original"><strong>Ghi chú:</strong> {{ opinion.notes }}</p>{% endif %}
+      </article>{% endfor %}
+    </div>
+  </details>
+  <details class="disclosure calibration-sources"><summary>Đoạn trích căn cứ ({{ sources|length }})</summary>
+    <div class="section-body stack">{% for source in sources %}
+      <details class="disclosure source"><summary>{% if source.subject %}{{ source.subject }} · {% endif %}{{ source.section or ('Đoạn trích ' ~ loop.index) }}</summary>
+        <div class="source-content"><p class="code">{{ source.id }}</p><div class="source-text">{{ source.html }}</div>
+          <details class="disclosure raw"><summary>Xem nguyên văn</summary><pre>{{ source.raw }}</pre></details>
+          <button type="button" class="document-open" data-document-open data-doc-id="{{ source.doc_id }}" hidden>Toàn bộ tài liệu</button>
+        </div>
+      </details>{% endfor %}
+    </div>
+  </details>
+  <form method="post" action="/calibration/{{ token }}" class="panel stack calibration-form" data-review-form data-consensus-form>
+    <h2>Kết quả thống nhất</h2><p class="muted">Người đại diện ghi nhận kết luận chung của nhóm.</p>
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="question_id" value="{{ item.question_id }}">
+    <input type="hidden" name="revision" value="{{ item.revision }}"><input type="hidden" name="expert_signature" value="{{ expert_signature }}">
+    {% for field in fields %}
+    <fieldset class="consensus-field stack" data-consensus-field data-agreed="{{ 'yes' if field.agreed else 'no' }}">
+      <legend>{{ field.title }}</legend>
+      {% if not field.agreed %}
+      <div class="opinion-choices" role="group" aria-label="{{ field.title }} — chọn ý kiến"><span>Đồng ý với ý kiến của:</span>
+        {% for group in field.groups %}<label><input type="radio" name="choice_{{ field.key }}" value="{{ group.key }}" data-consensus-choice data-value="{{ group.value.content|tojson|forceescape }}" data-reason="{{ group.value.reason }}"{% if field.choice == group.key %} checked{% endif %} required> {{ group.name }}</label>{% endfor %}
+        <label><input type="radio" name="choice_{{ field.key }}" value="custom" data-consensus-choice{% if field.choice == 'custom' %} checked{% endif %} required> Ý kiến thống nhất khác</label>
+      </div>{% endif %}
+      {% set custom = not field.agreed and field.choice == 'custom' %}
+      {% if field.key in ('query', 'answer') %}
+        <textarea name="{{ field.key }}" aria-label="{{ field.title }}" rows="{{ 3 if field.key == 'query' else 6 }}" maxlength="{{ 10000 if field.key == 'query' else 20000 }}" data-consensus-value{% if not custom %} readonly{% endif %}>{{ field.content }}</textarea>
+        <div class="field"><label for="{{ field.reason_key }}">Lí do sửa {{ 'câu hỏi' if field.key == 'query' else 'câu trả lời' }}</label>
+          <textarea id="{{ field.reason_key }}" name="{{ field.reason_key }}" rows="2" maxlength="3000" data-consensus-reason{% if not custom %} readonly{% endif %}>{{ field.reason }}</textarea>
+        </div>
+      {% elif field.key == 'evidence_ids' %}
+        <div class="stack compact">{% for source in sources %}<label class="check"><input type="checkbox" name="evidence_id" value="{{ source.id }}" data-consensus-value{% if source.id in field.content %} checked{% endif %}{% if not custom %} disabled{% endif %}> {{ source.subject }} · {{ source.section }} <span class="code">{{ source.id }}</span></label>{% endfor %}</div>
+      {% else %}
+        <select name="{{ field.key }}" aria-label="{{ field.title }}" data-consensus-value{% if not custom %} disabled{% endif %}>
+          {% if not field.content %}<option value="">Chọn ý kiến bên trên</option>{% endif %}
+          {% if field.key == 'answerability' %}{% for key, label in labels.items() %}<option value="{{ key }}"{% if field.content == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+          {% else %}<option value="confirm"{% if field.content == 'confirm' %} selected{% endif %}>Chấp nhận bản đã duyệt</option><option value="reject"{% if field.content == 'reject' %} selected{% endif %}>Tài liệu vô nghĩa</option>{% endif %}
+        </select>
+      {% endif %}
+    </fieldset>
+    {% endfor %}
+    <div class="field"><label for="notes">Ghi chú thống nhất</label><textarea id="notes" name="notes" rows="2" maxlength="3000">{{ notes }}</textarea></div>
+    <button class="primary" type="submit">Hoàn tất và Sang câu tiếp theo</button>
+    <p class="muted">Kết quả được lưu khi bấm hoàn tất.</p>
+  </form>
+</div>
+{% set documents_url = '/calibration/' ~ token ~ '/documents/' ~ item.question_id %}{% include '_documents_panel.html' %}
+</div>
+{% endif %}
+{% endblock %}

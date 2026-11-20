@@ -102,6 +102,15 @@ Lời mời dùng một lần, có hạn 7 ngày.</textarea></div>
 <section class="panel stack" aria-label="Phân công chuẩn khoa học">
   <h2>Phân công chuẩn khoa học (3 Chuyên gia)</h2>
   {% if scientific.active %}
+    <section class="stack" aria-label="Thảo luận Calibration">
+      <h3>Thống nhất Calibration</h3>
+      {% if calibration_url %}
+        <p>Cả ba đã hoàn thành {{ calibration.total }} câu Calibration. Còn {{ calibration.pending|length }} câu cần đối chiếu.</p>
+        <div class="field"><label for="calibration-url">Liên kết chung cho người đại diện</label><input id="calibration-url" readonly value="{{ calibration_url }}"></div>
+        <div class="actions"><a class="button" href="{{ calibration_url }}">Mở danh sách đối chiếu</a><button type="button" data-copy="calibration-url" hidden>Sao chép liên kết</button><span data-copy-feedback role="status" class="muted"></span></div>
+        <p class="muted">Người có liên kết có thể xem các ý kiến và chốt kết quả. Chỉ gửi cho nhóm chuyên gia tham gia thảo luận.</p>
+      {% else %}<p class="muted">Liên kết chung sẽ xuất hiện khi cả ba chuyên gia đã nộp đủ câu Calibration ({{ calibration.submitted }} / {{ calibration.total * 3 }} lượt nộp).</p>{% endif %}
+    </section>
     <details class="disclosure">
       <summary>Thu hồi phân công 3 chuyên gia</summary>
       <div class="section-body stack">

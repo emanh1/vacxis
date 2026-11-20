@@ -24,7 +24,7 @@ uv sync --group dev
 cp .env.example .env
 ```
 
-Điền `OPENROUTER_API_KEY` và `VACXIS_GENERATION_MODEL` để sinh câu trả lời trực tuyến. Đặt `VACXIS_QUERY_PLANNER_MODEL` nếu dùng giao diện hội thoại. Truy xuất vector mặc định dùng Qdrant tại `localhost:6333`, collection `VacxiS_Capstone_FA26`, BGE-M3 tại `models/bge-m3` và reranker tại `models/bge-reranker`.
+Điền `OPENROUTER_API_KEY` và `VACXIS_GENERATION_MODEL` để sinh câu trả lời trực tuyến. `VACXIS_LLM_BASE_URL` mặc định là `https://openrouter.ai/api/v1`; `VACXIS_EVALUATION_MODEL` chọn model chấm độc lập. Đặt `VACXIS_QUERY_PLANNER_MODEL` nếu dùng giao diện hội thoại. Truy xuất vector mặc định dùng Qdrant tại `localhost:6333`, collection `VacxiS_Capstone_FA26`, BGE-M3 tại `models/bge-m3` và reranker tại `models/bge-reranker`.
 
 Chạy các lệnh truy xuất trên máy có đủ tài nguyên:
 
@@ -40,8 +40,14 @@ uv run --extra retrieval --extra web --env-file .env vacxis-web
 
 Thứ tự khảo sát là **Naive → Advanced → Hybrid (baseline) → Table-aware → Graph RAG → Agent RAG**. Naive dùng BM25. Advanced dùng truy xuất dense BGE-M3. Hybrid hợp nhất thứ hạng dense và sparse của BGE-M3 và có thể chạy reranker. Xem [hướng dẫn đánh giá](evaluation/README.md) để chạy với cùng dữ liệu và độ sâu truy xuất.
 
-- **Table-aware** — [PLACEHOLDER: bổ sung phiên bản triển khai riêng, cấu hình xử lý bảng, tập câu hỏi và chỉ số.]
-- **Graph RAG** — [PLACEHOLDER: bổ sung phiên bản triển khai, lược đồ và quy trình truy xuất đồ thị, giao thức đánh giá và chỉ số.]
+- **Table-aware** — Có mã lập chỉ mục `summarize_dual` và kết quả truy xuất sơ bộ M3b. [PLACEHOLDER: bổ sung cấu hình lập chỉ mục cuối cùng, đặc tả triển khai và kết quả chất lượng câu trả lời.]
+- **Graph RAG** — Có tích hợp LightRAG và kết quả truy xuất sơ bộ M4. [PLACEHOLDER: xác nhận cấu hình cuối cùng, đặc tả đồ thị và kết quả chất lượng câu trả lời.]
 - **Agent RAG** — [PLACEHOLDER: bổ sung phiên bản triển khai, công cụ và điều kiện dừng, giao thức đánh giá và chỉ số.]
 
+Các tùy chọn `--retriever-mode`, lập chỉ mục bảng, retry và resume được mô tả trong [hướng dẫn đánh giá](evaluation/README.md) và [hướng dẫn phục hồi kho dữ liệu](import_qdrant_vecstore.md). Kết quả và các điểm cần xác minh được lưu trong [ghi chú kiểm tra kết quả](results/report_discrepancies.md).
+
 Bản thảo tiếng Anh nằm trong [report_draft.tex](report_draft.tex). Trên Overleaf, tải bản thảo và các tệp `.local/sn-jnl.cls`, `.local/references.bib` và `.local/logo.png` vào cùng thư mục. Chọn `report_draft.tex` làm tài liệu chính với pdfLaTeX. Tìm `PLACEHOLDER` để xác định thông tin còn thiếu.
+
+## Đồng bộ nhánh báo cáo
+
+`main` là nguồn tham chiếu cho mã triển khai và kết quả. Nhánh `report-write` tích hợp các thay đổi từ `main` rồi cập nhật báo cáo, tài liệu và các câu hỏi còn thiếu. Các xác nhận của nhóm được lưu trong [report_clarifications.md](report_clarifications.md).

@@ -11,8 +11,10 @@
     <p>Họ tên và vai trò giúp nhóm phụ trách ghi nhận người đã xác nhận câu trả lời. Nơi công tác chỉ dùng để đối chiếu trong đồ án. Thông tin do người duyệt tự khai và được lưu trong hồ sơ riêng.</p>
     <h2>Ai có thể xem?</h2>
     <p>Người duyệt có thể xem hồ sơ của mình. Nhóm phụ trách có thể xem hồ sơ và tải tệp JSON. Tệp dùng họ tên và vai trò khi người duyệt đã đồng ý với mục đích này. Trường hợp còn lại, tệp ghi mã người duyệt.</p>
+    <p>Khi đồng ý với nội dung xin phép hiện tại, họ tên và vai trò còn xuất hiện trong trang kiểm định chéo và liên kết thảo luận Calibration dành cho các chuyên gia. Người có liên kết thảo luận có thể xem những ý kiến cần đối chiếu và ghi nhận kết quả thống nhất. Nơi công tác không được chia sẻ qua liên kết này.</p>
+    {% if person and person.consent == 'accepted' and (person.consent_version or 0) < consent_version %}<p class="notice">Lựa chọn chia sẻ trước đây vẫn được giữ cho tệp JSON. Trên trang thảo luận, bạn được hiển thị bằng tên Expert. Nếu muốn chia sẻ tên với các chuyên gia khác, hãy đọc nội dung xin phép bên dưới và tự cập nhật thông tin.</p>{% endif %}
     <h2>Thay đổi hoặc xóa thông tin</h2>
-    <p>Bạn có thể xóa thông tin đã chia sẻ. Sau khi xóa, các lần tải JSON tiếp theo sẽ ghi mã người duyệt. Hệ thống cũng xóa thông tin nếu nhóm thu hồi toàn bộ câu được giao và đóng quyền truy cập của bạn.</p>
+    <p>Bạn có thể xóa thông tin đã chia sẻ. Sau khi xóa, các lần tải JSON tiếp theo sẽ ghi mã người duyệt, trang thảo luận sẽ dùng tên Expert. Các bản đã tải hoặc trang đang mở trước đó không thể thu hồi tự động. Hệ thống cũng xóa thông tin nếu nhóm thu hồi toàn bộ câu được giao và đóng quyền truy cập của bạn.</p>
     <p>{% if email %}Bạn có thể liên hệ <a href="mailto:{{ email }}">{{ email }}</a> để hỏi về dữ liệu của mình.{% else %}Để hỏi về dữ liệu của mình, hãy liên hệ người gửi lời mời tham gia đồ án.{% endif %}</p>
   </section>
   {% if person and person.scope == 'live' %}

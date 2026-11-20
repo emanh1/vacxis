@@ -738,3 +738,357 @@ def test_cli_default_dataset_matches_saved_generation_goldens():
         result = by_id[item["additional_metadata"]["query_id"]]
         assert item["input"] == result["input"]
         assert item["additional_metadata"]["source_chunk_ids"] == result["additional_metadata"]["source_chunk_ids"]
+
+
+def test_retrieval_context_from_answer_prefers_retrieved_contexts_with_fallback():
+    chunk_texts = {"c1": "raw parquet chunk text"}
+    dual_text = "Prose summary\n\n[BẢNG DỮ LIỆU GỐC]\n<table><tr><td>0.5 ml</td></tr></table>"
+
+    # Prefers explicit retrieved_contexts over raw chunk_texts
+    assert retrieval_context_from_answer(
+        {"retrieved_chunk_ids": ["c1"], "retrieved_contexts": [dual_text]},
+        chunk_texts,
+    ) == [dual_text]
+
+    # Falls back to chunk_texts when retrieved_contexts is absent or empty
+    assert retrieval_context_from_answer(
+        {"retrieved_chunk_ids": ["c1"], "retrieved_contexts": []},
+        chunk_texts,
+    ) == ["raw parquet chunk text"]
+
+
+def test_answer_fields_and_evaluator_preserve_retrieved_contexts():
+    fields = answer_fields(
+        {
+            "GENERATED_ANSWER": {
+                "answer": "Tiêm 0.5 ml.",
+                "is_refusal": False,
+                "retrieved_chunk_ids": ["c1"],
+                "retrieved_contexts": ["Dual context text", "   "],
+            }
+        }
+    )
+    assert fields["retrieved_contexts"] == ["Dual context text"]
+
+    evaluator = _make_evaluator(enable_geval=False)
+    info = evaluator._case_info(fields, {"c1": "raw text"})
+    assert info.retrieval_context == ["Dual context text"]
+
+
+def test_generated_answer_to_dict_includes_retrieved_contexts():
+    from vacxis_capstone_fa26.generation.schemas import GeneratedAnswer
+
+    ans = GeneratedAnswer(
+        query="q",
+        answer="a",
+        retrieved_chunks=[
+            {"chunk_id": "c1", "text": "  Context 1  "},
+            {"chunk_id": "c2", "TEXT": "Context 2"},
+        ],
+    )
+    data = ans.to_dict()
+    assert data["retrieved_chunk_ids"] == ["c1", "c2"]
+    assert data["retrieved_contexts"] == ["Context 1", "Context 2"]
+
+
+def test_cli_retriever_mode_and_merge_table_chunks_metadata(monkeypatch, tmp_path):
+    from vacxis_capstone_fa26.evaluation import cli
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["vacxis-eval", "--retrieval-only", "--merge-table-chunks", "--collection-name", "col_dual"],
+    )
+    args = cli.parse_args()
+    assert args.merge_table_chunks is True
+    assert args.retriever_mode is None
+
+    summary = EvaluationSummary()
+    cli._record_retrieval_run(summary, args)
+    run = summary.metadata["run"]
+    assert run["retriever"] == "hybrid"
+    assert run["retriever_mode"] == "hybrid"
+    assert run["merge_table_chunks"] is True
+    assert run["collection_name"] == "col_dual"
+
+    # Mutually exclusive checks
+    for bad_args in (
+        ["vacxis-eval", "--baseline", "--retriever-mode", "hybrid"],
+        ["vacxis-eval", "--advanced-rag", "--retriever-mode", "advanced"],
+        ["vacxis-eval", "--retriever-mode", "hybrid", "--results", "saved.json"],
+        ["vacxis-eval", "--retriever-mode", "naive", "--chunks", str(tmp_path / "missing.parquet")],
+    ):
+        monkeypatch.setattr("sys.argv", bad_args)
+        with pytest.raises(SystemExit):
+            cli.parse_args()
+
+
+def test_ir_metrics_exclude_lightrag_kg_context_while_deepeval_keeps_it():
+    evaluator = _make_evaluator(enable_geval=False)
+    dataset = [
+        {
+            "QUERY_ID": "Q1",
+            "QUERY": "Vắc-xin Gardasil 9 phòng bệnh gì?",
+            "ANSWERABILITY": "ANSWERABLE",
+            "additional_metadata": {"source_chunk_ids": ["c1", "c2"]},
+        }
+    ]
+    kg_text = "[ĐỒ THỊ TRI THỨC Y KHOA (LIGHTRAG)]\n\nThực thể liên quan:\n- Gardasil 9 (VACCINE)"
+    results = [
+        {
+            "QUERY_ID": "Q1",
+            "GENERATED_ANSWER": {
+                "answer": "Gardasil 9 phòng HPV [c1].",
+                "is_refusal": False,
+                "retrieved_chunk_ids": ["lightrag_kg_context", "c1", "c2"],
+                "retrieved_contexts": [kg_text, "Text c1", "Text c2"],
+            },
+        }
+    ]
+
+    # Retrieval-only IR scoring excludes synthetic lightrag_kg_context
+    ir_summary = evaluator.evaluate_retrieval(dataset, results, k_values=(1, 2))
+    assert ir_summary.overall_metrics["Hit@1"] == 1.0
+    assert ir_summary.overall_metrics["Precision@2"] == 1.0
+    assert ir_summary.overall_metrics["Recall@2"] == 1.0
+    assert ir_summary.metadata["short_rankings_by_cutoff"] == {"1": 0, "2": 0}
+    assert ir_summary.per_query_results[0]["metadata"]["retrieved_chunk_ids"] == [
+        "lightrag_kg_context",
+        "c1",
+        "c2",
+    ]
+
+    # Full DeepEval scoring preserves KG context in LLMTestCase.retrieval_context
+    captured_cases = []
+    metric_names = [m.__name__ for m in evaluator.build_metrics()]
+
+    def _capture(cases, **kw):
+        captured_cases.extend(cases)
+        return _fake_result(len(cases), metric_names)
+
+    evaluator._run_deepeval = _capture
+    full_summary = evaluator.evaluate_results(dataset, results, chunk_texts={})
+    assert captured_cases[0].retrieval_context == [kg_text, "Text c1", "Text c2"]
+    assert full_summary.overall_metrics["Hit@1"] == 1.0
+    assert full_summary.overall_metrics["MRR@1"] == 1.0
+
+
+def test_cli_lightrag_flags_and_metadata(monkeypatch):
+    from vacxis_capstone_fa26.evaluation import cli
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "vacxis-eval",
+            "--retrieval-only",
+            "--retriever-mode",
+            "hybrid_lightrag",
+            "--collection-name",
+            "VacxiS_Capstone_FA26_table_dual",
+            "--lightrag-mode",
+            "mix",
+            "--lightrag-fusion",
+            "rrf_rerank",
+            "--lightrag-working-dir",
+            "custom_lr_dir",
+            "--lightrag-workspace",
+            "vacxis_v2",
+            "--lightrag-top-k",
+            "15",
+            "--lightrag-chunk-top-k",
+            "6",
+        ],
+    )
+    args = cli.parse_args()
+    summary = EvaluationSummary()
+    cli._record_retrieval_run(summary, args)
+    run = summary.metadata["run"]
+    assert run["retriever"] == "hybrid_lightrag"
+    assert run["retriever_mode"] == "hybrid_lightrag"
+    assert run["collection_name"] == "VacxiS_Capstone_FA26_table_dual"
+    assert run["lightrag_mode"] == "mix"
+    assert run["lightrag_fusion"] == "rrf_rerank"
+    assert run["lightrag_working_dir"] == "custom_lr_dir"
+    assert run["lightrag_workspace"] == "vacxis_v2"
+    assert run["lightrag_top_k"] == 15
+    assert run["lightrag_chunk_top_k"] == 6
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["vacxis-eval", "--retrieval-only", "--retriever-mode", "lightrag", "--lightrag-top-k", "0"],
+    )
+    with pytest.raises(SystemExit):
+        cli.parse_args()
+
+
+def test_ir_metrics_alias_matching_preserves_ranks_and_bounds():
+    from vacxis_capstone_fa26.evaluation.ir_metrics import compute_query_ir_metrics
+
+    # Non-primary sub-chunk c_0028 was merged into primary c_0026 at rank 2
+    retrieved = ["c_0003", "c_0026", "c_0040"]
+    relevant = ["c_0003", "c_0028"]
+    aliases = {"c_0026": ["c_0026", "c_0027", "c_0028"]}
+
+    strict_scores = compute_query_ir_metrics(retrieved, relevant, k_values=(1, 2, 3))
+    assert strict_scores["Recall@2"] == 0.5
+    assert strict_scores["Precision@2"] == 0.5
+
+    alias_scores = compute_query_ir_metrics(
+        retrieved, relevant, k_values=(1, 2, 3), chunk_aliases=aliases
+    )
+    assert alias_scores["Hit@1"] == 1.0
+    assert alias_scores["Hit@2"] == 1.0
+    assert alias_scores["Recall@2"] == 1.0
+    assert alias_scores["Precision@2"] == 1.0
+    assert alias_scores["MRR@2"] == 1.0
+    assert alias_scores["NDCG@2"] == pytest.approx(1.0)
+    assert alias_scores["MAP@2"] == pytest.approx(1.0)
+
+    # Single merged chunk covering two relevant labels at rank 1 stays bounded <= 1.0
+    multi_scores = compute_query_ir_metrics(
+        ["c_0026", "other"],
+        ["c_0027", "c_0028"],
+        k_values=(1, 2),
+        chunk_aliases=aliases,
+    )
+    assert multi_scores["Hit@1"] == 1.0
+    assert multi_scores["Recall@1"] == 1.0
+    assert multi_scores["Precision@1"] == 1.0
+    assert multi_scores["Precision@2"] == 0.5
+    assert multi_scores["NDCG@1"] == pytest.approx(1.0)
+    assert multi_scores["NDCG@2"] == pytest.approx(1.0)
+    assert multi_scores["MAP@2"] == pytest.approx(1.0)
+
+    # Two slots sharing the same alias cannot double-count Precision/NDCG/MAP
+    dup_alias_scores = compute_query_ir_metrics(
+        ["slot_a", "slot_b"],
+        ["target_1"],
+        k_values=(2,),
+        chunk_aliases={"slot_a": ["slot_a", "target_1"], "slot_b": ["slot_b", "target_1"]},
+    )
+    assert dup_alias_scores["Precision@2"] == 0.5
+    assert dup_alias_scores["Recall@2"] == 1.0
+    assert dup_alias_scores["NDCG@2"] == pytest.approx(1.0)
+    assert dup_alias_scores["MAP@2"] == pytest.approx(1.0)
+
+
+def test_merged_chunk_aliases_flow_through_generation_and_evaluator():
+    from vacxis_capstone_fa26.generation.schemas import GeneratedAnswer, extract_chunk_aliases
+    from vacxis_capstone_fa26.retrieval.schemas import RetrievedChunk
+
+    merged_chunk = RetrievedChunk(
+        chunk_id="doc_c_0026",
+        doc_id="doc",
+        doc_title="Menactra",
+        category="DOSAGE",
+        parent_header="LIỀU",
+        header="Bảng 1",
+        content_type="table",
+        text="Merged table text",
+        score=0.9,
+        rrf_score=0.03,
+        metadata={"has_table": True, "merged_chunk_ids": ["doc_c_0026", "doc_c_0027", "doc_c_0028"]},
+    )
+    normal_chunk = RetrievedChunk(
+        chunk_id="doc_c_0003",
+        doc_id="doc",
+        doc_title="Menactra",
+        category="INDICATION",
+        parent_header="CHỈ ĐỊNH",
+        header="Mở đầu",
+        content_type="text",
+        text="Normal text",
+        score=0.8,
+        rrf_score=0.02,
+        metadata={"has_table": False},
+    )
+
+    assert extract_chunk_aliases([normal_chunk]) == {}
+    assert extract_chunk_aliases([merged_chunk, normal_chunk]) == {
+        "doc_c_0026": ["doc_c_0026", "doc_c_0027", "doc_c_0028"]
+    }
+
+    ans_plain = GeneratedAnswer(query="q", answer="a", retrieved_chunks=[normal_chunk])
+    assert "retrieved_chunk_aliases" not in ans_plain.to_dict()
+
+    ans_merged = GeneratedAnswer(
+        query="q", answer="a", retrieved_chunks=[normal_chunk, merged_chunk]
+    )
+    ans_dict = ans_merged.to_dict()
+    assert ans_dict["retrieved_chunk_aliases"] == {
+        "doc_c_0026": ["doc_c_0026", "doc_c_0027", "doc_c_0028"]
+    }
+
+    fields = answer_fields({"GENERATED_ANSWER": ans_dict})
+    assert fields["retrieved_chunk_aliases"] == {
+        "doc_c_0026": ["doc_c_0026", "doc_c_0027", "doc_c_0028"]
+    }
+
+    dataset = [
+        {
+            "QUERY_ID": "eval_0110",
+            "QUERY": "Liều tiêm Menactra?",
+            "ANSWERABILITY": "ANSWERABLE",
+            "additional_metadata": {"source_chunk_ids": ["doc_c_0003", "doc_c_0028"]},
+        }
+    ]
+    results = [{"QUERY_ID": "eval_0110", "GENERATED_ANSWER": ans_dict}]
+
+    evaluator = _make_evaluator(enable_geval=False)
+    ir_summary = evaluator.evaluate_retrieval(dataset, results, k_values=(1, 2))
+    assert ir_summary.overall_metrics["Hit@2"] == 1.0
+    assert ir_summary.overall_metrics["Recall@2"] == 1.0
+    assert ir_summary.overall_metrics["Precision@2"] == 1.0
+    assert ir_summary.overall_metrics["NDCG@2"] == pytest.approx(1.0)
+    assert "merged_chunk_ids" in ir_summary.metadata["relevance"]
+    assert ir_summary.per_query_results[0]["metadata"]["retrieved_chunk_aliases"] == {
+        "doc_c_0026": ["doc_c_0026", "doc_c_0027", "doc_c_0028"]
+    }
+
+    # Full evaluate_results also passes chunk_aliases into IR scoring
+    metric_names = [m.__name__ for m in evaluator.build_metrics()]
+    evaluator._run_deepeval = lambda cases, **kw: _fake_result(len(cases), metric_names)
+    full_summary = evaluator.evaluate_results(dataset, results, chunk_texts={})
+    assert full_summary.overall_metrics["Recall@3"] == 1.0
+    assert full_summary.overall_metrics["NDCG@3"] == pytest.approx(1.0)
+
+
+def test_explicit_report_checkpoint_survives_failure(tmp_path, monkeypatch):
+    evaluator = _make_evaluator()
+    dataset = [
+        {'QUERY_ID': str(i), 'QUERY': f'q{i}', 'REFERENCE_ANSWER': 'expected'}
+        for i in range(2)
+    ]
+    results = [
+        {'QUERY_ID': str(i), 'GENERATED_ANSWER': {'answer': 'answer', 'retrieved_chunk_ids': []}}
+        for i in range(2)
+    ]
+    names = [metric.__name__ for metric in evaluator.build_metrics()]
+    calls = []
+    def run(cases, **kwargs):
+        calls.append(cases[0].input)
+        if len(calls) == 2:
+            raise RuntimeError('connection lost')
+        return _fake_result(1, names)
+    monkeypatch.setattr(evaluator, '_run_deepeval', run)
+    path = tmp_path / 'checkpoint.json'
+    with pytest.raises(RuntimeError, match='connection lost'):
+        evaluator.evaluate_results(dataset, results, checkpoint_path=path)
+    assert len(json.loads(path.read_text())['report']['per_query_results']) == 1
+    summary = evaluator.evaluate_results(dataset, results, checkpoint_path=path, resume=True)
+    assert calls == ['q0', 'q1', 'q1']
+    assert summary.num_queries == 2
+    assert summary.metadata['complete'] is True
+    results[0]['GENERATED_ANSWER']['answer'] = 'changed'
+    with pytest.raises(ValueError, match='settings changed'):
+        evaluator.evaluate_results(dataset, results, checkpoint_path=path, resume=True)
+
+
+def test_explicit_checkpoint_rejects_missing_metrics(tmp_path, monkeypatch):
+    evaluator = _make_evaluator()
+    dataset = [{'QUERY_ID': '1', 'QUERY': 'q', 'REFERENCE_ANSWER': 'a'}]
+    results = [{'QUERY_ID': '1', 'GENERATED_ANSWER': {'answer': 'a'}}]
+    monkeypatch.setattr(evaluator, '_run_deepeval', lambda *a, **kw: _fake_result(1, []))
+    path = tmp_path / 'report.json'
+    with pytest.raises(ValueError, match='Incomplete metric'):
+        evaluator.evaluate_results(dataset, results, checkpoint_path=path)
+    assert json.loads(path.read_text())['report']['per_query_results'] == []
