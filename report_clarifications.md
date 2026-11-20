@@ -132,3 +132,13 @@ Was the ODT's 14-week schedule followed? What were the actual dates and major de
 - Question 1 confirmed the short name. The exact full report title has not been separately approved.
 - No conversion prompt, exact Gemini model version, conversion date or detailed manual-review protocol was supplied. The collection date is confirmed.
 - Metadata completeness, source-page links, handling of superseded instructions and the final experiment manifests remain report placeholders.
+
+## Results evidence update on November 20, 2026
+
+The team's earlier answers remain recorded above. New evidence on main now supplies retrieval-only results for questions 18 and 32–33, plus Table-aware and LightRAG implementation artifacts relevant to question 20. This is a repository observation and does not replace the team's confirmation of final designs or completed answer-level evaluation.
+
+- The three primary baseline reports each score 300 questions at top-k five. Naive, Advanced and Hybrid Hit@5 are 0.5367, 0.5900 and 0.7433.
+- Preliminary M3b and M4 reports contain Table-aware and graph-augmentation retrieval results. Final design mapping and implementation records remain pending. Agent RAG remains pending.
+- The default five-result depth is now recorded for these IR runs. The older four-result generation artifact remains separate.
+- Question 23 needs a revision-specific answer because current main has response validation enabled.
+- See results/report_discrepancies.md for scoring caveats, run differences and remaining evidence needs. Questions 21–24, 26–31 and 34–36 remain unresolved to the extent not answered by these saved retrieval artifacts.
