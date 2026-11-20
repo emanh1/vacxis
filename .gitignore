@@ -31,3 +31,4 @@ bugs-review/
 models/
 .pytest_cache
 .deepeval/
+qdrant_storage/
