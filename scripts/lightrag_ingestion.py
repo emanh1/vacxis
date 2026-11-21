@@ -261,7 +261,7 @@ async def run_pipeline(args: argparse.Namespace) -> None:
     qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333").strip()
     neo4j_uri = os.getenv("NEO4J_URI", "bolt://localhost:7687").strip()
     neo4j_user = os.getenv("NEO4J_USERNAME", "neo4j").strip()
-    neo4j_pass = os.getenv("NEO4J_PASSWORD", "neo4j").strip()
+    neo4j_pass = os.getenv("NEO4J_PASSWORD", "abc123456").strip()
     neo4j_db = os.getenv("NEO4J_DATABASE", "neo4j").strip()
 
     reasoning_effort = (

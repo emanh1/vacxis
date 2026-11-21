@@ -32,3 +32,4 @@ models/
 .pytest_cache
 .deepeval/
 qdrant_storage/
+neo4j/
