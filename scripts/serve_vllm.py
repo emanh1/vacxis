@@ -20,17 +20,17 @@ def parse_args() -> argparse.Namespace:
             "vLLM TPU backend and separate launch configuration."
         ),
     )
-    parser.add_argument("--model", default=os.getenv("MODEL_ID", "Qwen/Qwen2.5-3B-Instruct"))
+    parser.add_argument("--model", default=os.getenv("MODEL_ID", "Qwen/Qwen3.8-27B"))
     parser.add_argument("--served-model-name", default=os.getenv("SERVED_MODEL_NAME"))
     parser.add_argument("--host", default=os.getenv("VLLM_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.getenv("VLLM_PORT", "8000")))
-    parser.add_argument("--max-model-len", type=int, default=int(os.getenv("MAX_MODEL_LEN", "8192")))
+    parser.add_argument("--max-model-len", type=int, default=int(os.getenv("MAX_MODEL_LEN", "16384")))
     parser.add_argument(
         "--gpu-memory-utilization",
         type=float,
         default=float(os.getenv("GPU_MEMORY_UTILIZATION", "0.90")),
     )
-    parser.add_argument("--default-max-tokens", type=int, default=1024)
+    parser.add_argument("--default-max-tokens", type=int, default=16384)
     return parser.parse_args()
 
 

@@ -37468,5 +37468,465 @@
     "create_time": 1795168245,
     "update_time": 1795168245,
     "_id": "hybrid:keywords:6f87136091f5045c9f6e35d79c9d8103"
+  },
+  "hybrid:keywords:9f18a303cb33cf035c94b3edfeb063b0": {
+    "return": "{\"high_level_keywords\": [\"mang thai\", \"ti\\u00eam vaccine\", \"an to\\u00e0n cho m\\u1eb9 b\\u1ea7u\", \"ch\\u1ec9 \\u0111\\u1ecbnh ti\\u00eam ch\\u1ee7ng\"], \"low_level_keywords\": [\"Abrysvo\", \"22 tu\\u1ea7n\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Phụ nữ 22 tuần mang thai có nên tiêm vaccine Abrysvo không ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254521,
+    "update_time": 1795254521,
+    "_id": "hybrid:keywords:9f18a303cb33cf035c94b3edfeb063b0"
+  },
+  "hybrid:keywords:cedb63b3fdb406a7a42e51c2e03f2aa5": {
+    "return": "{\"high_level_keywords\": [\"ph\\u01b0\\u01a1ng ph\\u00e1p ti\\u00eam ch\\u1ee7ng\", \"an to\\u00e0n ti\\u00eam ch\\u1ee7ng tr\\u1ebb em\"], \"low_level_keywords\": [\"ProQuad\", \"IM\", \"SC\", \"b\\u00e9 12 th\\u00e1ng\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bé 12 tháng có thể tiêm ProQuad bằng IM hay SC ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254555,
+    "update_time": 1795254555,
+    "_id": "hybrid:keywords:cedb63b3fdb406a7a42e51c2e03f2aa5"
+  },
+  "hybrid:keywords:ad58179e415314c926b1bc2a56b7001f": {
+    "return": "{\"high_level_keywords\": [\"l\\u01b0u \\u00fd ti\\u00eam ch\\u1ee7ng\", \"d\\u00f9ng thu\\u1ed1c\", \"ph\\u1ea3n \\u1ee9ng sau ti\\u00eam\"], \"low_level_keywords\": [\"Nimenrix\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Tiêm Nimenrix cho bé cần lưu ý gì về dùng thuốc và phản ứng ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254588,
+    "update_time": 1795254588,
+    "_id": "hybrid:keywords:ad58179e415314c926b1bc2a56b7001f"
+  },
+  "hybrid:keywords:fe803302bafeb0d648a24a7318944793": {
+    "return": "{\"high_level_keywords\": [\"an to\\u00e0n ti\\u00eam ch\\u1ee7ng\", \"ch\\u1ed1ng ch\\u1ec9 \\u0111\\u1ecbnh\", \"s\\u1eed d\\u1ee5ng vaccine\"], \"low_level_keywords\": [\"gi\\u1ea3m ti\\u1ec3u c\\u1ea7u t\\u1ea1m th\\u1eddi\", \"vaccine Boostrix\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Đã từng giảm tiểu cầu tạm thời, có an toàn tiêm Boostrix không ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254677,
+    "update_time": 1795254677,
+    "_id": "hybrid:keywords:fe803302bafeb0d648a24a7318944793"
+  },
+  "hybrid:keywords:a5f67469ae195f35a7f2fb89b9d552ab": {
+    "return": "{\"high_level_keywords\": [\"li\\u1ec1u ti\\u00eam\", \"l\\u1ecbch ti\\u00eam ch\\u1ee7ng\", \"ch\\u1ed1ng ch\\u1ec9 \\u0111\\u1ecbnh\", \"ch\\u0103m s\\u00f3c s\\u1ee9c kh\\u1ecfe tr\\u1ebb em\"], \"low_level_keywords\": [\"b\\u00e9 2 th\\u00e1ng\", \"ComBE Five\", \"3 m\\u0169i\", \"0,5 ml\", \"c\\u00e1ch 4 tu\\u1ea7n\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bé 2 tháng, liều ComBE Five có 3 mũi, mỗi 0,5 ml, cách 4 tuần được không?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254708,
+    "update_time": 1795254708,
+    "_id": "hybrid:keywords:a5f67469ae195f35a7f2fb89b9d552ab"
+  },
+  "hybrid:keywords:0fe6aa9bed31771c709817b6afce68a7": {
+    "return": "{\"high_level_keywords\": [\"so s\\u00e1nh vaccine\", \"t\\u01b0 v\\u1ea5n y t\\u1ebf\", \"ch\\u1ec9 \\u0111\\u1ecbnh l\\u1ee9a tu\\u1ed5i\"], \"low_level_keywords\": [\"Prevenar 20\", \"Prevenar 13\", \"62 tu\\u1ed5i\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bác 62 tuổi, có nên chọn Prevenar 20 hơn Prevenar 13 không?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254748,
+    "update_time": 1795254748,
+    "_id": "hybrid:keywords:0fe6aa9bed31771c709817b6afce68a7"
+  },
+  "hybrid:keywords:f07a5ca4dfab493377df00af7dfad619": {
+    "return": "{\"high_level_keywords\": [\"ph\\u1ee5 n\\u1eef mang thai\", \"v\\u1eafc xin\", \"li\\u00ean quan s\\u1ee9c kh\\u1ecfe\"], \"low_level_keywords\": [\"Prevenar 13\", \"ti\\u00eam v\\u1eafc xin\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Tại sao phụ nữ mang thai nên tránh tiêm vắc‑xin Prevenar 13?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254812,
+    "update_time": 1795254812,
+    "_id": "hybrid:keywords:f07a5ca4dfab493377df00af7dfad619"
+  },
+  "hybrid:keywords:a4177fe35b38dc08e3ee5da5f639e600": {
+    "return": "{\"high_level_keywords\": [\"ph\\u1ea3n \\u1ee9ng sau ti\\u00eam\", \"t\\u01b0 v\\u1ea5n y t\\u1ebf\", \"\\u0111\\u00e1nh gi\\u00e1 t\\u00ecnh tr\\u1ea1ng s\\u1ee9c kh\\u1ecfe\"], \"low_level_keywords\": [\"PENTAVAC\", \"s\\u01b0ng \\u0111\\u1ecf\", \"ch\\u1ed7 ti\\u00eam\", \"can thi\\u1ec7p\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Em tiêm PENTAVAC, chỗ tiêm sưng đỏ, có phải phản ứng thường gặp, cần can thiệp không ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254840,
+    "update_time": 1795254840,
+    "_id": "hybrid:keywords:a4177fe35b38dc08e3ee5da5f639e600"
+  },
+  "hybrid:keywords:e06924b0e99ccdb3725e43fa5180fbe7": {
+    "return": "{\"high_level_keywords\": [\"ph\\u1ea3n \\u1ee9ng ph\\u1ee5\", \"ph\\u00e1t ban\", \"sau ti\\u00eam\", \"s\\u1ee9c kh\\u1ecfe tr\\u1ebb em\"], \"low_level_keywords\": [\"Nimenrix\", \"b\\u00e9 2 th\\u00e1ng\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bé 2 tháng sau tiêm Nimenrix có phát ban không?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254880,
+    "update_time": 1795254880,
+    "_id": "hybrid:keywords:e06924b0e99ccdb3725e43fa5180fbe7"
+  },
+  "hybrid:keywords:f353cde6bacd1a7c310491de5d675d0e": {
+    "return": "{\"high_level_keywords\": [\"ti\\u00eam ch\\u1ee7ng\", \"an to\\u00e0n v\\u1eafc-xin\", \"ch\\u1ec9 \\u0111\\u1ecbnh tu\\u1ed5i\"], \"low_level_keywords\": [\"SKYVaricella\", \"10 th\\u00e1ng\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bé 10 tháng có được tiêm SKYVaricella không ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254910,
+    "update_time": 1795254910,
+    "_id": "hybrid:keywords:f353cde6bacd1a7c310491de5d675d0e"
+  },
+  "hybrid:keywords:968f70fbc3bfbc252167e683ec2a696a": {
+    "return": "{\"high_level_keywords\": [\"ch\\u1ec9 \\u0111\\u1ecbnh ti\\u00eam ch\\u1ee7ng\", \"\\u0111\\u00e1nh gi\\u00e1 \\u0111\\u00e1p \\u1ee9ng mi\\u1ec5n d\\u1ecbch\", \"khuy\\u1ebfn c\\u00e1o y t\\u1ebf\"], \"low_level_keywords\": [\"Prevenar 13\", \"OPA GMT\", \"62 tu\\u1ed5i\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bác 62 tuổi có nên tiêm Prevenar 13 không, dù OPA GMT thấp hơn?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795254933,
+    "update_time": 1795254933,
+    "_id": "hybrid:keywords:968f70fbc3bfbc252167e683ec2a696a"
+  },
+  "hybrid:keywords:fa8d01d3ddca6ddb04504b3ae030ecd4": {
+    "return": "{\"high_level_keywords\": [\"li\\u1ec1u nh\\u1eafc l\\u1ea1i\", \"t\\u0103ng IgG\", \"kh\\u00e1ng polysaccharid\", \"li\\u1ec1u c\\u01a1 b\\u1ea3n\"], \"low_level_keywords\": [\"Prevenar 13\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Liều nhắc lại Prevenar 13 tăng IgG kháng polysaccharid so với 2 liều cơ bản?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255003,
+    "update_time": 1795255003,
+    "_id": "hybrid:keywords:fa8d01d3ddca6ddb04504b3ae030ecd4"
+  },
+  "hybrid:keywords:a18ab4732aa29da8df44eec22ac05245": {
+    "return": "{\"high_level_keywords\": [\"ti\\u00eam ch\\u1ee7ng\", \"l\\u1ecbch ti\\u00eam\", \"li\\u1ec1u l\\u01b0\\u1ee3ng\"], \"low_level_keywords\": [\"Prevenar 13\", \"0.5 ml\", \"2 li\\u1ec1u\", \"1 th\\u00e1ng\", \"8 th\\u00e1ng\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "8‑tháng chưa tiêm Prevenar 13, cần liều 0.5 ml bao nhiêu và lịch 2 liều cách 1 tháng?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255045,
+    "update_time": 1795255045,
+    "_id": "hybrid:keywords:a18ab4732aa29da8df44eec22ac05245"
+  },
+  "hybrid:keywords:9a6d52239bab1842dde1b0c149c71344": {
+    "return": "{\"high_level_keywords\": [\"ph\\u1ea3n \\u1ee9ng sau ti\\u00eam\", \"ti\\u00eam ch\\u1ee7ng\", \"ch\\u1ec9 \\u0111\\u1ecbnh b\\u00e1o b\\u00e1c s\\u0129\"], \"low_level_keywords\": [\"b\\u00e9 5 tu\\u1ed5i\", \"Vaxigrip\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bé 5 tuổi tiêm Vaxigrip, phản ứng gì thường gặp, khi nào báo bác sĩ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255075,
+    "update_time": 1795255075,
+    "_id": "hybrid:keywords:9a6d52239bab1842dde1b0c149c71344"
+  },
+  "hybrid:keywords:cc5bb3efd7b05803bd628bbceff983f6": {
+    "return": "{\"high_level_keywords\": [\"t\\u01b0\\u01a1ng t\\u00e1c thu\\u1ed1c\", \"\\u0111i\\u1ec1u tr\\u1ecb\", \"li\\u00ean quan \\u0111\\u1ebfn BCG\"], \"low_level_keywords\": [\"Isoniazid\", \"BCG\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Isoniazid ức chế BCG, có nên tiêm vắc‑xin BCG trong khi đang điều trị?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255131,
+    "update_time": 1795255131,
+    "_id": "hybrid:keywords:cc5bb3efd7b05803bd628bbceff983f6"
+  },
+  "hybrid:keywords:611e43d3e8bf9c4040aae856fa6da095": {
+    "return": "{\"high_level_keywords\": [\"ti\\u00eam ch\\u1ee7ng\", \"\\u0111\\u00e1p \\u1ee9ng vaccine\", \"t\\u01b0\\u01a1ng t\\u00e1c vaccine\"], \"low_level_keywords\": [\"Rotarix\", \"OPV\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Con tôi tiêm Rotarix + OPV, có ảnh hưởng tới đáp ứng vaccine không ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255155,
+    "update_time": 1795255155,
+    "_id": "hybrid:keywords:611e43d3e8bf9c4040aae856fa6da095"
+  },
+  "hybrid:keywords:d213543644b32c532f040e946f276999": {
+    "return": "{\"high_level_keywords\": [\"ph\\u1ea3n \\u1ee9ng ph\\u1ee5\", \"t\\u1ea7n su\\u1ea5t\", \"ti\\u00eam ch\\u1ee7ng\", \"tr\\u1ebb nh\\u1ecf\"], \"low_level_keywords\": [\"Hexaxim\", \"b\\u00e9 2 tu\\u1ed5i\", \"\\u0111au\", \"kh\\u00f3c\", \"s\\u01b0ng \\u0111\\u1ecf\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bé 2 tuổi tiêm Hexaxim có phản ứng gì, đau, khóc, đỏ, tần suất ra sao?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255182,
+    "update_time": 1795255182,
+    "_id": "hybrid:keywords:d213543644b32c532f040e946f276999"
+  },
+  "hybrid:keywords:9151f29ab06a5a48b7418302faaa0f0b": {
+    "return": "{\"high_level_keywords\": [\"t\\u1ef7 l\\u1ec7 t\\u0103ng \\u0111\\u00e1p \\u1ee9ng OPA\", \"so s\\u00e1nh hi\\u1ec7u qu\\u1ea3 vaccine\", \"ng\\u01b0\\u1eddi cao tu\\u1ed5i\"], \"low_level_keywords\": [\"Prevenar13\", \"PPSV23\", \"OPA serotype 6A\", \"ng\\u01b0\\u1eddi 60-64 tu\\u1ed5i\", \"ch\\u01b0a ti\\u00eam\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Prevenar13 tăng đáp ứng OPA serotype 6A bao nhiêu % so với PPSV23 ở người 60‑64 chưa tiêm ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255257,
+    "update_time": 1795255257,
+    "_id": "hybrid:keywords:9151f29ab06a5a48b7418302faaa0f0b"
+  },
+  "hybrid:keywords:578afbb80e65528db1c9acc5ba4d75df": {
+    "return": "{\"high_level_keywords\": [\"qu\\u00e1 li\\u1ec1u\", \"bi\\u1ec7n ph\\u00e1p x\\u1eed l\\u00fd\", \"thai b\\u1ecf\", \"h\\u01b0\\u1edbng d\\u1eabn s\\u1eed d\\u1ee5ng\"], \"low_level_keywords\": [\"Influvac Tetra\", \"QD\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Nếu dùng quá liều Influvac Tetra, cần làm gì và cách vứt bỏ đúng QD?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255314,
+    "update_time": 1795255314,
+    "_id": "hybrid:keywords:578afbb80e65528db1c9acc5ba4d75df"
+  },
+  "hybrid:keywords:8064c939773917715208eb7359a53cb3": {
+    "return": "{\"high_level_keywords\": [\"th\\u00e0nh ph\\u1ea7n\", \"t\\u00e1 d\\u01b0\\u1ee3c\"], \"low_level_keywords\": [\"Imojev MD\", \"b\\u1ed9t \\u0111\\u00f4ng kh\\u00f4\", \"dung m\\u00f4i\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Imojev MD có chứa tá dược nào trong bột đông khô hoặc dung môi không ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255337,
+    "update_time": 1795255337,
+    "_id": "hybrid:keywords:8064c939773917715208eb7359a53cb3"
+  },
+  "hybrid:keywords:41e3f6dc7504d73d32708d90dd8253d9": {
+    "return": "{\"high_level_keywords\": [\"ph\\u1ea3n \\u1ee9ng ph\\u1ee5\", \"ti\\u00eam ch\\u1ee7ng\", \"s\\u1ee9c kh\\u1ecfe tr\\u1ebb em\"], \"low_level_keywords\": [\"tr\\u1ebb 4 tu\\u1ed5i\", \"bOPV\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Trẻ 4 tuổi được tiêm bOPV, có phản ứng phụ gì không ạ?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255363,
+    "update_time": 1795255363,
+    "_id": "hybrid:keywords:41e3f6dc7504d73d32708d90dd8253d9"
+  },
+  "hybrid:keywords:dcae09943eafc2e186ee0fbae3038cce": {
+    "return": "{\"high_level_keywords\": [\"ch\\u1ed1ng ch\\u1ec9 \\u0111\\u1ecbnh ti\\u00eam vaccine\", \"s\\u1ea3n khoa\", \"an to\\u00e0n vaccine trong thai k\\u1ef3\", \"ti\\u1ec1n s\\u1eed d\\u1ecb \\u1ee9ng\"], \"low_level_keywords\": [\"ti\\u1ec1n s\\u1eed ph\\u1ea3n v\\u1ec7\", \"mang thai\", \"Qdenga\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Với tiền sử phản vệ và dự định mang thai, có nên tiêm Qdenga không?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255423,
+    "update_time": 1795255423,
+    "_id": "hybrid:keywords:dcae09943eafc2e186ee0fbae3038cce"
+  },
+  "hybrid:keywords:9c31ff584c2589eaacbc38f624db930f": {
+    "return": "{\"high_level_keywords\": [\"ti\\u00eam ch\\u1ee7ng\", \"l\\u1ecbch ti\\u00eam vaccine\", \"li\\u1ec1u ti\\u00eam\", \"t\\u01b0\\u01a1ng th\\u00edch vaccine\"], \"low_level_keywords\": [\"PCV7\", \"Prevenar 13\", \"0.5 ml\", \"8 tu\\u1ea7n\", \"b\\u00e9 3 tu\\u1ed5i\"]}",
+    "cache_type": "keywords",
+    "chunk_id": null,
+    "original_prompt": "Bé 3 tuổi đã tiêm PCV7, có nên tiêm 0.5 ml Prevenar 13 sau 8 tuần?",
+    "queryparam": {
+      "mode": "hybrid",
+      "response_type": "Multiple Paragraphs",
+      "top_k": 20,
+      "chunk_top_k": 5,
+      "max_entity_tokens": 1500,
+      "max_relation_tokens": 1500,
+      "max_total_tokens": 30000,
+      "user_prompt": "",
+      "enable_rerank": false
+    },
+    "create_time": 1795255482,
+    "update_time": 1795255482,
+    "_id": "hybrid:keywords:9c31ff584c2589eaacbc38f624db930f"
   }
 }
