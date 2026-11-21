@@ -109,6 +109,10 @@ class LocalBGEM3Embedder:
         """Async wrapper matching LightRAG EmbeddingFunc contract."""
         return await asyncio.to_thread(self.encode_sync, texts)
 
+    def __deepcopy__(self, memo):
+        memo[id(self)] = self
+        return self
+
 
 def ensure_lightrag_target_collection(
     client: QdrantClient,
